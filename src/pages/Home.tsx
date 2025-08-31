@@ -69,9 +69,9 @@ const Home = () => {
                 Explore Services
               </Button>
               <Button 
-                variant="outline" 
+                variant="ghost" 
                 size="lg"
-                className="border-white/30 text-white hover:bg-white/20 hover:text-white animate-scale-in"
+                className="bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 hover:text-white animate-scale-in"
               >
                 Learn More
                 <ArrowRight className="w-5 h-5 ml-2" />
