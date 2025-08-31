@@ -10,7 +10,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   return (
     <NextThemeProvider 
       attribute="class" 
-      defaultTheme="light" 
+      defaultTheme="dark" 
       enableSystem={false}
       themes={['light', 'dark']}
     >
