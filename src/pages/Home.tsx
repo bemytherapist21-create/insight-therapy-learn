@@ -71,7 +71,7 @@ const Home = () => {
               <Button 
                 variant="outline" 
                 size="lg"
-                className="border-white/30 text-white hover:bg-white hover:text-gray-900 animate-scale-in"
+                className="border-white/30 text-white hover:bg-white/20 hover:text-white animate-scale-in"
               >
                 Learn More
                 <ArrowRight className="w-5 h-5 ml-2" />
