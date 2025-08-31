@@ -13,13 +13,13 @@ All colors MUST be HSL for consistent theming.
     --foreground: 222.2 84% 4.9%;
 
     /* Glass morphism backgrounds */
-    --glass: 0 0% 100% / 0.1;
+    --glass: 0 0% 0% / 0.2;
     --glass-border: 0 0% 100% / 0.2;
     
     /* Card system */
-    --card: 0 0% 100% / 0.95;
-    --card-foreground: 222.2 84% 4.9%;
-    --card-glass: 0 0% 100% / 0.1;
+    --card: 0 0% 0% / 0.7;
+    --card-foreground: 0 0% 100%;
+    --card-glass: 0 0% 0% / 0.3;
 
     /* Popover system */
     --popover: 0 0% 100%;
