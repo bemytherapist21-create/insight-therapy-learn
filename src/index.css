@@ -6,8 +6,8 @@
 All colors MUST be HSL for consistent theming.
 */
 
-/* Base styles and theme variables */
-:root {
+@layer base {
+  :root {
   --background: 0 0% 100%;
   --foreground: 0 0% 9%;
   --card: 0 0% 100%;
@@ -65,7 +65,7 @@ All colors MUST be HSL for consistent theming.
   /* Smooth transitions */
   --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-bounce: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
+  }
 
   .dark {
     /* Dark mode overrides */
