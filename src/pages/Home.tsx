@@ -5,13 +5,12 @@ import {
   Brain, 
   BarChart3, 
   GraduationCap, 
-  Sparkles, 
   ArrowRight,
   Users,
   Target,
-  Lightbulb
+  Lightbulb,
+  Sparkles
 } from 'lucide-react';
-import heroImage from '@/assets/hero-ai.jpg';
 
 const Home = () => {
   const services = [
@@ -20,58 +19,49 @@ const Home = () => {
       title: 'AI-Powered Therapy',
       description: 'Connect with AI therapists or human professionals for personalized mental health support.',
       link: '/ai-therapy',
-      gradient: 'from-purple-500 to-pink-500'
+      color: 'text-purple-600'
     },
     {
       icon: BarChart3,
       title: 'InsightFusion',
       description: 'Advanced business analytics and strategy sessions to accelerate your growth.',
       link: '/insight-fusion',
-      gradient: 'from-blue-500 to-cyan-500'
+      color: 'text-blue-600'
     },
     {
       icon: GraduationCap,
       title: 'AI-Powered Learning',
       description: 'Access cutting-edge educational materials and AI-driven learning experiences.',
       link: '/ai-learning',
-      gradient: 'from-orange-500 to-red-500'
+      color: 'text-green-600'
     }
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="relative pt-20 pb-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-main opacity-90" />
-        <div className="absolute inset-0">
-          <img 
-            src={heroImage} 
-            alt="AI Technology Background" 
-            className="w-full h-full object-cover opacity-20"
-          />
-        </div>
-        
-        <div className="relative container mx-auto px-4 text-center">
-          <div className="max-w-4xl mx-auto animate-fade-in">
-            <h1 className="text-5xl md:text-7xl font-bold mb-8 bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent leading-relaxed py-4">
+      <section className="pt-32 pb-20">
+        <div className="container mx-auto px-4 text-center">
+          <div className="max-w-4xl mx-auto">
+            <h1 className="text-5xl md:text-7xl font-bold mb-8 text-foreground leading-tight">
               The Everything AI
             </h1>
-            <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-2xl mx-auto">
+            <p className="text-xl md:text-2xl mb-12 text-muted-foreground max-w-3xl mx-auto">
               Revolutionizing therapy, business insights, and learning through 
               cutting-edge artificial intelligence
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
               <Button 
                 size="lg" 
-                className="bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 text-white hover-glow animate-scale-in"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 text-base font-medium"
               >
                 <Sparkles className="w-5 h-5 mr-2" />
-                Explore Services
+                Get Started
               </Button>
               <Button 
-                variant="ghost" 
+                variant="outline" 
                 size="lg"
-                className="bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 hover:text-white animate-scale-in"
+                className="px-8 py-3 text-base font-medium border-border hover:bg-accent"
               >
                 Learn More
                 <ArrowRight className="w-5 h-5 ml-2" />
@@ -82,32 +72,31 @@ const Home = () => {
       </section>
 
       {/* Services Section */}
-      <section className="py-20 relative">
+      <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16 animate-fade-in">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">
               Our AI-Powered Services
             </h2>
-            <p className="text-xl text-white/80 max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Experience the future of digital services with our comprehensive AI solutions
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {services.map((service, index) => (
+            {services.map((service) => (
               <Link key={service.title} to={service.link}>
-                <Card className="glass-card hover-lift cursor-pointer group animate-scale-in" 
-                      style={{ animationDelay: `${index * 0.1}s` }}>
-                  <CardHeader className="text-center">
-                    <div className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-r ${service.gradient} p-4 mb-4 group-hover:shadow-glow transition-all duration-300`}>
-                      <service.icon className="w-8 h-8 text-white" />
+                <Card className="h-full hover:shadow-lg transition-all duration-200 cursor-pointer group border-border bg-card">
+                  <CardHeader className="text-center pb-4">
+                    <div className={`w-16 h-16 mx-auto rounded-xl bg-muted flex items-center justify-center mb-6 group-hover:bg-accent transition-colors`}>
+                      <service.icon className={`w-8 h-8 ${service.color}`} />
                     </div>
-                    <CardTitle className="text-2xl text-white group-hover:text-primary transition-colors">
+                    <CardTitle className="text-2xl text-card-foreground mb-2">
                       {service.title}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <CardDescription className="text-white/70 text-center group-hover:text-white/90 transition-colors">
+                    <CardDescription className="text-muted-foreground text-center leading-relaxed">
                       {service.description}
                     </CardDescription>
                   </CardContent>
@@ -118,48 +107,48 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-black/20">
+      {/* Stats Section */}
+      <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <div className="text-center animate-fade-in">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                <Users className="w-8 h-8 text-white" />
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-purple-100 rounded-full flex items-center justify-center">
+                <Users className="w-8 h-8 text-purple-600" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">10,000+ Users</h3>
-              <p className="text-white/70">Trusted by thousands worldwide</p>
+              <h3 className="text-2xl font-bold text-foreground mb-2">10,000+</h3>
+              <p className="text-muted-foreground">Trusted users worldwide</p>
             </div>
-            <div className="text-center animate-fade-in" style={{ animationDelay: '0.1s' }}>
-              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
-                <Target className="w-8 h-8 text-white" />
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
+                <Target className="w-8 h-8 text-blue-600" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">99.9% Accuracy</h3>
-              <p className="text-white/70">Precision in every AI interaction</p>
+              <h3 className="text-2xl font-bold text-foreground mb-2">99.9%</h3>
+              <p className="text-muted-foreground">Precision in AI interactions</p>
             </div>
-            <div className="text-center animate-fade-in" style={{ animationDelay: '0.2s' }}>
-              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
-                <Lightbulb className="w-8 h-8 text-white" />
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+                <Lightbulb className="w-8 h-8 text-green-600" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">24/7 Available</h3>
-              <p className="text-white/70">AI assistance whenever you need it</p>
+              <h3 className="text-2xl font-bold text-foreground mb-2">24/7</h3>
+              <p className="text-muted-foreground">AI assistance available</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section className="py-20">
+      {/* CTA Section */}
+      <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4 text-center">
-          <div className="max-w-2xl mx-auto animate-fade-in">
-            <h2 className="text-4xl font-bold text-white mb-6">
+          <div className="max-w-2xl mx-auto">
+            <h2 className="text-4xl font-bold text-foreground mb-6">
               Ready to Transform Your Experience?
             </h2>
-            <p className="text-xl text-white/80 mb-8">
+            <p className="text-xl text-muted-foreground mb-8">
               Join thousands of satisfied users and discover the power of AI-driven solutions
             </p>
             <Button 
               size="lg" 
-              className="bg-gradient-primary hover:shadow-glow animate-glow-pulse"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 text-base font-medium"
             >
               <Sparkles className="w-5 h-5 mr-2" />
               Get Started Today
