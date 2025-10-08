@@ -18,6 +18,10 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				poppins: ['Poppins', 'sans-serif'],
+				roboto: ['Roboto', 'sans-serif']
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -26,13 +30,11 @@ export default {
 				foreground: 'hsl(var(--foreground))',
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))',
-					glow: 'hsl(var(--primary-glow))'
+					foreground: 'hsl(var(--primary-foreground))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
-					foreground: 'hsl(var(--secondary-foreground))',
-					glow: 'hsl(var(--secondary-glow))'
+					foreground: 'hsl(var(--secondary-foreground))'
 				},
 				destructive: {
 					DEFAULT: 'hsl(var(--destructive))',
@@ -52,27 +54,8 @@ export default {
 				},
 				card: {
 					DEFAULT: 'hsl(var(--card))',
-					foreground: 'hsl(var(--card-foreground))',
-					glass: 'hsl(var(--card-glass))'
-				},
-				glass: {
-					DEFAULT: 'hsl(var(--glass))',
-					border: 'hsl(var(--glass-border))'
+					foreground: 'hsl(var(--card-foreground))'
 				}
-			},
-			backgroundImage: {
-				'gradient-main': 'var(--gradient-hero)',
-				'gradient-primary': 'var(--gradient-primary)',
-				'gradient-glass': 'var(--gradient-glass)',
-				'gradient-glow': 'var(--gradient-glow)'
-			},
-			boxShadow: {
-				'glass': 'var(--shadow-glass)',
-				'glow': 'var(--shadow-glow)',
-				'card': 'var(--shadow-card)'
-			},
-			backdropBlur: {
-				'glass': '20px'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
