@@ -149,46 +149,46 @@ const Home = () => {
       </section>
 
       {/* About Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">About The Everything AI</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">About The Everything AI</h2>
             <div className="h-1 w-24 bg-gradient-to-r from-purple-700 to-orange-500 mx-auto rounded-full"></div>
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
             <div className="order-2 lg:order-1">
-              <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">Pioneering AI Solutions for a Better Tomorrow</h3>
+              <h3 className="text-2xl md:text-3xl font-bold text-white mb-6">Pioneering AI Solutions for a Better Tomorrow</h3>
               
-              <p className="text-gray-700 mb-6 text-lg">
+              <p className="text-white/80 mb-6 text-lg">
                 At The Everything AI, we're revolutionizing how individuals and businesses harness the power of artificial intelligence. Founded in 2023, our mission is to make advanced AI technologies accessible, practical, and transformative for everyday life.
               </p>
               
-              <p className="text-gray-700 mb-8 text-lg">
+              <p className="text-white/80 mb-8 text-lg">
                 Our team of AI specialists, data scientists, and industry experts work together to create solutions that address real-world challenges across mental health, business analytics, and education.
               </p>
               
               <div className="grid grid-cols-2 gap-6 mb-8">
-                <div className="bg-gray-50 p-6 rounded-lg transition-transform duration-300 hover:-translate-y-2">
-                  <div className="text-purple-600 mb-2">
+                <div className="bg-white/5 backdrop-blur-sm p-6 rounded-lg transition-transform duration-300 hover:-translate-y-2 border border-white/10">
+                  <div className="text-purple-400 mb-2">
                     <Lightbulb className="h-10 w-10" />
                   </div>
-                  <h4 className="font-bold text-lg text-gray-900 mb-1">Innovation</h4>
-                  <p className="text-gray-700">Constantly pushing AI boundaries</p>
+                  <h4 className="font-bold text-lg text-white mb-1">Innovation</h4>
+                  <p className="text-white/70">Constantly pushing AI boundaries</p>
                 </div>
                 
-                <div className="bg-gray-50 p-6 rounded-lg transition-transform duration-300 hover:-translate-y-2">
-                  <div className="text-orange-500 mb-2">
+                <div className="bg-white/5 backdrop-blur-sm p-6 rounded-lg transition-transform duration-300 hover:-translate-y-2 border border-white/10">
+                  <div className="text-orange-400 mb-2">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                   </div>
-                  <h4 className="font-bold text-lg text-gray-900 mb-1">Privacy</h4>
-                  <p className="text-gray-700">Your data safety is our priority</p>
+                  <h4 className="font-bold text-lg text-white mb-1">Privacy</h4>
+                  <p className="text-white/70">Your data safety is our priority</p>
                 </div>
               </div>
               
-              <a href="#services" className="inline-flex items-center text-purple-700 font-medium group">
+              <a href="#services" className="inline-flex items-center text-purple-400 font-medium group hover:text-purple-300 transition-colors">
                 Discover our services
                 <ArrowRight className="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" />
               </a>
@@ -197,8 +197,8 @@ const Home = () => {
             <div className="order-1 lg:order-2 flex justify-center">
               <div className="relative">
                 <div className="w-72 h-72 md:w-96 md:h-96 bg-gradient-to-br from-purple-700 to-orange-500 rounded-full flex items-center justify-center shadow-xl">
-                  <div className="w-56 h-56 md:w-80 md:h-80 bg-white rounded-full flex items-center justify-center p-6">
-                    <Brain className="w-40 h-40 text-gray-800" />
+                  <div className="w-56 h-56 md:w-80 md:h-80 bg-background rounded-full flex items-center justify-center p-6 border border-white/10">
+                    <Brain className="w-40 h-40 text-white" />
                   </div>
                 </div>
                 
@@ -210,19 +210,19 @@ const Home = () => {
           </div>
           
           <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <div className="bg-gray-50 p-8 rounded-xl text-center transform transition-transform duration-300 hover:-translate-y-2">
-              <span className="text-4xl font-bold bg-gradient-to-r from-purple-700 to-blue-500 bg-clip-text text-transparent">96%</span>
-              <p className="text-gray-700 mt-2">User Satisfaction</p>
+            <div className="bg-white/5 backdrop-blur-sm p-8 rounded-xl text-center transform transition-transform duration-300 hover:-translate-y-2 border border-white/10">
+              <span className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">96%</span>
+              <p className="text-white/80 mt-2">User Satisfaction</p>
             </div>
             
-            <div className="bg-gray-50 p-8 rounded-xl text-center transform transition-transform duration-300 hover:-translate-y-2">
-              <span className="text-4xl font-bold bg-gradient-to-r from-blue-500 to-teal-500 bg-clip-text text-transparent">10,000+</span>
-              <p className="text-gray-700 mt-2">Users Worldwide</p>
+            <div className="bg-white/5 backdrop-blur-sm p-8 rounded-xl text-center transform transition-transform duration-300 hover:-translate-y-2 border border-white/10">
+              <span className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-teal-400 bg-clip-text text-transparent">10,000+</span>
+              <p className="text-white/80 mt-2">Users Worldwide</p>
             </div>
             
-            <div className="bg-gray-50 p-8 rounded-xl text-center transform transition-transform duration-300 hover:-translate-y-2">
-              <span className="text-4xl font-bold bg-gradient-to-r from-teal-500 to-orange-500 bg-clip-text text-transparent">24/7</span>
-              <p className="text-gray-700 mt-2">AI-Powered Support</p>
+            <div className="bg-white/5 backdrop-blur-sm p-8 rounded-xl text-center transform transition-transform duration-300 hover:-translate-y-2 border border-white/10">
+              <span className="text-4xl font-bold bg-gradient-to-r from-teal-400 to-orange-400 bg-clip-text text-transparent">24/7</span>
+              <p className="text-white/80 mt-2">AI-Powered Support</p>
             </div>
           </div>
         </div>
