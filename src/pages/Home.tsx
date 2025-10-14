@@ -1,5 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Link } from 'react-router-dom';
 import { 
   Brain, 
@@ -9,11 +11,29 @@ import {
   ArrowRight,
   Users,
   Target,
-  Lightbulb
+  Lightbulb,
+  Send
 } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from '@/hooks/use-toast';
 import heroImage from '@/assets/hero-ai.jpg';
 
 const Home = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: ''
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    toast({
+      title: "Message sent!",
+      description: "We'll get back to you as soon as possible.",
+    });
+    setFormData({ name: '', email: '', message: '' });
+  };
+
   const services = [
     {
       icon: Brain,
@@ -53,9 +73,14 @@ const Home = () => {
         
         <div className="relative container mx-auto px-4 text-center">
           <div className="max-w-4xl mx-auto animate-fade-in">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-8">
+              <Sparkles className="w-4 h-4 text-yellow-300" />
+              <span className="text-sm text-white/90">Powered by Advanced AI Technology</span>
+            </div>
+            
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 tracking-tight text-white">
               <span className="block">Welcome to</span>
-              <span className="block mt-2 bg-gradient-to-r from-white to-orange-300 bg-clip-text text-transparent">The Everything AI</span>
+              <span className="block mt-2 bg-gradient-to-r from-[#8A2BE2] to-[#FF8C00] bg-clip-text text-transparent">The Everything AI</span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-2xl mx-auto">
               Revolutionizing therapy, business insights, and learning through 
@@ -64,18 +89,21 @@ const Home = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
                 size="lg" 
-                className="bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 text-white hover-glow animate-scale-in"
+                className="bg-gradient-to-r from-[#8A2BE2] to-[#FF8C00] hover:shadow-glow text-white border-0 animate-scale-in"
+                asChild
               >
-                <Sparkles className="w-5 h-5 mr-2" />
-                Explore Services
+                <a href="#services">
+                  Explore Services
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </a>
               </Button>
               <Button 
-                variant="ghost" 
+                variant="outline" 
                 size="lg"
-                className="bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 hover:text-white animate-scale-in"
+                className="bg-white/10 backdrop-blur-md border-white/30 text-white hover:bg-white/20 hover:text-white animate-scale-in"
+                asChild
               >
-                Learn More
-                <ArrowRight className="w-5 h-5 ml-2" />
+                <a href="#about">Learn More</a>
               </Button>
             </div>
           </div>
@@ -83,7 +111,7 @@ const Home = () => {
       </section>
 
       {/* Services Section */}
-      <section className="py-20 relative">
+      <section id="services" className="py-20 relative">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16 animate-fade-in">
             <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white">
@@ -149,7 +177,7 @@ const Home = () => {
       </section>
 
       {/* About Section */}
-      <section className="py-20 bg-background">
+      <section id="about" className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">About The Everything AI</h2>
@@ -229,23 +257,64 @@ const Home = () => {
       </section>
 
       {/* Contact Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-4 text-center">
-          <div className="max-w-2xl mx-auto animate-fade-in">
-            <h2 className="text-4xl font-bold text-white mb-6">
-              Ready to Transform Your Experience?
-            </h2>
-            <p className="text-xl text-white/80 mb-8">
-              Join thousands of satisfied users and discover the power of AI-driven solutions
-            </p>
-            <Button 
-              size="lg" 
-              className="bg-gradient-primary hover:shadow-glow animate-glow-pulse"
-            >
-              <Sparkles className="w-5 h-5 mr-2" />
-              Get Started Today
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
+      <section id="contact" className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-12 animate-fade-in">
+              <h2 className="text-4xl font-bold text-white mb-4">
+                Get In Touch
+              </h2>
+              <p className="text-xl text-white/80">
+                Have questions? We'd love to hear from you.
+              </p>
+            </div>
+
+            <Card className="glass-card animate-scale-in">
+              <CardContent className="pt-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div>
+                    <Input
+                      placeholder="Name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      required
+                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-primary"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Input
+                      type="email"
+                      placeholder="Email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      required
+                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-primary"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Textarea
+                      placeholder="Message"
+                      value={formData.message}
+                      onChange={(e) => setFormData({...formData, message: e.target.value})}
+                      required
+                      rows={5}
+                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-primary resize-none"
+                    />
+                  </div>
+                  
+                  <Button 
+                    type="submit"
+                    size="lg"
+                    className="w-full bg-gradient-to-r from-[#8A2BE2] to-[#FF8C00] hover:shadow-glow text-white border-0"
+                  >
+                    Send Message
+                    <Send className="w-5 h-5 ml-2" />
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
