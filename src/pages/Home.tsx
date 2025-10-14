@@ -53,9 +53,9 @@ const Home = () => {
         
         <div className="relative container mx-auto px-4 text-center">
           <div className="max-w-4xl mx-auto animate-fade-in">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 tracking-tight text-white">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-3 tracking-tight text-white">
               <span className="block">Welcome to</span>
-              <span className="block mt-2 pb-2 leading-normal bg-gradient-to-r from-white to-orange-300 bg-clip-text text-transparent">The Everything AI</span>
+              <span className="block mt-1 pb-2 leading-normal bg-gradient-to-r from-white to-orange-300 bg-clip-text text-transparent">The Everything AI</span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-2xl mx-auto">
               Revolutionizing therapy, business insights, and learning through 
