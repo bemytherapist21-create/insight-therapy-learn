@@ -1,6 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Brain, 
   BarChart3, 
@@ -9,11 +13,28 @@ import {
   ArrowRight,
   Users,
   Target,
-  Lightbulb
+  Lightbulb,
+  Mail
 } from 'lucide-react';
 import heroImage from '@/assets/hero-ai.jpg';
 
 const Home = () => {
+  const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: ''
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    toast({
+      title: "Message sent!",
+      description: "We'll get back to you soon at " + formData.email,
+    });
+    setFormData({ name: '', email: '', message: '' });
+  };
+
   const services = [
     {
       icon: Brain,
@@ -231,31 +252,86 @@ const Home = () => {
       </section>
 
       {/* Contact Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-4 text-center">
-          <div className="max-w-2xl mx-auto animate-fade-in">
-            <h2 className="text-4xl font-bold text-white mb-6">
-              Ready to Transform Your Experience?
-            </h2>
-            <p className="text-xl text-white/80 mb-6">
-              Join thousands of satisfied users and discover the power of AI-driven solutions
-            </p>
-            <div className="flex items-center justify-center gap-2 mb-8">
-              <a 
-                href="mailto:founder@theeverythingai.com" 
-                className="text-lg text-white/90 hover:text-white transition-colors underline decoration-primary/50 hover:decoration-primary"
-              >
-                founder@theeverythingai.com
-              </a>
+      <section id="contact" className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-12 animate-fade-in">
+              <h2 className="text-4xl font-bold text-white mb-4">
+                Get In Touch
+              </h2>
+              <p className="text-xl text-white/80">
+                Ready to transform your experience? Send us a message and we'll get back to you soon.
+              </p>
             </div>
-            <Button 
-              size="lg" 
-              className="bg-gradient-primary hover:shadow-glow animate-glow-pulse"
-            >
-              <Sparkles className="w-5 h-5 mr-2" />
-              Get Started Today
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
+
+            <Card className="glass-card animate-fade-in">
+              <CardContent className="p-8">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-white mb-2">
+                      Name
+                    </label>
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Your name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      required
+                      className="bg-white/5 border-white/20 text-white placeholder:text-white/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
+                      Email
+                    </label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="your.email@example.com"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      required
+                      className="bg-white/5 border-white/20 text-white placeholder:text-white/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="message" className="block text-sm font-medium text-white mb-2">
+                      Message
+                    </label>
+                    <Textarea
+                      id="message"
+                      placeholder="Tell us about your needs..."
+                      value={formData.message}
+                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                      required
+                      rows={6}
+                      className="bg-white/5 border-white/20 text-white placeholder:text-white/50 resize-none"
+                    />
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                    <a 
+                      href="mailto:founder@theeverythingai.com" 
+                      className="flex items-center gap-2 text-white/90 hover:text-white transition-colors"
+                    >
+                      <Mail className="w-4 h-4" />
+                      <span className="text-sm">founder@theeverythingai.com</span>
+                    </a>
+                    <Button 
+                      type="submit"
+                      size="lg" 
+                      className="bg-gradient-primary hover:shadow-glow w-full sm:w-auto"
+                    >
+                      <Sparkles className="w-5 h-5 mr-2" />
+                      Send Message
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
