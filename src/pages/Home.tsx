@@ -65,6 +65,7 @@ const Home = () => {
               <Button 
                 size="lg" 
                 className="bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 text-white hover-glow animate-scale-in"
+                onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 <Sparkles className="w-5 h-5 mr-2" />
                 Explore Services
@@ -73,6 +74,7 @@ const Home = () => {
                 variant="ghost" 
                 size="lg"
                 className="bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 hover:text-white animate-scale-in"
+                onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 Learn More
                 <ArrowRight className="w-5 h-5 ml-2" />
@@ -83,7 +85,7 @@ const Home = () => {
       </section>
 
       {/* Services Section */}
-      <section className="py-20 relative">
+      <section id="services" className="py-20 relative">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16 animate-fade-in">
             <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white">
@@ -149,7 +151,7 @@ const Home = () => {
       </section>
 
       {/* About Section */}
-      <section className="py-20 bg-background">
+      <section id="about" className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">About The Everything AI</h2>
