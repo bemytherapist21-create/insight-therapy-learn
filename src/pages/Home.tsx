@@ -235,9 +235,17 @@ const Home = () => {
             <h2 className="text-4xl font-bold text-white mb-6">
               Ready to Transform Your Experience?
             </h2>
-            <p className="text-xl text-white/80 mb-8">
+            <p className="text-xl text-white/80 mb-6">
               Join thousands of satisfied users and discover the power of AI-driven solutions
             </p>
+            <div className="flex items-center justify-center gap-2 mb-8">
+              <a 
+                href="mailto:founder@theeverythingai.com" 
+                className="text-lg text-white/90 hover:text-white transition-colors underline decoration-primary/50 hover:decoration-primary"
+              >
+                founder@theeverythingai.com
+              </a>
+            </div>
             <Button 
               size="lg" 
               className="bg-gradient-primary hover:shadow-glow animate-glow-pulse"
