@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import emailjs from '@emailjs/browser';
 import { 
   Brain, 
   BarChart3, 
@@ -26,13 +27,34 @@ const Home = () => {
     message: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Message sent!",
-      description: "We'll get back to you soon at " + formData.email,
-    });
-    setFormData({ name: '', email: '', message: '' });
+    
+    try {
+      await emailjs.send(
+        'YOUR_SERVICE_ID',
+        'YOUR_TEMPLATE_ID',
+        {
+          from_name: formData.name,
+          from_email: formData.email,
+          message: formData.message,
+          to_email: 'founder@theeverythingai.com',
+        },
+        'YOUR_PUBLIC_KEY'
+      );
+      
+      toast({
+        title: "Message sent!",
+        description: "We'll get back to you soon at " + formData.email,
+      });
+      setFormData({ name: '', email: '', message: '' });
+    } catch (error) {
+      toast({
+        title: "Error sending message",
+        description: "Please try again or email us directly at founder@theeverythingai.com",
+        variant: "destructive",
+      });
+    }
   };
 
   const services = [
