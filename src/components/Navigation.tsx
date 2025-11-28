@@ -32,7 +32,7 @@ const Navigation = () => {
             <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center shadow-glow">
               <Brain className="w-6 h-6 text-primary-foreground" />
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-[#8A2BE2] to-[#FF8C00] bg-clip-text text-transparent">
+            <span className="text-2xl font-bold bg-gradient-to-r from-white to-orange-300 bg-clip-text text-transparent">
               The Everything AI
             </span>
           </Link>

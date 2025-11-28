@@ -84,30 +84,26 @@ const Home = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative pt-20 pb-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-main opacity-90" />
-        <div className="absolute inset-0">
-          <img 
-            src={heroImage} 
-            alt="AI Technology Background" 
-            className="w-full h-full object-cover opacity-20"
-          />
-        </div>
-        
-        <div className="relative container mx-auto px-4 text-center">
-          <div className="max-w-4xl mx-auto animate-fade-in">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 tracking-tight text-white leading-tight">
-              <span className="block mb-1">Welcome to</span>
-              <span className="block pb-2 leading-normal bg-gradient-to-r from-white to-orange-300 bg-clip-text text-transparent">The Everything AI</span>
+      <section className="relative w-full min-h-screen bg-gradient-to-br from-purple-700 to-orange-500 flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-24 overflow-hidden">
+        <div className="max-w-7xl w-full text-center">
+          <div className="relative z-10">
+            {/* Animated Background Elements */}
+            <div className="absolute -top-24 -left-24 w-48 h-48 bg-white opacity-10 rounded-full blur-xl animate-pulse" />
+            <div className="absolute top-10 right-10 w-32 h-32 bg-orange-300 opacity-20 rounded-full blur-xl animate-pulse" style={{ animationDelay: '700ms' }} />
+            <div className="absolute bottom-0 left-1/4 w-56 h-56 bg-purple-300 opacity-20 rounded-full blur-xl animate-pulse" style={{ animationDelay: '1000ms' }} />
+            
+            {/* Main Hero Content */}
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 tracking-tight">
+              <span className="block">Welcome to</span>
+              <span className="block mt-2 bg-gradient-to-r from-white to-orange-300 bg-clip-text text-transparent">The Everything AI</span>
             </h1>
-            <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-2xl mx-auto">
-              Revolutionizing therapy, business insights, and learning through 
-              cutting-edge artificial intelligence
+            <p className="text-lg sm:text-xl md:text-2xl text-white opacity-90 max-w-3xl mx-auto mb-8">
+              Transforming the future with cutting-edge artificial intelligence solutions for therapy, business, and education.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10">
               <Button 
                 size="lg" 
-                className="bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 text-white hover-glow animate-scale-in"
+                className="bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 text-white hover-glow"
                 onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 <Sparkles className="w-5 h-5 mr-2" />
@@ -116,7 +112,7 @@ const Home = () => {
               <Button 
                 variant="ghost" 
                 size="lg"
-                className="bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 hover:text-white animate-scale-in"
+                className="bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 hover:text-white"
                 onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 Learn More
