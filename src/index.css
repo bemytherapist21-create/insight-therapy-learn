@@ -137,7 +137,7 @@ All colors MUST be HSL for consistent theming.
   }
 
   body {
-    @apply bg-gradient-main text-foreground min-h-screen;
+    @apply bg-black text-white min-h-screen;
   }
 
   /* Scrollbar Styling */
