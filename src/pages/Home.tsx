@@ -97,7 +97,7 @@ const Home = () => {
           <div className="max-w-4xl mx-auto animate-fade-in">
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 tracking-tight text-white leading-tight">
               <span className="block mb-1">Welcome to</span>
-              <span className="block pb-2 leading-normal bg-gradient-to-r from-white to-orange-300 bg-clip-text text-transparent">The Everything AI</span>
+              <span className="block pb-2 leading-normal bg-gradient-to-r from-[#8A2BE2] to-[#FF8C00] bg-clip-text text-transparent">The Everything AI</span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-white max-w-2xl mx-auto">
               Revolutionizing therapy, business insights, and learning through 
