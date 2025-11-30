@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { TherapyChat } from '@/components/TherapyChat';
 import { 
   Bot, 
   User, 
@@ -12,6 +13,8 @@ import {
   Heart,
   Shield
 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 const AITherapy = () => {
   // Simulated live tracking data (in real app, this would come from your backend)
@@ -71,12 +74,17 @@ const AITherapy = () => {
       {/* Hero Section */}
       <section className="py-20">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16 animate-fade-in">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
             <h1 className="text-5xl md:text-6xl font-bold mb-6 text-white">
               AI-Powered Therapy
             </h1>
             <p className="text-xl text-white/80 max-w-3xl mx-auto mb-8">
-              Choose your preferred therapy experience - from instant AI support to professional human counselors
+              Protected by Project Guardian safety framework with real-time risk assessment
             </p>
             
             {/* Live Statistics */}
@@ -106,76 +114,98 @@ const AITherapy = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Therapy Options */}
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {therapyOptions.map((option, index) => (
-              <Card key={option.type} className="glass-card hover-lift animate-scale-in group" 
-                    style={{ animationDelay: `${index * 0.1}s` }}>
-                <CardHeader className="text-center">
-                  <div className={`w-20 h-20 mx-auto rounded-2xl bg-gradient-to-r ${option.gradient} p-5 mb-4 group-hover:shadow-glow transition-all duration-300`}>
-                    <option.icon className="w-10 h-10 text-white" />
-                  </div>
-                  <CardTitle className="text-2xl text-white group-hover:text-primary transition-colors">
-                    {option.type}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <CardDescription className="text-white/70 text-center">
-                    {option.description}
-                  </CardDescription>
-                  
-                  <div className="space-y-2">
-                    {option.features.map((feature, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-white/80">
-                        <div className="w-2 h-2 rounded-full bg-gradient-primary" />
-                        <span className="text-sm">{feature}</span>
-                      </div>
-                    ))}
-                  </div>
+          {/* AI Chatbot Interface */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mb-16"
+          >
+            <TherapyChat />
+          </motion.div>
 
-                  <Button 
-                    className={`w-full bg-gradient-to-r ${option.gradient} hover:shadow-glow transition-all duration-300`}
-                  >
-                    {option.requiresRegistration ? (
-                      <UserPlus className="w-4 h-4 mr-2" />
-                    ) : option.type.includes('Voice') ? (
-                      <Mic className="w-4 h-4 mr-2" />
-                    ) : (
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                    )}
-                    {option.action}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {/* Other Therapy Options */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            <h2 className="text-3xl font-bold text-center mb-8 text-white">More Therapy Options</h2>
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              {therapyOptions.slice(1).map((option, index) => (
+                <Card key={option.type} className="glass-card hover-lift group">
+                  <CardHeader className="text-center">
+                    <div className={`w-20 h-20 mx-auto rounded-2xl bg-gradient-to-r ${option.gradient} p-5 mb-4 group-hover:shadow-glow transition-all duration-300`}>
+                      <option.icon className="w-10 h-10 text-white" />
+                    </div>
+                    <CardTitle className="text-2xl text-white group-hover:text-primary transition-colors">
+                      {option.type}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <CardDescription className="text-white/70 text-center">
+                      {option.description}
+                    </CardDescription>
+                    
+                    <div className="space-y-2">
+                      {option.features.map((feature, idx) => (
+                        <div key={idx} className="flex items-center gap-2 text-white/80">
+                          <div className="w-2 h-2 rounded-full bg-gradient-primary" />
+                          <span className="text-sm">{feature}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <Button 
+                      className={`w-full bg-gradient-to-r ${option.gradient} hover:shadow-glow transition-all duration-300`}
+                      onClick={() => toast.info(`${option.type} coming soon!`)}
+                    >
+                      {option.requiresRegistration ? (
+                        <UserPlus className="w-4 h-4 mr-2" />
+                      ) : option.type.includes('Voice') ? (
+                        <Mic className="w-4 h-4 mr-2" />
+                      ) : (
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                      )}
+                      {option.action}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </motion.div>
 
           {/* Trust Indicators */}
-          <div className="mt-20 grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <div className="text-center animate-fade-in">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="mt-20 grid md:grid-cols-3 gap-8 max-w-4xl mx-auto"
+          >
+            <div className="text-center">
               <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
                 <Shield className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">100% Confidential</h3>
-              <p className="text-white/70">Your privacy and data security are our top priority</p>
+              <h3 className="text-xl font-bold text-white mb-2">Project Guardian Protected</h3>
+              <p className="text-white/70">Multi-layered safety framework with crisis detection</p>
             </div>
-            <div className="text-center animate-fade-in" style={{ animationDelay: '0.1s' }}>
+            <div className="text-center">
               <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
                 <Heart className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Clinically Backed</h3>
-              <p className="text-white/70">Our AI models are trained on evidence-based therapy methods</p>
+              <h3 className="text-xl font-bold text-white mb-2">Clinically Informed</h3>
+              <p className="text-white/70">Based on evidence-based therapy practices</p>
             </div>
-            <div className="text-center animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <div className="text-center">
               <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
                 <TrendingUp className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Proven Results</h3>
-              <p className="text-white/70">95% of users report improved mental well-being</p>
+              <h3 className="text-xl font-bold text-white mb-2">Real-time Monitoring</h3>
+              <p className="text-white/70">Continuous well-being coefficient tracking</p>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
     </div>
