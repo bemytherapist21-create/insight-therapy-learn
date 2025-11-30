@@ -14,7 +14,150 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      conversations: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      detection_events: {
+        Row: {
+          actual_risk: boolean | null
+          conversation_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          outcome: string | null
+          predicted_risk: boolean
+          user_id: string
+          wbc_score: number
+        }
+        Insert: {
+          actual_risk?: boolean | null
+          conversation_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          outcome?: string | null
+          predicted_risk: boolean
+          user_id: string
+          wbc_score: number
+        }
+        Update: {
+          actual_risk?: boolean | null
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          outcome?: string | null
+          predicted_risk?: boolean
+          user_id?: string
+          wbc_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "detection_events_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          risk_level: string | null
+          role: string
+          wbc_score: number | null
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          risk_level?: string | null
+          role: string
+          wbc_score?: number | null
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          risk_level?: string | null
+          role?: string
+          wbc_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      safety_violations: {
+        Row: {
+          action_taken: string
+          conversation_id: string
+          created_at: string
+          detected_risk: string
+          id: string
+          law_violated: string
+          severity: string
+          user_message: string
+        }
+        Insert: {
+          action_taken: string
+          conversation_id: string
+          created_at?: string
+          detected_risk: string
+          id?: string
+          law_violated: string
+          severity: string
+          user_message: string
+        }
+        Update: {
+          action_taken?: string
+          conversation_id?: string
+          created_at?: string
+          detected_risk?: string
+          id?: string
+          law_violated?: string
+          severity?: string
+          user_message?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "safety_violations_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
