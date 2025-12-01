@@ -165,8 +165,8 @@ export const TherapyChat = () => {
       </Card>
 
       {/* Crisis Resources */}
-      <Card className="p-3 bg-muted/50 border-muted">
-        <p className="text-xs text-center text-muted-foreground">
+      <Card className="p-3 bg-gradient-to-r from-purple-500 to-purple-600 border-purple-400">
+        <p className="text-xs text-center text-white">
           <strong>Crisis Resources:</strong> National Suicide Prevention Lifeline: 988 | 
           Crisis Text Line: Text HOME to 741741 | Emergency: 911
         </p>
