@@ -144,8 +144,8 @@ export const TherapyChat = () => {
                 <div
                   className={`max-w-[80%] rounded-lg p-3 ${
                     msg.role === 'user'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-white dark:bg-muted text-gray-900 dark:text-foreground'
+                      ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white'
+                      : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
                   }`}
                 >
                   <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
