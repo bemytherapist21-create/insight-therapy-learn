@@ -2,13 +2,11 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Brain, Sparkles, Moon, Sun } from 'lucide-react';
-import { useTheme } from 'next-themes';
+import { Menu, X, Brain, Sparkles } from 'lucide-react';
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
-  const { theme, setTheme } = useTheme();
 
   const navItems = [
     { name: 'Home', path: '/' },
@@ -18,10 +16,6 @@ const Navigation = () => {
   ];
 
   const isActive = (path: string) => location.pathname === path;
-
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass-card">
@@ -55,20 +49,6 @@ const Navigation = () => {
                 )}
               </Link>
             ))}
-            
-            {/* Theme Toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className="hover:bg-white/10"
-            >
-              {theme === 'dark' ? (
-                <Sun className="w-5 h-5 text-foreground" />
-              ) : (
-                <Moon className="w-5 h-5 text-foreground" />
-              )}
-            </Button>
 
             <Button variant="default" className="bg-gradient-primary hover:shadow-glow">
               <Sparkles className="w-4 h-4 mr-2" />
@@ -77,21 +57,7 @@ const Navigation = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center gap-2">
-            {/* Mobile Theme Toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className="hover:bg-white/10"
-            >
-              {theme === 'dark' ? (
-                <Sun className="w-5 h-5 text-foreground" />
-              ) : (
-                <Moon className="w-5 h-5 text-foreground" />
-              )}
-            </Button>
-            
+          <div className="md:hidden">
             <Button
               variant="ghost"
               size="icon"
