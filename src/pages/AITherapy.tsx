@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { TherapyChat } from '@/components/TherapyChat';
+import { VoiceTherapy } from '@/components/VoiceTherapy';
 import { 
   Bot, 
   User, 
@@ -19,6 +20,7 @@ import { toast } from 'sonner';
 
 const AITherapy = () => {
   const [showChat, setShowChat] = useState(false);
+  const [showVoice, setShowVoice] = useState(false);
   
   // Simulated live tracking data (in real app, this would come from your backend)
   const [therapistStats, setTherapistStats] = useState({
@@ -57,11 +59,11 @@ const AITherapy = () => {
     {
       type: 'AI Voice Therapist',
       icon: Mic,
-      description: 'Experience therapy through natural voice conversation with our AI voice clone technology.',
-      features: ['Natural Voice', 'Emotional Recognition', 'Personalized Tone', 'Voice Memory'],
+      description: 'Experience therapy through natural voice conversation with our AI voice technology.',
+      features: ['Natural Voice', 'Emotional Recognition', 'Real-time Response', 'Voice Memory'],
       gradient: 'from-blue-500 to-cyan-500',
       action: 'Start Voice Session',
-      onClick: () => toast.info('AI Voice Therapist coming soon!')
+      onClick: () => setShowVoice(true)
     },
     {
       type: 'Human Therapist',
@@ -74,6 +76,11 @@ const AITherapy = () => {
       onClick: () => toast.info('Human Therapist registration coming soon!')
     }
   ];
+
+  const handleBack = () => {
+    setShowChat(false);
+    setShowVoice(false);
+  };
 
   return (
     <div className="min-h-screen pt-20">
@@ -136,12 +143,32 @@ const AITherapy = () => {
                 <Button 
                   variant="ghost" 
                   className="mb-4 text-white hover:text-primary"
-                  onClick={() => setShowChat(false)}
+                  onClick={handleBack}
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Options
                 </Button>
                 <TherapyChat />
+              </motion.div>
+            ) : showVoice ? (
+              /* AI Voice Interface */
+              <motion.div
+                key="voice"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.4 }}
+                className="mb-16"
+              >
+                <Button 
+                  variant="ghost" 
+                  className="mb-4 text-white hover:text-primary"
+                  onClick={handleBack}
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Options
+                </Button>
+                <VoiceTherapy onBack={handleBack} />
               </motion.div>
             ) : (
               /* Therapy Options Cards */
