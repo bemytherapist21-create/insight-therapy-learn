@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.voice-therapy-token]
 verify_jwt = false
+
+[functions.did-avatar]
+verify_jwt = false
+
+[functions.analyze-emotion]
+verify_jwt = false
