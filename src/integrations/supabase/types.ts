@@ -158,6 +158,71 @@ export type Database = {
           },
         ]
       }
+      voice_messages: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          emotion: string | null
+          id: string
+          role: string
+          session_id: string
+          text: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          emotion?: string | null
+          id?: string
+          role: string
+          session_id: string
+          text: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          emotion?: string | null
+          id?: string
+          role?: string
+          session_id?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "voice_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      voice_sessions: {
+        Row: {
+          ended_at: string | null
+          id: string
+          last_emotion: string | null
+          notes: string | null
+          started_at: string
+          user_id: string | null
+        }
+        Insert: {
+          ended_at?: string | null
+          id?: string
+          last_emotion?: string | null
+          notes?: string | null
+          started_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          ended_at?: string | null
+          id?: string
+          last_emotion?: string | null
+          notes?: string | null
+          started_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
