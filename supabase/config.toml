@@ -2,3 +2,6 @@ project_id = "sudlkozsotxdzvjpxubu"
 
 [functions.therapy-chat]
 verify_jwt = false
+
+[functions.voice-therapy-token]
+verify_jwt = false
