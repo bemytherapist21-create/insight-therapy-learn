@@ -8,6 +8,8 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import Navigation from "./components/Navigation";
 import Home from "./pages/Home";
 import AITherapy from "./pages/AITherapy";
+import AITherapyChat from "./pages/AITherapyChat";
+import AITherapyVoice from "./pages/AITherapyVoice";
 import InsightFusion from "./pages/InsightFusion";
 import AILearning from "./pages/AILearning";
 import NotFound from "./pages/NotFound";
@@ -25,6 +27,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/ai-therapy" element={<AITherapy />} />
+            <Route path="/ai-therapy/chat" element={<AITherapyChat />} />
+            <Route path="/ai-therapy/voice" element={<AITherapyVoice />} />
             <Route path="/insight-fusion" element={<InsightFusion />} />
             <Route path="/ai-learning" element={<AILearning />} />
             <Route path="/about" element={<Home />} />
