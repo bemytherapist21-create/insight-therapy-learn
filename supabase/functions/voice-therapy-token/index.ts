@@ -15,10 +15,12 @@ serve(async (req) => {
   try {
     const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
     if (!OPENAI_API_KEY) {
+      console.error("OPENAI_API_KEY is not set in environment");
       throw new Error('OPENAI_API_KEY is not set');
     }
 
     console.log("Creating OpenAI Realtime session...");
+    console.log("API Key present:", !!OPENAI_API_KEY, "Length:", OPENAI_API_KEY.length);
 
     // Request an ephemeral token from OpenAI
     const response = await fetch("https://api.openai.com/v1/realtime/sessions", {
@@ -54,20 +56,22 @@ Communication Style:
       }),
     });
 
+    console.log("OpenAI response status:", response.status);
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error("OpenAI API error:", response.status, errorText);
-      throw new Error(`OpenAI API error: ${response.status}`);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log("Session created successfully");
+    console.log("Session created successfully, has client_secret:", !!data.client_secret);
 
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error in voice-therapy-token:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
