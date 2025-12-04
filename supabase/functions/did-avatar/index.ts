@@ -7,6 +7,17 @@ const corsHeaders = {
 
 const DID_TALK_URL = "https://api.d-id.com/talks";
 
+// Helper to encode API key for D-ID Basic auth
+function getAuthHeader(apiKey: string): string {
+  // If it contains a colon (email:password format), base64 encode it
+  if (apiKey.includes(':')) {
+    const encoded = btoa(apiKey);
+    return `Basic ${encoded}`;
+  }
+  // Otherwise assume it's already base64 encoded
+  return `Basic ${apiKey}`;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -18,16 +29,17 @@ serve(async (req) => {
       throw new Error('DID_API_KEY is not set');
     }
 
-    const { text, action } = await req.json();
+    const authHeader = getAuthHeader(DID_API_KEY);
+    const body = await req.json();
+    const { text, action, talkId } = body;
 
-    // Action: create or poll
     if (action === 'create') {
       console.log("Creating D-ID talk for text:", text?.substring(0, 50));
       
       const response = await fetch(DID_TALK_URL, {
         method: "POST",
         headers: {
-          "Authorization": `Basic ${DID_API_KEY}`,
+          "Authorization": authHeader,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -49,7 +61,7 @@ serve(async (req) => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error("D-ID create error:", response.status, errorText);
-        throw new Error(`D-ID API error: ${response.status}`);
+        throw new Error(`D-ID API error: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
@@ -63,13 +75,16 @@ serve(async (req) => {
       });
 
     } else if (action === 'poll') {
-      const { talkId } = await req.json();
+      if (!talkId) {
+        throw new Error("talkId is required for poll action");
+      }
+      
       console.log("Polling D-ID talk:", talkId);
 
       const response = await fetch(`${DID_TALK_URL}/${talkId}`, {
         method: "GET",
         headers: {
-          "Authorization": `Basic ${DID_API_KEY}`,
+          "Authorization": authHeader,
         },
       });
 
