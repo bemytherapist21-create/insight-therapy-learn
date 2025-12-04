@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { TherapyChat } from '@/components/TherapyChat';
-import { VoiceTherapy } from '@/components/VoiceTherapy';
 import { 
   Bot, 
   User, 
@@ -12,15 +10,14 @@ import {
   UserPlus,
   TrendingUp,
   Heart,
-  Shield,
-  ArrowLeft
+  Shield
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 const AITherapy = () => {
-  const [showChat, setShowChat] = useState(false);
-  const [showVoice, setShowVoice] = useState(false);
+  const navigate = useNavigate();
   
   // Simulated live tracking data (in real app, this would come from your backend)
   const [therapistStats, setTherapistStats] = useState({
@@ -54,7 +51,7 @@ const AITherapy = () => {
       features: ['24/7 Availability', 'Instant Responses', 'Privacy Guaranteed', 'Multi-language Support'],
       gradient: 'from-purple-500 to-blue-500',
       action: 'Start Chat Session',
-      onClick: () => setShowChat(true)
+      onClick: () => navigate('/ai-therapy/chat')
     },
     {
       type: 'AI Voice Therapist',
@@ -63,7 +60,7 @@ const AITherapy = () => {
       features: ['Natural Voice', 'Emotional Recognition', 'Real-time Response', 'Voice Memory'],
       gradient: 'from-blue-500 to-cyan-500',
       action: 'Start Voice Session',
-      onClick: () => setShowVoice(true)
+      onClick: () => navigate('/ai-therapy/voice')
     },
     {
       type: 'Human Therapist',
@@ -76,11 +73,6 @@ const AITherapy = () => {
       onClick: () => toast.info('Human Therapist registration coming soon!')
     }
   ];
-
-  const handleBack = () => {
-    setShowChat(false);
-    setShowVoice(false);
-  };
 
   return (
     <div className="min-h-screen pt-20">
@@ -129,112 +121,66 @@ const AITherapy = () => {
             </div>
           </motion.div>
 
-          <AnimatePresence mode="wait">
-            {showChat ? (
-              /* AI Chatbot Interface */
-              <motion.div
-                key="chat"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4 }}
-                className="mb-16"
-              >
-                <Button 
-                  variant="ghost" 
-                  className="mb-4 text-white hover:text-primary"
-                  onClick={handleBack}
+          {/* Therapy Options Cards */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <h2 className="text-3xl font-bold text-center mb-8 text-white">Choose Your Therapy Option</h2>
+            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              {therapyOptions.map((option, index) => (
+                <motion.div
+                  key={option.type}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: index * 0.1 }}
                 >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Options
-                </Button>
-                <TherapyChat />
-              </motion.div>
-            ) : showVoice ? (
-              /* AI Voice Interface */
-              <motion.div
-                key="voice"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4 }}
-                className="mb-16"
-              >
-                <Button 
-                  variant="ghost" 
-                  className="mb-4 text-white hover:text-primary"
-                  onClick={handleBack}
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Options
-                </Button>
-                <VoiceTherapy onBack={handleBack} />
-              </motion.div>
-            ) : (
-              /* Therapy Options Cards */
-              <motion.div
-                key="options"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4 }}
-              >
-                <h2 className="text-3xl font-bold text-center mb-8 text-white">Choose Your Therapy Option</h2>
-                <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                  {therapyOptions.map((option, index) => (
-                    <motion.div
-                      key={option.type}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: index * 0.1 }}
-                    >
-                      <Card className="glass-card hover-lift group h-full cursor-pointer" onClick={option.onClick}>
-                        <CardHeader className="text-center">
-                          <div className={`w-20 h-20 mx-auto rounded-2xl bg-gradient-to-r ${option.gradient} p-5 mb-4 group-hover:shadow-glow transition-all duration-300`}>
-                            <option.icon className="w-10 h-10 text-white" />
+                  <Card className="glass-card hover-lift group h-full cursor-pointer" onClick={option.onClick}>
+                    <CardHeader className="text-center">
+                      <div className={`w-20 h-20 mx-auto rounded-2xl bg-gradient-to-r ${option.gradient} p-5 mb-4 group-hover:shadow-glow transition-all duration-300`}>
+                        <option.icon className="w-10 h-10 text-white" />
+                      </div>
+                      <CardTitle className="text-2xl text-white group-hover:text-primary transition-colors">
+                        {option.type}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <CardDescription className="text-white/70 text-center">
+                        {option.description}
+                      </CardDescription>
+                      
+                      <div className="space-y-2">
+                        {option.features.map((feature, idx) => (
+                          <div key={idx} className="flex items-center gap-2 text-white/80">
+                            <div className="w-2 h-2 rounded-full bg-gradient-primary" />
+                            <span className="text-sm">{feature}</span>
                           </div>
-                          <CardTitle className="text-2xl text-white group-hover:text-primary transition-colors">
-                            {option.type}
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                          <CardDescription className="text-white/70 text-center">
-                            {option.description}
-                          </CardDescription>
-                          
-                          <div className="space-y-2">
-                            {option.features.map((feature, idx) => (
-                              <div key={idx} className="flex items-center gap-2 text-white/80">
-                                <div className="w-2 h-2 rounded-full bg-gradient-primary" />
-                                <span className="text-sm">{feature}</span>
-                              </div>
-                            ))}
-                          </div>
+                        ))}
+                      </div>
 
-                          <Button 
-                            className={`w-full bg-gradient-to-r ${option.gradient} hover:shadow-glow transition-all duration-300`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              option.onClick();
-                            }}
-                          >
-                            {option.requiresRegistration ? (
-                              <UserPlus className="w-4 h-4 mr-2" />
-                            ) : option.type.includes('Voice') ? (
-                              <Mic className="w-4 h-4 mr-2" />
-                            ) : (
-                              <MessageCircle className="w-4 h-4 mr-2" />
-                            )}
-                            {option.action}
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                      <Button 
+                        className={`w-full bg-gradient-to-r ${option.gradient} hover:shadow-glow transition-all duration-300`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          option.onClick();
+                        }}
+                      >
+                        {option.requiresRegistration ? (
+                          <UserPlus className="w-4 h-4 mr-2" />
+                        ) : option.type.includes('Voice') ? (
+                          <Mic className="w-4 h-4 mr-2" />
+                        ) : (
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                        )}
+                        {option.action}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
 
           {/* Trust Indicators */}
           <motion.div
