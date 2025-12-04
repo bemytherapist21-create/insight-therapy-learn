@@ -30,27 +30,31 @@ const Home = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Google Apps Script URL for saving to Google Sheets
+    const googleSheetsURL = 'https://script.google.com/macros/s/AKfycbxQ5FgsJfnT55m81KTXsgZGE5qByyFOap_Do6Nb4m_deA-9FR1mMQCLB4bY7xvVgPQk/exec';
+    
     try {
-      await emailjs.send(
-        'YOUR_SERVICE_ID',
-        'YOUR_TEMPLATE_ID',
-        {
-          from_name: formData.name,
-          from_email: formData.email,
-          message: formData.message,
-          to_email: 'founder@theeverythingai.com',
+      await fetch(googleSheetsURL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        'YOUR_PUBLIC_KEY'
-      );
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          message: formData.message
+        })
+      });
       
       toast({
-        title: "Message sent!",
-        description: "We'll get back to you soon at " + formData.email,
+        title: "Message received!",
+        description: "Thank you! We'll get back to you soon.",
       });
       setFormData({ name: '', email: '', message: '' });
     } catch (error) {
       toast({
-        title: "Error sending message",
+        title: "Error",
         description: "Please try again or email us directly at founder@theeverythingai.com",
         variant: "destructive",
       });
