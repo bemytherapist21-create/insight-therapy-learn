@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { RealtimeChat } from '@/utils/RealtimeAudio';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import { Mic, MicOff, Phone, PhoneOff, Volume2, Loader2, Video, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -40,6 +42,15 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
   const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const chatRef = useRef<RealtimeChat | null>(null);
+  
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+    }
+  }, [user, authLoading, navigate]);
 
   // Analyze emotion for text
   const analyzeEmotion = async (text: string) => {
@@ -125,9 +136,11 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
 
   // Create new session
   const createSession = async () => {
+    if (!user) return null;
+    
     try {
       const { data, error } = await supabase.from('voice_sessions').insert({
-        user_id: 'anonymous'
+        user_id: user.id
       }).select().single();
       
       if (error) throw error;
@@ -198,6 +211,12 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
   };
 
   const startSession = async () => {
+    if (!user) {
+      toast.error('Please sign in to use voice therapy');
+      navigate('/auth');
+      return;
+    }
+    
     setIsConnecting(true);
     try {
       // Request microphone permission first
@@ -249,6 +268,14 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
       chatRef.current?.disconnect();
     };
   }, []);
+
+  if (authLoading) {
+    return (
+      <div className="max-w-4xl mx-auto flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
