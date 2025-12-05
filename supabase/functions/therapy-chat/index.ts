@@ -136,16 +136,46 @@ CLEAR STATUS - Provide supportive therapy conversation.
   }
 }
 
+// Extract user ID from JWT token
+function getUserIdFromToken(authHeader: string | null): string | null {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+  
+  try {
+    const token = authHeader.replace('Bearer ', '');
+    // Decode JWT payload (middle part)
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    
+    const payload = JSON.parse(atob(parts[1]));
+    return payload.sub || null;
+  } catch {
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { message, conversationId, userId } = await req.json();
+    // Extract and validate user from JWT
+    const authHeader = req.headers.get('authorization');
+    const userId = getUserIdFromToken(authHeader);
     
-    if (!message || !userId) {
-      throw new Error('Message and userId are required');
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { message, conversationId } = await req.json();
+    
+    if (!message) {
+      throw new Error('Message is required');
     }
 
     // Initialize Supabase client
@@ -168,6 +198,21 @@ serve(async (req) => {
       
       if (convError) throw convError;
       convId = newConv.id;
+    } else {
+      // Verify user owns this conversation
+      const { data: existingConv, error: verifyError } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('id', convId)
+        .eq('user_id', userId)
+        .single();
+      
+      if (verifyError || !existingConv) {
+        return new Response(
+          JSON.stringify({ error: 'Conversation not found or access denied' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     // Save user message
@@ -268,8 +313,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
