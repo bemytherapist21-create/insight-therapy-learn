@@ -1,12 +1,20 @@
-
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Brain, Sparkles } from 'lucide-react';
+import { Menu, X, Brain, Sparkles, LogIn, UserPlus } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/hooks/useAuth';
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
 
   const navItems = [
     { name: 'Home', path: '/' },
@@ -16,6 +24,11 @@ const Navigation = () => {
   ];
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass-card">
@@ -50,10 +63,34 @@ const Navigation = () => {
               </Link>
             ))}
 
-            <Button variant="default" className="bg-gradient-primary hover:shadow-glow">
-              <Sparkles className="w-4 h-4 mr-2" />
-              Get Started
-            </Button>
+            {user ? (
+              <Button 
+                variant="default" 
+                className="bg-gradient-primary hover:shadow-glow"
+                onClick={handleSignOut}
+              >
+                Sign Out
+              </Button>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="default" className="bg-gradient-primary hover:shadow-glow">
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Get Started
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => navigate('/auth')} className="cursor-pointer">
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Login
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/auth?mode=signup')} className="cursor-pointer">
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Register
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -86,10 +123,43 @@ const Navigation = () => {
                   {item.name}
                 </Link>
               ))}
-              <Button variant="default" className="bg-gradient-primary w-full mt-2">
-                <Sparkles className="w-4 h-4 mr-2" />
-                Get Started
-              </Button>
+              {user ? (
+                <Button 
+                  variant="default" 
+                  className="bg-gradient-primary w-full mt-2"
+                  onClick={() => {
+                    handleSignOut();
+                    setIsOpen(false);
+                  }}
+                >
+                  Sign Out
+                </Button>
+              ) : (
+                <div className="flex flex-col gap-2 mt-2">
+                  <Button 
+                    variant="default" 
+                    className="bg-gradient-primary w-full"
+                    onClick={() => {
+                      navigate('/auth');
+                      setIsOpen(false);
+                    }}
+                  >
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Login
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full border-white/20 text-foreground hover:bg-white/10"
+                    onClick={() => {
+                      navigate('/auth?mode=signup');
+                      setIsOpen(false);
+                    }}
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Register
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         )}
