@@ -50,11 +50,10 @@ const Navigation = () => {
               <Link
                 key={item.name}
                 to={item.path}
-                className={`relative transition-all duration-300 ${
-                  isActive(item.path)
+                className={`relative transition-all duration-300 ${isActive(item.path)
                     ? 'text-primary font-semibold'
                     : 'text-foreground hover:text-primary'
-                }`}
+                  }`}
               >
                 {item.name}
                 {isActive(item.path) && (
@@ -64,8 +63,8 @@ const Navigation = () => {
             ))}
 
             {user ? (
-              <Button 
-                variant="default" 
+              <Button
+                variant="default"
                 className="bg-gradient-primary hover:shadow-glow"
                 onClick={handleSignOut}
               >
@@ -80,11 +79,11 @@ const Navigation = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => navigate('/auth')} className="cursor-pointer">
+                  <DropdownMenuItem onClick={() => navigate('/login')} className="cursor-pointer">
                     <LogIn className="w-4 h-4 mr-2" />
                     Login
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/auth?mode=signup')} className="cursor-pointer">
+                  <DropdownMenuItem onClick={() => navigate('/register')} className="cursor-pointer">
                     <UserPlus className="w-4 h-4 mr-2" />
                     Register
                   </DropdownMenuItem>
@@ -114,18 +113,17 @@ const Navigation = () => {
                   key={item.name}
                   to={item.path}
                   onClick={() => setIsOpen(false)}
-                  className={`py-2 transition-colors ${
-                    isActive(item.path)
+                  className={`py-2 transition-colors ${isActive(item.path)
                       ? 'text-primary font-semibold'
                       : 'text-foreground hover:text-primary'
-                  }`}
+                    }`}
                 >
                   {item.name}
                 </Link>
               ))}
               {user ? (
-                <Button 
-                  variant="default" 
+                <Button
+                  variant="default"
                   className="bg-gradient-primary w-full mt-2"
                   onClick={() => {
                     handleSignOut();
@@ -136,22 +134,22 @@ const Navigation = () => {
                 </Button>
               ) : (
                 <div className="flex flex-col gap-2 mt-2">
-                  <Button 
-                    variant="default" 
+                  <Button
+                    variant="default"
                     className="bg-gradient-primary w-full"
                     onClick={() => {
-                      navigate('/auth');
+                      navigate('/login');
                       setIsOpen(false);
                     }}
                   >
                     <LogIn className="w-4 h-4 mr-2" />
                     Login
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full border-white/20 text-foreground hover:bg-white/10"
                     onClick={() => {
-                      navigate('/auth?mode=signup');
+                      navigate('/register');
                       setIsOpen(false);
                     }}
                   >
