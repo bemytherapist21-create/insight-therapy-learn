@@ -77,7 +77,8 @@ No other text.`
 
   } catch (error) {
     console.error("Error:", error);
-    return new Response(JSON.stringify({ error: error.message, emotion: "mixed", confidence: 0 }), {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return new Response(JSON.stringify({ error: errorMessage, emotion: "mixed", confidence: 0 }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

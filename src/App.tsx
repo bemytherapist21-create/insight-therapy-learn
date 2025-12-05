@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { AuthProvider } from "@/hooks/useAuth";
 import Navigation from "./components/Navigation";
 import Home from "./pages/Home";
 import AITherapy from "./pages/AITherapy";
@@ -12,6 +13,7 @@ import AITherapyChat from "./pages/AITherapyChat";
 import AITherapyVoice from "./pages/AITherapyVoice";
 import InsightFusion from "./pages/InsightFusion";
 import AILearning from "./pages/AILearning";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -19,26 +21,29 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Navigation />
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/ai-therapy" element={<AITherapy />} />
-            <Route path="/ai-therapy/chat" element={<AITherapyChat />} />
-            <Route path="/ai-therapy/voice" element={<AITherapyVoice />} />
-            <Route path="/insight-fusion" element={<InsightFusion />} />
-            <Route path="/ai-learning" element={<AILearning />} />
-            <Route path="/about" element={<Home />} />
-            <Route path="/services" element={<Home />} />
-            <Route path="/contact" element={<Home />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Navigation />
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/ai-therapy" element={<AITherapy />} />
+              <Route path="/ai-therapy/chat" element={<AITherapyChat />} />
+              <Route path="/ai-therapy/voice" element={<AITherapyVoice />} />
+              <Route path="/insight-fusion" element={<InsightFusion />} />
+              <Route path="/ai-learning" element={<AILearning />} />
+              <Route path="/about" element={<Home />} />
+              <Route path="/services" element={<Home />} />
+              <Route path="/contact" element={<Home />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );

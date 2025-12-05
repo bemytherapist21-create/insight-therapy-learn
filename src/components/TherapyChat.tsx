@@ -5,6 +5,8 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { Send, AlertCircle, Heart, Shield } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -27,8 +29,14 @@ export const TherapyChat = () => {
   const [safety, setSafety] = useState<SafetyStatus | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // Generate a simple user ID (in production, use actual auth)
-  const userId = "user-" + Math.random().toString(36).substring(7);
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+    }
+  }, [user, authLoading, navigate]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -39,7 +47,7 @@ export const TherapyChat = () => {
   }, [messages]);
 
   const sendMessage = async () => {
-    if (!input.trim() || loading) return;
+    if (!input.trim() || loading || !user) return;
 
     const userMessage = input.trim();
     setInput("");
@@ -50,8 +58,7 @@ export const TherapyChat = () => {
       const { data, error } = await supabase.functions.invoke('therapy-chat', {
         body: { 
           message: userMessage,
-          conversationId,
-          userId 
+          conversationId
         }
       });
 
@@ -69,9 +76,15 @@ export const TherapyChat = () => {
         });
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error:', error);
-      toast.error("Failed to send message. Please try again.");
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage.includes('Authentication required')) {
+        toast.error("Please sign in to continue");
+        navigate('/auth');
+      } else {
+        toast.error("Failed to send message. Please try again.");
+      }
       setMessages(prev => prev.slice(0, -1)); // Remove user message on error
     } finally {
       setLoading(false);
@@ -97,6 +110,14 @@ export const TherapyChat = () => {
       default: return "bg-green-500/10 border-green-500/20";
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="w-full max-w-4xl mx-auto flex items-center justify-center h-96">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-4">

@@ -1,13 +1,13 @@
 project_id = "sudlkozsotxdzvjpxubu"
 
 [functions.therapy-chat]
-verify_jwt = false
+verify_jwt = true
 
 [functions.voice-therapy-token]
-verify_jwt = false
+verify_jwt = true
 
 [functions.did-avatar]
-verify_jwt = false
+verify_jwt = true
 
 [functions.analyze-emotion]
-verify_jwt = false
+verify_jwt = true
