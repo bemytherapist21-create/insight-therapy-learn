@@ -12,6 +12,9 @@ import AITherapyChat from "./pages/AITherapyChat";
 import AITherapyVoice from "./pages/AITherapyVoice";
 import InsightFusion from "./pages/InsightFusion";
 import AILearning from "./pages/AILearning";
+import Register from "./pages/Register";
+import Login from "./pages/Login";
+import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +37,9 @@ const App = () => (
             <Route path="/about" element={<Home />} />
             <Route path="/services" element={<Home />} />
             <Route path="/contact" element={<Home />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/terms" element={<Terms />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
