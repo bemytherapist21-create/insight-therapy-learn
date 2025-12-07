@@ -1,203 +1,174 @@
-# Privacy Policy
+# Privacy Policy - Insight Therapy Learn
 
-**Last Updated: December 8, 2025**
+**Effective Date:** December 8, 2025  
+**Last Updated:** December 8, 2025
 
 ## Introduction
 
-Insight Therapy Learn ("we", "our", or "us") is committed to protecting your privacy. This policy explains how we collect, use, and safeguard your personal information.
+Insight Therapy Learn ("we," "our," or "us") is committed to protecting your privacy. This AI-powered mental health platform provides emotional support services while maintaining the highest standards of data protection.
+
+**IMPORTANT:** Insight Therapy Learn is NOT a substitute for professional mental health care. This is a support tool, not medical treatment.
 
 ## Information We Collect
 
 ### 1. Account Information
 - Email address
-- Username
-- Password (encrypted)
-- Profile preferences
+- Name (optional)
+- Country/region (for emergency resources)
+- Account preferences
 
 ### 2. Conversation Data
-- Messages exchanged with AI
-- Voice recordings (if using voice features)
-- Emotion analysis data
-- Session timestamps
+- Text messages with AI therapist
+- Voice recordings (if voice mode enabled)
+- Session timestamps and duration
+- Sentiment analysis results (emotional tone)
 
-### 3. Usage Data
+### 3. Safety & Crisis Data
+- Crisis detection alerts
+- Risk assessment scores
+- Emergency intervention logs
+- Referral records
+
+### 4. Technical Data
+- IP address
 - Device information
 - Browser type
-- IP address (anonymized)
-- Session duration
-- Feature usage patterns
-
-### 4. Safety & Crisis Data
-- Crisis detection events
-- Emergency intervention triggers
-- Safety check results
+- Usage analytics (anonymized)
 
 ## How We Use Your Information
 
 ### Primary Uses
+1. **Provide Therapy Support** - Power AI conversations and personalization
+2. **Safety Monitoring** - Detect crisis situations and provide emergency resources
+3. **Service Improvement** - Analyze usage patterns to improve effectiveness
+4. **Legal Compliance** - Maintain audit trails as required by law
 
-1. **Service Delivery**
-   - Provide AI therapy conversations
-   - Analyze emotions and track progress
-   - Detect crisis situations
-
-2. **Safety & Security**
-   - Monitor for harmful content
-   - Prevent self-harm
-   - Trigger emergency interventions
-
-3. **Service Improvement**
-   - Train AI models (anonymized)
-   - Fix bugs and errors
-   - Enhance user experience
-
-### We DO NOT:
-- Sell your data to third parties
-- Share identifiable information without consent
-- Use data for advertising
-- Share with insurance companies
-- Provide data to employers
+### Data Processing
+- AI responses generated using OpenAI GPT-4
+- Voice synthesis via ElevenLabs (optional)
+- Sentiment analysis for mood tracking
+- Safety checks via Project Guardian framework
 
 ## Data Security
 
 ### Encryption
-
-- **In Transit**: TLS 1.3 encryption
-- **At Rest**: AES-256 encryption
-- **End-to-End**: For voice conversations
+- **In Transit:** TLS 1.3 encryption for all data transmission
+- **At Rest:** AES-256 encryption for stored conversations
+- **End-to-End:** Messages encrypted before leaving your device
 
 ### Access Controls
-
-- Role-based access limitations
-- Multi-factor authentication
+- Role-based access for staff (minimal)
+- Multi-factor authentication required
 - Regular security audits
-- Intrusion detection systems
+- SOC 2 Type II compliance (in progress)
 
-### Compliance
-
-- GDPR compliant (EU users)
-- CCPA compliant (California users)
-- ISO 27001 security standards
-- Regular third-party audits
-
-## Data Retention
-
-### Retention Periods
-
-| Data Type | Retention Period | Reason |
-|-----------|------------------|--------|
-| Active conversations | 30 days | Service provision |
-| Emotion analytics | 90 days | Progress tracking |
-| Safety logs | 2 years | Legal compliance |
-| Account data | Until deletion request | Service access |
-
-### Automatic Deletion
-
-- Inactive accounts: 1 year
-- Temporary data: 30 days
-- Voice recordings: 7 days (unless saved)
+### Data Retention
+- **Active Sessions:** Retained while account is active
+- **Crisis Logs:** 7 years (legal requirement)
+- **Deleted Accounts:** 30-day grace period, then permanent deletion
+- **Anonymous Analytics:** Indefinite (no personal identifiers)
 
 ## Your Rights
 
-### You Have the Right To:
+### Access & Control
+- **View Your Data:** Download all conversation history
+- **Delete Data:** Request immediate deletion (except crisis logs)
+- **Export Data:** JSON/CSV format available
+- **Opt-Out:** Analytics tracking can be disabled
 
-1. **Access** - Request your data
-2. **Rectification** - Correct inaccurate data
-3. **Erasure** - Delete your account and data
-4. **Portability** - Export your data
-5. **Object** - Opt out of processing
-6. **Restrict** - Limit how we use data
+### GDPR Rights (EU Users)
+- Right to access
+- Right to rectification
+- Right to erasure ("right to be forgotten")
+- Right to data portability
+- Right to object to processing
 
-### How to Exercise Rights
+### CCPA Rights (California Users)
+- Know what data we collect
+- Delete personal information
+- Opt-out of data sales (we never sell data)
+- Non-discrimination for exercising rights
 
-Email: privacy@theeverythingai.com
+## Data Sharing
 
-We respond within **30 days**.
+### We DO NOT Share Data With:
+- Insurance companies
+- Employers
+- Marketing companies
+- Third-party advertisers
 
-## Third-Party Services
+### We ONLY Share With:
+1. **Service Providers**
+   - Supabase (database hosting)
+   - OpenAI (AI processing)
+   - ElevenLabs (voice synthesis)
+   - *All under strict data protection agreements*
 
-We use:
+2. **Emergency Services**
+   - Only if user is in immediate danger
+   - Required by law to prevent harm
+   - Crisis hotlines (with user consent)
 
-### AI & Processing
-- OpenAI (conversation AI)
-- ElevenLabs (voice synthesis)
-- Supabase (data storage)
+3. **Legal Requirements**
+   - Court orders
+   - Law enforcement (imminent harm only)
+   - Regulatory compliance
 
-### Analytics
-- Anonymous usage statistics
-- Error tracking (no personal data)
+## Crisis Situations
 
-### Compliance
-All third parties are:
-- GDPR/CCPA compliant
-- Bound by data processing agreements
-- Subject to security audits
+### Mandatory Disclosure
+We may break confidentiality if:
+- You express intent to harm yourself
+- You express intent to harm others
+- We suspect child/elder abuse
+- Court order requires disclosure
 
-## Cookies & Tracking
-
-### Essential Cookies
-- Authentication
-- Session management
-- Security
-
-### Optional Cookies
-- Analytics (opt-out available)
-- Preference storage
-
-**We DO NOT use advertising cookies.**
+### What Happens
+1. AI detects crisis signals
+2. Emergency contacts displayed immediately
+3. Session logged for safety audit
+4. Admin alerted for review (high-risk cases)
+5. You maintain control (we encourage, not force, help-seeking)
 
 ## Children's Privacy
 
-- Not designed for children under 18
-- No knowingly collected data from minors
-- Parents can request deletion
+**Age Requirement:** 18+ only  
+**Verification:** Age confirmed during signup  
+**COPPA Compliance:** No services for children under 13
 
-## Crisis Data Handling
+If we discover a user under 18, their account will be immediately deleted.
 
-### Special Protections
+## International Users
 
-When crisis is detected:
-- Data encrypted immediately
-- Access limited to safety team
-- Retained for safety monitoring
-- Never used for marketing
+### Data Location
+- Primary servers: United States (AWS)
+- EU users: Data processed in EU when possible
+- Standard Contractual Clauses (SCCs) for transfers
 
-### Emergency Disclosure
-
-We may disclose data **without consent** if:
-- Imminent danger to self/others
-- Required by law
-- Court order received
-
-## International Transfers
-
-Data may be processed in:
-- India (primary)
-- EU (backup)
-- USA (AI processing)
-
-All transfers use:
-- Standard contractual clauses
-- Adequacy decisions
-- Encryption in transit
+### Jurisdiction
+- Governed by California law
+- EU users protected by GDPR
+- Privacy Shield framework compliance (where applicable)
 
 ## Changes to Policy
 
-We notify you of changes via:
-- Email (registered users)
-- In-app notification
+We will notify you of material changes via:
+- Email notification
+- In-app alert
 - Website banner
 
 ## Contact Us
 
-### Privacy Concerns
-- **Email**: privacy@theeverythingai.com
-- **Data Requests**: data-requests@theeverythingai.com
+**Privacy Officer:** privacy@insighttherapylearn.com  
+**Data Requests:** datarequest@insighttherapylearn.com  
+**General Inquiries:** support@insighttherapylearn.com  
 
-### Safety Concerns
-- **Email**: safety@theeverythingai.com
-- **Emergency**: Use crisis hotlines
+**Mail:**  
+Insight Therapy Learn  
+Attn: Privacy Officer  
+[Your Address]  
+Pune, Maharashtra, India
 
 ---
 
-**By using Insight Therapy Learn, you consent to this Privacy Policy.**
+**Note:** This is a support service, not medical treatment. If you're in crisis, call 988 (US), 112 (India), or your local emergency number.
