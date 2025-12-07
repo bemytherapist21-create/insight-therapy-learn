@@ -1,117 +1,111 @@
 /**
- * Safety Middleware
- * Intercepts all AI interactions for safety checks
+ * Safety Middleware for AI Conversations
+ * Intercepts and validates all messages before/after AI processing
  */
 
-import { guardianClient, SafetyCheckResult } from './guardian-client';
-import { CrisisDetector } from './crisis-detector';
-import { toast } from 'sonner';
+import { crisisDetector } from './crisis-detector';
+import { guardianClient } from './guardian-client';
 
-export class SafetyMiddleware {
+export interface SafetyContext {
+  userId: string;
+  sessionId: string;
+  conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>;
+}
+
+export interface SafetyResult {
+  allowed: boolean;
+  modifiedMessage?: string;
+  warning?: string;
+  emergencyAction?: 'block' | 'intervene' | 'monitor';
+}
+
+class SafetyMiddleware {
   /**
-   * Pre-process user message before AI
+   * Pre-process user message before sending to AI
    */
-  static async beforeAI(message: string): Promise<{
-    allowed: boolean;
-    safetyResult: SafetyCheckResult;
-    modifiedMessage?: string;
-  }> {
-    // Local crisis detection (fast)
-    const localCheck = CrisisDetector.detectCrisisSignals(message);
+  async beforeAI(message: string, context: SafetyContext): Promise<SafetyResult> {
+    // Detect crisis signals
+    const detection = await crisisDetector.detectCrisis(message, context.userId, context.sessionId);
 
-    // Remote comprehensive check (thorough)
-    const remoteCheck = await guardianClient.checkMessageSafety(message);
-
-    // If critical risk detected
-    if (localCheck.severity === 'critical' || remoteCheck.riskLevel === 'critical') {
-      await guardianClient.logSafetyEvent({
-        type: 'crisis_detected',
-        severity: 'critical',
-        details: { localCheck, remoteCheck },
-      });
-
+    if (detection.isEmergency) {
       return {
         allowed: false,
-        safetyResult: remoteCheck,
+        warning: detection.interventionMessage,
+        emergencyAction: 'intervene',
       };
     }
 
-    // If high risk, allow but flag
-    if (localCheck.severity === 'high' || remoteCheck.riskLevel === 'danger') {
-      await guardianClient.logSafetyEvent({
-        type: 'crisis_detected',
-        severity: 'high',
-        details: { localCheck, remoteCheck },
-      });
-
-      toast.warning('We noticed you might be struggling. Help is available 24/7.');
+    if (detection.shouldIntervene) {
+      return {
+        allowed: true,
+        warning: detection.interventionMessage,
+        emergencyAction: 'monitor',
+      };
     }
 
-    return {
-      allowed: true,
-      safetyResult: remoteCheck,
-      modifiedMessage: message,
-    };
+    return { allowed: true };
   }
 
   /**
    * Post-process AI response before showing to user
    */
-  static async afterAI(response: string): Promise<{
-    allowed: boolean;
-    safetyResult: SafetyCheckResult;
-    modifiedResponse?: string;
-  }> {
-    const validation = await guardianClient.validateAIResponse(response);
+  async afterAI(aiResponse: string, userMessage: string, context: SafetyContext): Promise<SafetyResult> {
+    // Validate AI response for harmful content
+    const validation = await guardianClient.validateAIResponse(aiResponse, userMessage);
 
-    // Check for harmful AI responses
-    const harmfulPatterns = [
-      'you should kill yourself',
-      'end your life',
-      'better off dead',
-      'no hope',
-    ];
-
-    const containsHarmful = harmfulPatterns.some(pattern =>
-      response.toLowerCase().includes(pattern)
-    );
-
-    if (containsHarmful || !validation.isSafe) {
-      console.error('Unsafe AI response blocked:', response);
-      await guardianClient.logSafetyEvent({
-        type: 'intervention_triggered',
-        severity: 'critical',
-        details: { response, validation },
-      });
-
+    if (!validation.safe) {
       return {
         allowed: false,
-        safetyResult: validation,
-        modifiedResponse:
-          "I'm not able to provide an appropriate response right now. Please reach out to a crisis helpline immediately if you're in distress.",
+        warning: 'AI response blocked for safety reasons',
+        modifiedMessage: "I want to respond thoughtfully to what you've shared. Let me rephrase that in a more helpful way.",
+        emergencyAction: 'block',
       };
     }
 
-    return {
-      allowed: true,
-      safetyResult: validation,
-      modifiedResponse: response,
-    };
+    // Check if AI is attempting to provide medical advice (prohibited)
+    if (this.containsMedicalAdvice(aiResponse)) {
+      return {
+        allowed: false,
+        modifiedMessage: "I'm here to provide emotional support, but I can't give medical advice. Please consult with a licensed healthcare provider for medical concerns.",
+        emergencyAction: 'block',
+      };
+    }
+
+    return { allowed: true };
   }
 
   /**
-   * Show emergency intervention UI
+   * Detect if AI is providing medical advice
    */
-  static async showEmergencyIntervention(countryCode: string = 'IN'): Promise<void> {
-    const contacts = await guardianClient.getEmergencyContacts(countryCode);
+  private containsMedicalAdvice(response: string): boolean {
+    const medicalPatterns = [
+      /(?:you should|i recommend|take)\s+(?:medication|medicine|pills|drugs)/i,
+      /(?:diagnose|diagnosis)\s+(?:you|with)/i,
+      /(?:stop taking|increase|decrease)\s+your\s+(?:medication|dose)/i,
+      /(?:prescribe|prescription)/i,
+    ];
 
-    await guardianClient.logSafetyEvent({
-      type: 'emergency_contact_shown',
-      severity: 'critical',
-      details: { contacts, countryCode },
-    });
+    return medicalPatterns.some(pattern => pattern.test(response));
+  }
 
-    // This should trigger a modal/dialog in the UI
-    return Promise.resolve();
+  /**
+   * Monitor session for cumulative risk factors
+   */
+  async monitorSession(context: SafetyContext): Promise<{ riskLevel: number; shouldAlert: boolean }> {
+    const recentMessages = context.conversationHistory.slice(-10);
+    const userMessages = recentMessages.filter(m => m.role === 'user').map(m => m.content);
+
+    const signals = [];
+    for (const msg of userMessages) {
+      const detection = await crisisDetector.detectCrisis(msg, context.userId, context.sessionId);
+      signals.push(...detection.signals);
+    }
+
+    const riskLevel = crisisDetector.calculateSessionRisk(signals);
+    const shouldAlert = riskLevel > 0.6; // Alert at 60% risk
+
+    return { riskLevel, shouldAlert };
   }
 }
+
+export const safetyMiddleware = new SafetyMiddleware();
