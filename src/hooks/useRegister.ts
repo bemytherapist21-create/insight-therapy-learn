@@ -55,22 +55,8 @@ export const useRegister = () => {
         }
     };
 
-    const loadCountries = async () => {
-        const { data, error } = await supabase
-            .from('crisis_resources')
-            .select('country_code, country_name')
-            .order('country_name');
-
-        if (error || !data) {
-            console.error('Error loading countries:', error);
-            setCountries(DEFAULT_COUNTRIES);
-            return;
-        }
-
-        setCountries(data.map(c => ({
-            code: c.country_code,
-            name: c.country_name
-        })));
+    const loadCountries = () => {
+        setCountries(DEFAULT_COUNTRIES);
     };
 
     const updateField = (field: keyof RegistrationFormData, value: any) => {
