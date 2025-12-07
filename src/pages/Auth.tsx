@@ -6,13 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { z } from 'zod';
 import { Shield, Mail, Lock } from 'lucide-react';
-
-const authSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-});
+import { passwordSchema, emailSchema, sanitizeEmail } from '@/lib/validation';
+import { rateLimiter, RATE_LIMITS } from '@/lib/rateLimiter';
+import { logger } from '@/services/loggingService';
+import { errorService } from '@/services/errorService';
+import { ROUTES } from '@/config/constants';
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
@@ -21,70 +20,96 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-  
+
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
-      navigate('/');
+      navigate(ROUTES.HOME);
     }
   }, [user, navigate]);
 
   const validateForm = () => {
     try {
-      authSchema.parse({ email, password });
+      // Use our stronger validation schemas
+      emailSchema.parse(email);
+
+      // Only validate password strength for signup
+      if (!isLogin) {
+        passwordSchema.parse(password);
+      }
+
       setErrors({});
       return true;
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        const fieldErrors: { email?: string; password?: string } = {};
-        error.errors.forEach((err) => {
-          if (err.path[0] === 'email') fieldErrors.email = err.message;
-          if (err.path[0] === 'password') fieldErrors.password = err.message;
+      const fieldErrors: { email?: string; password?: string } = {};
+
+      if (error && typeof error === 'object' && 'errors' in error) {
+        const zodErrors = (error as { errors: Array<{ path: string[]; message: string }> }).errors;
+        zodErrors.forEach((err) => {
+          const field = err.path[0];
+          if (field === 'email' || field === 'password') {
+            fieldErrors[field as 'email' | 'password'] = err.message;
+          }
         });
-        setErrors(fieldErrors);
       }
+
+      setErrors(fieldErrors);
       return false;
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
+    // Rate limiting
+    const rateLimitKey = isLogin ? 'login' : 'register';
+    const rateLimit = isLogin ? RATE_LIMITS.LOGIN : RATE_LIMITS.REGISTER;
+
+    if (!rateLimiter.checkLimit(rateLimitKey, rateLimit)) {
+      const timeLeft = rateLimiter.getTimeUntilReset(rateLimitKey);
+      toast.error(`Too many attempts. Please try again in ${timeLeft} seconds.`);
+      logger.warn(`${isLogin ? 'Login' : 'Registration'} rate limited`, { email });
+      return;
+    }
+
     setLoading(true);
-    
+
     try {
       if (isLogin) {
-        const { error } = await signIn(email, password);
+        const { error } = await signIn(sanitizeEmail(email), password);
         if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-            toast.error('Invalid email or password');
-          } else {
-            toast.error(error.message);
-          }
-        } else {
-          toast.success('Welcome back!');
-          navigate('/');
+          throw error;
         }
+
+        logger.info('User logged in via Auth page', { email });
+        toast.success('Welcome back!');
+        rateLimiter.reset('login');
+        navigate(ROUTES.HOME);
       } else {
-        const { error } = await signUp(email, password);
+        const { error } = await signUp(sanitizeEmail(email), password);
         if (error) {
-          if (error.message.includes('already registered')) {
-            toast.error('This email is already registered. Please sign in.');
-          } else {
-            toast.error(error.message);
-          }
-        } else {
-          toast.success('Account created! You can now sign in.');
-          setIsLogin(true);
+          throw error;
         }
+
+        logger.info('User registered via Auth page', { email });
+        toast.success('Account created! Check your email to verify.');
+        setIsLogin(true);
       }
+    } catch (error) {
+      errorService.handleError(error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleMode = () => {
+    setIsLogin(!isLogin);
+    setErrors({});
+    setPassword(''); // Clear password when switching modes
   };
 
   return (
@@ -100,8 +125,8 @@ export default function Auth() {
             {isLogin ? 'Welcome Back' : 'Create Account'}
           </CardTitle>
           <CardDescription className="text-white/60">
-            {isLogin 
-              ? 'Sign in to access AI Therapy services' 
+            {isLogin
+              ? 'Sign in to access AI Therapy services'
               : 'Sign up to start your wellness journey'}
           </CardDescription>
         </CardHeader>
@@ -118,13 +143,14 @@ export default function Auth() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                  required
                 />
               </div>
               {errors.email && (
                 <p className="text-red-400 text-sm">{errors.email}</p>
               )}
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="password" className="text-white/80">Password</Label>
               <div className="relative">
@@ -132,19 +158,25 @@ export default function Auth() {
                 <Input
                   id="password"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder={isLogin ? "••••••••" : "Min 12 chars, mixed case, numbers, symbols"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                  required
                 />
               </div>
               {errors.password && (
                 <p className="text-red-400 text-sm">{errors.password}</p>
               )}
+              {!isLogin && (
+                <p className="text-white/50 text-xs">
+                  Password must be at least 12 characters with uppercase, lowercase, numbers, and special characters
+                </p>
+              )}
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full bg-gradient-to-r from-purple-500 to-orange-500 hover:shadow-glow"
               disabled={loading}
             >
@@ -155,14 +187,11 @@ export default function Auth() {
           <div className="mt-6 text-center">
             <button
               type="button"
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setErrors({});
-              }}
+              onClick={toggleMode}
               className="text-purple-400 hover:text-purple-300 text-sm"
             >
-              {isLogin 
-                ? "Don't have an account? Sign up" 
+              {isLogin
+                ? "Don't have an account? Sign up"
                 : 'Already have an account? Sign in'}
             </button>
           </div>

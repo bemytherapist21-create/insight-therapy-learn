@@ -1,73 +1,107 @@
-# Welcome to your Lovable project
+# The Everything AI - Insight Therapy Learn
 
-## Project info
+[![CI](https://github.com/Start-Here-Project/insight-therapy-learn/actions/workflows/ci.yml/badge.svg)](https://github.com/Start-Here-Project/insight-therapy-learn/actions/workflows/ci.yml)
+[![Security Audit](https://github.com/Start-Here-Project/insight-therapy-learn/actions/workflows/security.yml/badge.svg)](https://github.com/Start-Here-Project/insight-therapy-learn/actions/workflows/security.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**URL**: https://lovable.dev/projects/2149bd4c-fc5e-488f-b474-be6cf710b08c
+A next-generation AI-powered mental health platform providing accessible, voice-based therapy sessions, emotion analysis, and crisis support.
 
-## How can I edit this code?
+![Project Banner](./public/og-image.png)
 
-There are several ways of editing your application.
+## 🚀 Features
 
-**Use Lovable**
+- **AI Voice Therapy**: Real-time voice conversations with an empathetic AI therapist.
+- **Emotion Analysis**: Live sentiment tracking and visualization of emotional states.
+- **Secure & Private**: End-to-end encryption, GDPR compliance, and automated data deletion.
+- **Crisis Support**: Immediate access to localized emergency resources.
+- **Modern UI**: Built with React, Tailwind CSS, and Framer Motion for a premium experience.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/2149bd4c-fc5e-488f-b474-be6cf710b08c) and start prompting.
+## 🛠️ Tech Stack
 
-Changes made via Lovable will be committed automatically to this repo.
+- **Frontend**: React, TypeScript, Vite
+- **UI Framework**: Tailwind CSS, shadcn/ui, Radix Primitives
+- **State Management**: React Hooks, React Query
+- **Backend (BaaS)**: Supabase (Auth, Database, Edge Functions)
+- **AI Services**: OpenAI (LLM), D-ID (Avatar), Vercel AI SDK
+- **Testing**: Vitest, React Testing Library
+- **DevOps**: GitHub Actions, Husky, Vercel
 
-**Use your preferred IDE**
+## 🚦 Getting Started
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Prerequisites
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- Node.js 18+
+- npm 9+
+- A Supabase project
 
-Follow these steps:
+### Installation
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Start-Here-Project/insight-therapy-learn.git
+   cd insight-therapy-learn
+   ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+3. **Configure Environment**
+   Copy `.env.example` to `.env` and fill in your credentials:
+   ```bash
+   cp .env.example .env
+   ```
+   *Note: Never commit your `.env` file!*
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+4. **Start Development Server**
+   ```bash
+   npm run dev
+   ```
+
+## 🧪 Testing
+
+We rely on comprehensive testing to ensure reliability.
+
+```bash
+# Run unit and integration tests
+npm run test
+
+# Run tests with UI
+npm run test:ui
+
+# Check code style
+npm run lint
 ```
 
-**Edit a file directly in GitHub**
+## 📁 Project Structure
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```
+src/
+├── components/     # UI components (Atomic design)
+│   ├── auth/       # Authentication forms
+│   ├── safety/     # Crisis intervention tools
+│   ├── ui/         # Generic accessible UI primitives
+│   └── voice/      # Voice therapy interface
+├── config/         # App constants and configuration
+├── hooks/          # Custom React hooks (logic layer)
+├── lib/            # Utilities (Performance, Validation, Error Tracking)
+├── pages/          # Route components
+└── services/       # API integration layer
+```
 
-**Use GitHub Codespaces**
+## 🛡️ Security & Compliance
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- **GDPR**: Validated privacy policy and data erasure workflows.
+- **Audit Logs**: Sensitive actions are logged for compliance monitoring.
+- **Headers**: Strict Content Security Policy (CSP) and security headers configured.
 
-## What technologies are used for this project?
+See [SECURITY.md](SECURITY.md) for more details.
 
-This project is built with:
+## 🤝 Contributing
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to submit Pull Requests, report bugs, and request features.
 
-## How can I deploy this project?
+## 📄 License
 
-Simply open [Lovable](https://lovable.dev/projects/2149bd4c-fc5e-488f-b474-be6cf710b08c) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

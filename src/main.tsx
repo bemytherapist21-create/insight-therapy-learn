@@ -1,5 +1,15 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
+import { reportWebVitals } from './lib/performance'
 
-createRoot(document.getElementById("root")!).render(<App />);
+import { ErrorBoundary } from './components/analytics/ErrorBoundary'
+
+createRoot(document.getElementById("root")!).render(
+    <ErrorBoundary>
+        <App />
+    </ErrorBoundary>
+);
+
+// reportWebVitals();
+reportWebVitals();

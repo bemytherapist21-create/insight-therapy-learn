@@ -1,24 +1,57 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>The Everything AI - AI-Powered Therapy, Analytics & Learning</title>
-    <meta name="description" content="Experience the future with The Everything AI. Access AI-powered therapy, InsightFusion business analytics, and cutting-edge AI learning resources." />
+    
+    <!-- Security Headers (via meta tags for static hosting) -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+    
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net;
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com data:;
+      img-src 'self' data: https: blob:;
+      connect-src 'self' https://*.supabase.co https://ipapi.co https://api.d-id.com https://script.google.com wss://*.supabase.co;
+      media-src 'self' https: blob:;
+      frame-src 'none';
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+      upgrade-insecure-requests;
+    " />
+    
+    <!-- Permissions Policy -->
+    <meta http-equiv="Permissions-Policy" content="
+      camera=(),
+      microphone=(self),
+      geolocation=(),
+      interest-cohort=()
+    " />
+    
+    <!-- SEO & Meta -->
+    <meta name="description" content="The Everything AI - AI-powered mental health therapy and support platform" />
+    <meta name="keywords" content="AI therapy, mental health, voice therapy, chat therapy, emotional support" />
     <meta name="author" content="The Everything AI" />
-
-    <meta property="og:title" content="The Everything AI - AI-Powered Solutions" />
-    <meta property="og:description" content="Revolutionary AI services: therapy, business analytics, and learning. Transform your experience with cutting-edge artificial intelligence." />
+    <meta name="robots" content="index, follow" />
+    
+    <!-- Open Graph / Social Media -->
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@theeverythingai" />
-    <meta name="twitter:title" content="The Everything AI - Revolutionary AI Solutions" />
-    <meta name="twitter:description" content="AI-powered therapy, business analytics, and learning resources. Experience the future today." />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta property="og:title" content="The Everything AI - AI Therapy Platform" />
+    <meta property="og:description" content="Professional AI-powered mental health support and therapy" />
+    <meta property="og:site_name" content="The Everything AI" />
+    
+    <!-- Theme -->
+    <meta name="theme-color" content="#7c3aed" />
+    
+    <title>The Everything AI - AI Therapy Platform</title>
   </head>
-
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

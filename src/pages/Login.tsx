@@ -5,12 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { rateLimiter, RATE_LIMITS } from '@/lib/rateLimiter';
+import { logger } from '@/services/loggingService';
+import { errorService } from '@/services/errorService';
+import { sanitizeEmail } from '@/lib/validation';
+import { ROUTES, SUCCESS_MESSAGES } from '@/config/constants';
 
 const Login = () => {
     const navigate = useNavigate();
-    const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         email: '',
@@ -19,28 +23,34 @@ const Login = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Rate limiting check
+        if (!rateLimiter.checkLimit('login', RATE_LIMITS.LOGIN)) {
+            const timeLeft = rateLimiter.getTimeUntilReset('login');
+            toast.error(`Too many login attempts. Please try again in ${timeLeft} seconds.`);
+            logger.warn('Login rate limited', { email: formData.email });
+            return;
+        }
+
         setLoading(true);
 
         try {
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email: formData.email,
+            const { error } = await supabase.auth.signInWithPassword({
+                email: sanitizeEmail(formData.email),
                 password: formData.password,
             });
 
             if (error) throw error;
 
-            toast({
-                title: "Welcome back!",
-                description: "You have successfully logged in.",
-            });
+            logger.info('User logged in successfully', { email: formData.email });
+            toast.success(SUCCESS_MESSAGES.LOGIN_SUCCESS);
 
-            navigate('/');
-        } catch (error: any) {
-            toast({
-                title: "Login failed",
-                description: error.message,
-                variant: "destructive",
-            });
+            // Reset rate limiter on successful login
+            rateLimiter.reset('login');
+
+            navigate(ROUTES.HOME);
+        } catch (error) {
+            errorService.handleError(error, 'Login failed');
         } finally {
             setLoading(false);
         }
@@ -99,7 +109,7 @@ const Login = () => {
 
                         <p className="text-center text-sm text-white/70">
                             Don't have an account?{' '}
-                            <Link to="/register" className="text-purple-400 hover:underline">
+                            <Link to={ROUTES.REGISTER} className="text-purple-400 hover:underline">
                                 Create one
                             </Link>
                         </p>
