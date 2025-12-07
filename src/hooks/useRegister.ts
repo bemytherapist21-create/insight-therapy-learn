@@ -24,6 +24,7 @@ export const useRegister = () => {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [countries, setCountries] = useState<Country[]>([]);
+    const [autoDetectedCountry, setAutoDetectedCountry] = useState<string | null>(null);
 
     const [formData, setFormData] = useState<RegistrationFormData>({
         email: '',
@@ -49,6 +50,7 @@ export const useRegister = () => {
             const data = await response.json();
             if (data.country_code) {
                 setFormData(prev => ({ ...prev, country: data.country_code }));
+                setAutoDetectedCountry(data.country_code);
             }
         } catch (error) {
             console.log('Could not auto-detect country');
@@ -127,6 +129,7 @@ export const useRegister = () => {
         loading,
         countries,
         errors,
+        autoDetectedCountry,
         updateField,
         handleSubmit
     };

@@ -9,7 +9,7 @@ import { useRegister } from '@/hooks/useRegister';
 import { calculatePasswordStrength } from '@/lib/validation';
 
 export const RegisterForm = () => {
-    const { formData, loading, countries, errors, updateField, handleSubmit } = useRegister();
+    const { formData, loading, countries, errors, autoDetectedCountry, updateField, handleSubmit } = useRegister();
     const passwordStrength = calculatePasswordStrength(formData.password);
 
     return (
@@ -116,7 +116,7 @@ export const RegisterForm = () => {
                         <SelectContent>
                             {countries.map((country) => (
                                 <SelectItem key={country.code} value={country.code}>
-                                    {country.name}
+                                    {country.name}{autoDetectedCountry === country.code ? ' (Auto Detected)' : ''}
                                 </SelectItem>
                             ))}
                         </SelectContent>
