@@ -125,6 +125,20 @@ export class RealtimeChat {
 
       // Set up data channel
       this.dc = this.pc.createDataChannel("oai-events");
+      
+      this.dc.addEventListener("open", () => {
+        console.log("Data channel opened, sending session update...");
+        // Enable input audio transcription after connection
+        this.dc?.send(JSON.stringify({
+          type: "session.update",
+          session: {
+            input_audio_transcription: {
+              model: "whisper-1"
+            }
+          }
+        }));
+      });
+      
       this.dc.addEventListener("message", (e) => {
         const event = JSON.parse(e.data);
         console.log("Received event:", event.type);
