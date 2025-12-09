@@ -10,6 +10,10 @@ import {
   TrendingUp,
   CheckCircle
 } from 'lucide-react';
+import CalendlyEmbed from '@/components/CalendlyEmbed';
+
+// TODO: Replace with your actual Calendly URL
+const CALENDLY_URL = 'https://calendly.com/your-username';
 
 const InsightFusion = () => {
   const services = [
@@ -83,6 +87,7 @@ const InsightFusion = () => {
               <Button 
                 size="lg" 
                 className="bg-gradient-primary hover:shadow-glow w-full animate-glow-pulse"
+                onClick={() => document.getElementById('book-session')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 <Calendar className="w-5 h-5 mr-2" />
                 Book Strategy Session
@@ -140,6 +145,7 @@ const InsightFusion = () => {
 
                   <Button 
                     className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:shadow-glow transition-all duration-300"
+                    onClick={() => document.getElementById('book-session')?.scrollIntoView({ behavior: 'smooth' })}
                   >
                     <Calendar className="w-4 h-4 mr-2" />
                     Book This Session
@@ -149,26 +155,19 @@ const InsightFusion = () => {
             ))}
           </div>
 
-          {/* Calendar Integration Placeholder */}
-          <div className="mt-20 text-center">
-            <Card className="glass-card max-w-4xl mx-auto animate-fade-in">
-              <CardContent className="p-12">
-                <Calendar className="w-20 h-20 mx-auto mb-6 text-primary" />
-                <h3 className="text-3xl font-bold text-white mb-4">
-                  Calendar Integration Coming Soon
-                </h3>
-                <p className="text-white/70 mb-8 max-w-2xl mx-auto">
-                  We're building a seamless booking experience with calendar integration. 
-                  For now, please contact us directly to schedule your strategy session.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button size="lg" className="bg-gradient-primary hover:shadow-glow">
-                    Contact Us to Book
-                  </Button>
-                  <Button variant="outline" size="lg" className="border-white/30 text-white hover:bg-white hover:text-gray-900">
-                    Learn More About Our Process
-                  </Button>
-                </div>
+          {/* Calendly Booking Section */}
+          <div id="book-session" className="mt-20">
+            <div className="text-center mb-8 animate-fade-in">
+              <h3 className="text-3xl font-bold text-white mb-4">
+                Book Your Strategy Session
+              </h3>
+              <p className="text-white/70 max-w-2xl mx-auto">
+                Choose a time that works best for you and let's start transforming your business.
+              </p>
+            </div>
+            <Card className="glass-card max-w-4xl mx-auto animate-fade-in overflow-hidden">
+              <CardContent className="p-0">
+                <CalendlyEmbed url={CALENDLY_URL} minHeight="700px" />
               </CardContent>
             </Card>
           </div>
