@@ -13,7 +13,7 @@ import {
 import CalendlyEmbed from '@/components/CalendlyEmbed';
 
 // TODO: Replace with your actual Calendly URL
-const CALENDLY_URL = 'https://calendly.com/your-username';
+const CALENDLY_URL = 'https://calendly.com/bhupeshpandey62/30min';
 
 const InsightFusion = () => {
   const services = [
