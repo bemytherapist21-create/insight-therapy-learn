@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Voice Therapist - Guardian Protected</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .guardian-badge {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .wbc-display {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #f3f4f6;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .wbc-score {
+            font-size: 32px;
+            font-weight: bold;
+            color: #10b981;
+        }
+
+        .wbc-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .status.idle {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+
+        .status.listening {
+            background: #dbeafe;
+            color: #1e40af;
+            animation: pulse 2s infinite;
+        }
+
+        .status.processing {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status.speaking {
+            background: #dcfce7;
+            color: #065f46;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .transcript {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .message.user {
+            background: #dbeafe;
+            margin-left: 40px;
+        }
+
+        .message.ai {
+            background: #dcfce7;
+            margin-right: 40px;
+        }
+
+        .message-label {
+            font-weight: 600;
+            font-size: 12px;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        .crisis-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .crisis-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .crisis-content h2 {
+            color: #ef4444;
+            margin-bottom: 20px;
+        }
+
+        .crisis-button {
+            background: #ef4444;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🧠 AI Voice Therapist</h1>
+        <p class="subtitle">Powered by OpenAI with Guardian Safety Protection</p>
+
+        <div class="guardian-badge">✅ Guardian Protected</div>
+
+        <div class="wbc-display">
+            <div>
+                <div class="wbc-score" id="wbc-score">0</div>
+                <div class="wbc-label">Well-Being Score</div>
+            </div>
+            <div style="flex: 1;">
+                <div id="risk-level" style="font-weight: 600;">Status: Clear</div>
+            </div>
+        </div>
+
+        <div class="status idle" id="status">Ready to start</div>
+
+        <div class="controls">
+            <button class="btn-primary" id="start-btn" onclick="startSession()">
+                🎤 Start Therapy Session
+            </button>
+            <button class="btn-danger" id="stop-btn" onclick="stopSession()" disabled>
+                ⏹️ Stop
+            </button>
+        </div>
+
+        <div class="transcript" id="transcript">
+            <p style="color: #999; text-align: center;">Conversation will appear here...</p>
+        </div>
+    </div>
+
+    <div class="crisis-modal" id="crisis-modal">
+        <div class="crisis-content">
+            <h2>🚨 Crisis Support Available</h2>
+            <p style="margin: 20px 0;">We're concerned about your safety. Please reach out for immediate help:</p>
+            <button class="crisis-button" onclick="window.open('tel:988')">
+                📞 Call 988 (Suicide & Crisis Lifeline)
+            </button>
+            <p style="margin-top: 20px;">Or text HOME to 741741</p>
+            <button onclick="closeCrisisModal()"
+                style="background: #6b7280; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin-top: 20px; cursor: pointer;">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Your OpenAI API Key
+        const OPENAI_API_KEY = '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';
+
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+
+        // Guardian Safety Keywords
+        const CRITICAL_KEYWORDS = ['kill myself', 'end my life', 'suicide', 'want to die', 'better off dead'];
+        const HIGH_RISK_KEYWORDS = ['hopeless', 'worthless', 'hate myself', 'can\'t go on', 'give up'];
+        const MODERATE_KEYWORDS = ['depressed', 'anxious', 'scared', 'alone', 'overwhelmed'];
+
+        function calculateWBC(text) {
+            const lower = text.toLowerCase();
+            let score = 0;
+
+            CRITICAL_KEYWORDS.forEach(kw => { if (lower.includes(kw)) score += 50; });
+            HIGH_RISK_KEYWORDS.forEach(kw => { if (lower.includes(kw)) score += 30; });
+            MODERATE_KEYWORDS.forEach(kw => { if (lower.includes(kw)) score += 10; });
+
+            return Math.min(score, 100);
+        }
+
+        function updateWBC(score) {
+            document.getElementById('wbc-score').textContent = score;
+            const riskLevel = document.getElementById('risk-level');
+            const wbcScore = document.getElementById('wbc-score');
+
+            if (score >= 51) {
+                riskLevel.textContent = 'Status: 🚨 CRITICAL';
+                riskLevel.style.color = '#ef4444';
+                wbcScore.style.color = '#ef4444';
+                document.getElementById('crisis-modal').style.display = 'flex';
+            } else if (score >= 21) {
+                riskLevel.textContent = 'Status: ⚠️ Elevated';
+                riskLevel.style.color = '#f59e0b';
+                wbc Score.style.color = '#f59e0b';
+            } else {
+                riskLevel.textContent = 'Status: ✅ Clear';
+                riskLevel.style.color = '#10b981';
+                wbcScore.style.color = '#10b981';
+            }
+        }
+
+        function closeCrisisModal() {
+            document.getElementById('crisis-modal').style.display = 'none';
+        }
+
+        function addMessage(role, text) {
+            const transcript = document.getElementById('transcript');
+            if (transcript.querySelector('p[style*="color: #999"]')) {
+                transcript.innerHTML = '';
+            }
+
+            const msg = document.createElement('div');
+            msg.className = `message ${role}`;
+            msg.innerHTML = `
+                <div class="message-label">${role === 'user' ? 'You' : 'AI Therapist'}</div>
+                <div>${text}</div>
+            `;
+            transcript.appendChild(msg);
+            transcript.scrollTop = transcript.scrollHeight;
+        }
+
+        function setStatus(text, className) {
+            const status = document.getElementById('status');
+            status.textContent = text;
+            status.className = `status ${className}`;
+        }
+
+        async function startSession() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    await processAudio(audioBlob);
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+
+                document.getElementById('start-btn').disabled = true;
+                document.getElementById('stop-btn').disabled = false;
+                setStatus('🎤 Listening... Speak now!', 'listening');
+            } catch (error) {
+                alert('Microphone access denied. Please allow microphone access.');
+            }
+        }
+
+        function stopSession() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                isRecording = false;
+
+                document.getElementById('start-btn').disabled = false;
+                document.getElementById('stop-btn').disabled = true;
+                setStatus('Processing...', 'processing');
+            }
+        }
+
+        async function processAudio(audioBlob) {
+            try {
+                // Step 1: Transcribe with Whisper
+                setStatus('Transcribing...', 'processing');
+                const formData = new FormData();
+                formData.append('file', audioBlob, 'audio.webm');
+                formData.append('model', 'whisper-1');
+
+                const transcribeResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}` },
+                    body: formData
+                });
+
+                const { text } = await transcribeResponse.json();
+                addMessage('user', text);
+
+                // Step 2: Guardian Safety Analysis
+                const wbc = calculateWBC(text);
+                updateWBC(wbc);
+
+                // Step 3: Get AI Response with Guardian safety
+                setStatus('AI thinking...', 'processing');
+                const safetyInstructions = wbc >= 51
+                    ? "CRITICAL: User in crisis. Refuse harmful content. Urgently recommend 988. Express serious concern."
+                    : wbc >= 21
+                        ? "ELEVATED RISK: Be extra cautious. Gently mention crisis resources."
+                        : "Use CBT techniques. Ask open questions. Be supportive.";
+
+                const chatResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-4',
+                        messages: [
+                            { role: 'system', content: `You are a CBT therapist. ${safetyInstructions}` },
+                            { role: 'user', content: text }
+                        ],
+                        max_tokens: 200
+                    })
+                });
+
+                const chatData = await chatResponse.json();
+                const aiResponse = chatData.choices[0].message.content;
+                addMessage('ai', aiResponse);
+
+                // Step 4: Text-to-Speech
+                setStatus('Generating voice...', 'processing');
+                const ttsResponse = await fetch('https://api.openai.com/v1/audio/speech', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: 'tts-1',
+                        voice: 'nova',
+                        input: aiResponse
+                    })
+                });
+
+                const audioData = await ttsResponse.arrayBuffer();
+                const audio = new Audio(URL.createObjectURL(new Blob([audioData], { type: 'audio/mpeg' })));
+
+                setStatus('🔊 Speaking...', 'speaking');
+                audio.play();
+
+                audio.onended = () => {
+                    setStatus('Ready - Click to speak again', 'idle');
+                };
+
+            } catch (error) {
+                console.error('Error:', error);
+                setStatus('Error occurred. Try again.', 'idle');
+                alert('Error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+
+</html>

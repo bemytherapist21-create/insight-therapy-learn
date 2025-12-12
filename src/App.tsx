@@ -15,6 +15,7 @@ const Home = lazy(() => import("./pages/Home"));
 const AITherapy = lazy(() => import("./pages/AITherapy"));
 const AITherapyChat = lazy(() => import("./pages/AITherapyChat"));
 const AITherapyVoice = lazy(() => import("./pages/AITherapyVoice"));
+const SimpleVoiceTherapy = lazy(() => import("./pages/SimpleVoiceTherapy"));
 const InsightFusion = lazy(() => import("./pages/InsightFusion"));
 const AILearning = lazy(() => import("./pages/AILearning"));
 const Register = lazy(() => import("./pages/Register"));
@@ -42,6 +43,7 @@ const App = () => (
                 <Route path="/ai-therapy" element={<AITherapy />} />
                 <Route path="/ai-therapy/chat" element={<AITherapyChat />} />
                 <Route path="/ai-therapy/voice" element={<AITherapyVoice />} />
+                <Route path="/ai-therapy/voice-simple" element={<SimpleVoiceTherapy />} />
                 <Route path="/insight-fusion" element={<InsightFusion />} />
                 <Route path="/ai-learning" element={<AILearning />} />
                 <Route path="/about" element={<Home />} />

@@ -131,12 +131,18 @@ export class RealtimeChat {
 
       this.dc.addEventListener("open", () => {
         console.log("Data channel opened, sending session update...");
-        // Enable input audio transcription after connection
+        // Enable transcription and configure session NOW that channel is open
         this.dc?.send(JSON.stringify({
           type: "session.update",
           session: {
             input_audio_transcription: {
               model: "whisper-1"
+            },
+            turn_detection: {
+              type: "server_vad",
+              threshold: 0.5,
+              prefix_padding_ms: 300,
+              silence_duration_ms: 500
             }
           }
         }));
