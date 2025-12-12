@@ -67,8 +67,8 @@ export default function GeminiVoiceTherapy() {
                 {/* Status Display */}
                 <div className="text-center mb-6">
                     <div className={`inline-block px-6 py-3 rounded-full ${isListening ? 'bg-blue-500 animate-pulse' :
-                            isSpeaking ? 'bg-green-500' :
-                                'bg-white/90'
+                        isSpeaking ? 'bg-green-500' :
+                            'bg-white/90'
                         }`}>
                         <span className={`font-semibold ${isListening || isSpeaking ? 'text-white' : 'text-gray-800'
                             }`}>
@@ -141,8 +141,8 @@ export default function GeminiVoiceTherapy() {
                                 <div
                                     key={idx}
                                     className={`p-4 rounded-lg ${msg.role === 'user'
-                                            ? 'bg-blue-50 ml-12'
-                                            : 'bg-green-50 mr-12'
+                                        ? 'bg-blue-50 ml-12'
+                                        : 'bg-green-50 mr-12'
                                         }`}
                                 >
                                     <div className="text-xs font-semibold text-gray-600 mb-1 flex items-center gap-2">
@@ -172,7 +172,10 @@ export default function GeminiVoiceTherapy() {
 
                 {/* Crisis Modal */}
                 {showCrisisModal && (
-                    <CrisisIntervention onClose={closeCrisisModal} />
+                    <CrisisIntervention
+                        isOpen={showCrisisModal}
+                        onClose={closeCrisisModal}
+                    />
                 )}
             </div>
         </div>
