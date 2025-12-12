@@ -164,6 +164,29 @@ class TherapyService {
             logger.warn('Failed to update session emotion', { error });
         }
     }
+
+    /**
+     * Update session safety metrics (Guardian Integration)
+     */
+    async updateSessionSafety(
+        sessionId: string,
+        wbcScore: number,
+        riskLevel: string
+    ): Promise<void> {
+        try {
+            const { error } = await supabase
+                .from('voice_sessions')
+                .update({
+                    wbc_score: wbcScore,
+                    risk_level: riskLevel
+                })
+                .eq('id', sessionId);
+
+            if (error) throw error;
+        } catch (error) {
+            logger.warn('Failed to update session safety', { error });
+        }
+    }
 }
 
 export const therapyService = new TherapyService();

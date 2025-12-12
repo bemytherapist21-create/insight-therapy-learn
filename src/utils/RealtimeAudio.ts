@@ -6,7 +6,7 @@ export class AudioRecorder {
   private processor: ScriptProcessorNode | null = null;
   private source: MediaStreamAudioSourceNode | null = null;
 
-  constructor(private onAudioData: (audioData: Float32Array) => void) {}
+  constructor(private onAudioData: (audioData: Float32Array) => void) { }
 
   async start() {
     try {
@@ -19,19 +19,19 @@ export class AudioRecorder {
           autoGainControl: true
         }
       });
-      
+
       this.audioContext = new AudioContext({
         sampleRate: 24000,
       });
-      
+
       this.source = this.audioContext.createMediaStreamSource(this.stream);
       this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
-      
+
       this.processor.onaudioprocess = (e) => {
         const inputData = e.inputBuffer.getChannelData(0);
         this.onAudioData(new Float32Array(inputData));
       };
-      
+
       this.source.connect(this.processor);
       this.processor.connect(this.audioContext.destination);
     } catch (error) {
@@ -66,16 +66,16 @@ export const encodeAudioForAPI = (float32Array: Float32Array): string => {
     const s = Math.max(-1, Math.min(1, float32Array[i]));
     int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
   }
-  
+
   const uint8Array = new Uint8Array(int16Array.buffer);
   let binary = '';
   const chunkSize = 0x8000;
-  
+
   for (let i = 0; i < uint8Array.length; i += chunkSize) {
     const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length));
     binary += String.fromCharCode.apply(null, Array.from(chunk));
   }
-  
+
   return btoa(binary);
 };
 
@@ -90,13 +90,16 @@ export class RealtimeChat {
     this.audioEl.autoplay = true;
   }
 
-  async init() {
+  async init(wbcScore: number = 0) {
     try {
-      console.log("Fetching ephemeral token...");
-      
+      console.log("Fetching ephemeral token with WBC:", wbcScore);
+
       // Get ephemeral token from our Supabase Edge Function
-      const { data: tokenData, error: tokenError } = await supabase.functions.invoke("voice-therapy-token");
-      
+      // Pass WBC score for adaptive Guardian safety instructions
+      const { data: tokenData, error: tokenError } = await supabase.functions.invoke("voice-therapy-token", {
+        body: { wbcScore }
+      });
+
       if (tokenError) {
         console.error("Token error:", tokenError);
         throw new Error("Failed to get ephemeral token");
@@ -108,7 +111,7 @@ export class RealtimeChat {
       }
 
       const EPHEMERAL_KEY = tokenData.client_secret.value;
-      console.log("Got ephemeral token, establishing WebRTC connection...");
+      console.log("Got ephemeral token with Guardian safety, establishing WebRTC connection...");
 
       // Create peer connection
       this.pc = new RTCPeerConnection();
@@ -125,7 +128,7 @@ export class RealtimeChat {
 
       // Set up data channel
       this.dc = this.pc.createDataChannel("oai-events");
-      
+
       this.dc.addEventListener("open", () => {
         console.log("Data channel opened, sending session update...");
         // Enable input audio transcription after connection
@@ -138,7 +141,7 @@ export class RealtimeChat {
           }
         }));
       });
-      
+
       this.dc.addEventListener("message", (e) => {
         const event = JSON.parse(e.data);
         console.log("Received event:", event.type);
@@ -152,7 +155,7 @@ export class RealtimeChat {
       // Connect to OpenAI's Realtime API
       const baseUrl = "https://api.openai.com/v1/realtime";
       const model = "gpt-4o-realtime-preview-2024-12-17";
-      
+
       console.log("Sending SDP offer to OpenAI...");
       const sdpResponse = await fetch(`${baseUrl}?model=${model}`, {
         method: "POST",
@@ -171,7 +174,7 @@ export class RealtimeChat {
         type: "answer" as RTCSdpType,
         sdp: await sdpResponse.text(),
       };
-      
+
       await this.pc.setRemoteDescription(answer);
       console.log("WebRTC connection established");
 
@@ -201,7 +204,7 @@ export class RealtimeChat {
     };
 
     this.dc.send(JSON.stringify(event));
-    this.dc.send(JSON.stringify({type: 'response.create'}));
+    this.dc.send(JSON.stringify({ type: 'response.create' }));
   }
 
   disconnect() {

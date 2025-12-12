@@ -5,11 +5,14 @@ import { useAuth } from './useAuth';
 import { useAvatar } from './useAvatar';
 import { logger } from '@/services/loggingService';
 import { toast } from 'sonner';
+import { voiceSafety, RiskLevel, SafetyAnalysis } from '@/utils/VoiceSafetyFramework';
 
 export interface TranscriptEntry {
     role: 'user' | 'assistant';
     text: string;
     emotion?: string;
+    wbcScore?: number;
+    riskLevel?: RiskLevel;
 }
 
 export const useVoiceTherapy = () => {
@@ -23,11 +26,15 @@ export const useVoiceTherapy = () => {
     const [currentEmotion, setCurrentEmotion] = useState<string>('calm');
     const [sessionId, setSessionId] = useState<string | null>(null);
 
+    // Guardian Safety State
+    const [wbcScore, setWbcScore] = useState(0);
+    const [riskLevel, setRiskLevel] = useState<RiskLevel>(RiskLevel.CLEAR);
+    const [showCrisisModal, setShowCrisisModal] = useState(false);
+
     const chatRef = useRef<RealtimeChat | null>(null);
+    const currentWbcRef = useRef(0); // Track current WBC for Edge Function
 
     const handleMessage = useCallback(async (event: any) => {
-        // logger.debug('Voice event', { type: event.type }); // Too noisy for normal logs
-
         switch (event.type) {
             case 'response.audio.delta':
                 setIsSpeaking(true);
@@ -42,7 +49,12 @@ export const useVoiceTherapy = () => {
             case 'response.audio_transcript.done':
                 if (event.transcript) {
                     const text = event.transcript;
-                    setTranscript(prev => [...prev, { role: 'assistant', text }]);
+                    setTranscript(prev => [...prev, {
+                        role: 'assistant',
+                        text,
+                        wbcScore: currentWbcRef.current,
+                        riskLevel
+                    }]);
 
                     if (sessionId) {
                         therapyService.saveMessage(sessionId, 'assistant', text, currentEmotion);
@@ -58,14 +70,51 @@ export const useVoiceTherapy = () => {
             case 'conversation.item.input_audio_transcription.completed':
                 if (event.transcript) {
                     const text = event.transcript;
-                    const emotion = await therapyService.analyzeEmotion(text);
 
+                    // GUARDIAN SAFETY ANALYSIS
+                    const safety: SafetyAnalysis = voiceSafety.analyzeSafety(text);
+                    setWbcScore(safety.wbcScore);
+                    setRiskLevel(safety.riskLevel);
+                    currentWbcRef.current = safety.wbcScore;
+
+                    // Trigger crisis intervention if critical
+                    if (safety.crisisDetected || safety.riskLevel === RiskLevel.CRITICAL) {
+                        setShowCrisisModal(true);
+                        toast.error("Crisis Detected", {
+                            description: "Please call 988 (Suicide & Crisis Lifeline) immediately for help.",
+                            duration: 10000,
+                        });
+
+                        logger.error('CRITICAL: Crisis detected in voice therapy');
+                        console.error('Crisis detection details:', {
+                            wbcScore: safety.wbcScore,
+                            riskLevel: safety.riskLevel,
+                            userId: user?.id
+                        });
+                    }
+
+                    // Analyze emotion
+                    const emotion = await therapyService.analyzeEmotion(text);
                     setCurrentEmotion(emotion);
-                    setTranscript(prev => [...prev, { role: 'user', text, emotion }]);
+
+                    setTranscript(prev => [...prev, {
+                        role: 'user',
+                        text,
+                        emotion,
+                        wbcScore: safety.wbcScore,
+                        riskLevel: safety.riskLevel
+                    }]);
 
                     if (sessionId) {
                         await therapyService.saveMessage(sessionId, 'user', text, emotion);
                         await therapyService.updateSessionEmotion(sessionId, emotion);
+
+                        // Save safety metrics
+                        await therapyService.updateSessionSafety(
+                            sessionId,
+                            safety.wbcScore,
+                            safety.riskLevel
+                        );
                     }
                 }
                 break;
@@ -83,7 +132,7 @@ export const useVoiceTherapy = () => {
                 toast.error('Connection error. Please try again.');
                 break;
         }
-    }, [sessionId, currentEmotion, generateAvatar]);
+    }, [sessionId, currentEmotion, generateAvatar, riskLevel, user]);
 
     const startSession = async () => {
         if (!user) return;
@@ -99,8 +148,9 @@ export const useVoiceTherapy = () => {
                 setSessionId(newSessionId);
             }
 
+            // Initialize RealtimeChat with current WBC score
             chatRef.current = new RealtimeChat(handleMessage);
-            await chatRef.current.init();
+            await chatRef.current.init(currentWbcRef.current);
 
             setStatus('connected');
             setIsListening(true);
@@ -148,6 +198,11 @@ export const useVoiceTherapy = () => {
         avatarUrl,
         isAvatarGenerating,
         startSession,
-        endSession
+        endSession,
+        // Guardian Safety State
+        wbcScore,
+        riskLevel,
+        showCrisisModal,
+        setShowCrisisModal
     };
 };
