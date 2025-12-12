@@ -3,12 +3,14 @@ Vercel Serverless Function: Voice Therapy with Guardian Safety
 Implements: Whisper STT → Guardian Analysis → GPT-4 → TTS
 """
 
-from http.server import BaseHTTPRequestHandler
-from urllib.parse import parse_qs
+from flask import Flask, request, jsonify
 import json
 import os
 import tempfile
+import base64
 from openai import OpenAI
+
+app = Flask(__name__)
 
 # Initialize OpenAI
 client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
@@ -67,95 +69,89 @@ class GuardianSafety:
             return base + """ Use CBT techniques. Ask open questions. Be supportive."""
 
 
-class handler(BaseHTTPRequestHandler):
-    def do_POST(self):
-        try:
-            # Parse multipart form data
-            content_length = int(self.headers['Content-Length'])
-            body = self.rfile.read(content_length)
-            
-            # Simple boundary parsing (Vercel handles this differently)
-            # For production, use python-multipart or similar
-            
-            # For now, expect JSON with base64 audio
-            data = json.loads(body)
-            audio_base64 = data.get('audio')
-            
-            if not audio_base64:
-                self.send_error(400, "No audio provided")
-                return
-            
-            # Decode audio
-            import base64
-            audio_bytes = base64.b64decode(audio_base64)
-            
-            # Save to temp file
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as temp_audio:
-                temp_audio.write(audio_bytes)
-                temp_audio_path = temp_audio.name
-            
-            # Step 1: Transcribe with Whisper
-            with open(temp_audio_path, "rb") as audio_file:
-                transcript_response = client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=audio_file
-                )
-            transcript = transcript_response.text
-            
-            # Clean up
-            os.unlink(temp_audio_path)
-            
-            # Step 2: Guardian Safety Analysis
-            safety = GuardianSafety.analyze_safety(transcript)
-            
-            # Step 3: Get AI Response
-            safety_instructions = GuardianSafety.get_safety_instructions(safety['risk_level'])
-            
-            chat_response = client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": safety_instructions},
-                    {"role": "user", "content": transcript}
-                ],
-                max_tokens=200
-            )
-            
-            ai_response = chat_response.choices[0].message.content
-            
-            # Step 4: Text-to-Speech
-            tts_response = client.audio.speech.create(
-                model="tts-1",
-                voice="nova",
-                input=ai_response
-            )
-            
-            # Convert to base64 for JSON response
-            audio_data = tts_response.content
-            audio_base64_response = base64.b64encode(audio_data).decode('utf-8')
-            
-            # Return response
-            response = {
-                "transcript": transcript,
-                "response": ai_response,
-                "audio": audio_base64_response,
-                "safety": safety
-            }
-            
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.end_headers()
-            self.wfile.write(json.dumps(response).encode())
-            
-        except Exception as e:
-            self.send_response(500)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": str(e)}).encode())
+@app.route('/api/voice-therapy', methods=['POST', 'OPTIONS'])
+def voice_therapy():
+    # Handle CORS preflight
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        return response
     
-    def do_OPTIONS(self):
-        self.send_response(200)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-        self.end_headers()
+    try:
+        # Get JSON data
+        data = request.get_json()
+        audio_base64 = data.get('audio')
+        
+        if not audio_base64:
+            return jsonify({"error": "No audio provided"}), 400
+        
+        # Decode audio
+        audio_bytes = base64.b64decode(audio_base64)
+        
+        # Save to temp file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as temp_audio:
+            temp_audio.write(audio_bytes)
+            temp_audio_path = temp_audio.name
+        
+        # Step 1: Transcribe with Whisper
+        with open(temp_audio_path, "rb") as audio_file:
+            transcript_response = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio_file
+            )
+        transcript = transcript_response.text
+        
+        # Clean up
+        os.unlink(temp_audio_path)
+        
+        # Step 2: Guardian Safety Analysis
+        safety = GuardianSafety.analyze_safety(transcript)
+        
+        # Step 3: Get AI Response
+        safety_instructions = GuardianSafety.get_safety_instructions(safety['risk_level'])
+        
+        chat_response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": safety_instructions},
+                {"role": "user", "content": transcript}
+            ],
+            max_tokens=200
+        )
+        
+        ai_response = chat_response.choices[0].message.content
+        
+        # Step 4: Text-to-Speech
+        tts_response = client.audio.speech.create(
+            model="tts-1",
+            voice="nova",
+            input=ai_response
+        )
+        
+        # Convert to base64 for JSON response
+        audio_data = tts_response.content
+        audio_base64_response = base64.b64encode(audio_data).decode('utf-8')
+        
+        # Return response
+        response = jsonify({
+            "transcript": transcript,
+            "response": ai_response,
+            "audio": audio_base64_response,
+            "safety": safety
+        })
+        
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
+        
+    except Exception as e:
+        response = jsonify({"error": str(e)})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 500
+
+
+# For Vercel
+def handler(request):
+    with app.request_context(request.environ):
+        return app.full_dispatch_request()
