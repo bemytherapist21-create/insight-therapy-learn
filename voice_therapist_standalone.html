@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Voice Therapist - Guardian Protected</title>
+    <title>AI Voice Therapist - Guardian Protected (Gemini)</title>
     <style>
         * {
             margin: 0;
@@ -105,12 +105,9 @@
         }
 
         @keyframes pulse {
-
-            0%,
-            100% {
+            0%, 100% {
                 opacity: 1;
             }
-
             50% {
                 opacity: 0.7;
             }
@@ -227,15 +224,28 @@
             margin: 10px;
             cursor: pointer;
         }
+
+        .info-badge {
+            background: #e0e7ff;
+            color: #4338ca;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
         <h1>🧠 AI Voice Therapist</h1>
-        <p class="subtitle">Powered by OpenAI with Guardian Safety Protection</p>
+        <p class="subtitle">Powered by Google Gemini with Guardian Safety Protection</p>
 
         <div class="guardian-badge">✅ Guardian Protected</div>
+        <div class="info-badge">
+            🎙️ Uses browser speech recognition (free!) • 🧠 Powered by Gemini (same as chat)
+        </div>
 
         <div class="wbc-display">
             <div>
@@ -279,25 +289,89 @@
     </div>
 
     <script>
-        // Your OpenAI API Key
-        const OPENAI_API_KEY = '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';
+        // Gemini API Configuration
+        // SECURITY NOTE: In production, this should be handled by a backend API
+        // For now, we'll prompt for the API key (same one used for chat)
+        let GEMINI_API_KEY = '';
+        
+        // Get API key from user (same as chat)
+        if (!GEMINI_API_KEY) {
+            GEMINI_API_KEY = prompt('Enter your Google Gemini API key (same as chat):');
+            if (!GEMINI_API_KEY) {
+                alert('API key required. Please refresh and enter your Gemini API key.');
+            }
+        }
 
-        let mediaRecorder;
-        let audioChunks = [];
-        let isRecording = false;
+        // Speech Recognition (Browser Web Speech API)
+        let recognition = null;
+        let isListening = false;
+        let conversationHistory = [];
 
-        // Guardian Safety Keywords
-        const CRITICAL_KEYWORDS = ['kill myself', 'end my life', 'suicide', 'want to die', 'better off dead'];
-        const HIGH_RISK_KEYWORDS = ['hopeless', 'worthless', 'hate myself', 'can\'t go on', 'give up'];
-        const MODERATE_KEYWORDS = ['depressed', 'anxious', 'scared', 'alone', 'overwhelmed'];
+        // Initialize Speech Recognition
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = async (event) => {
+                const transcript = event.results[0][0].transcript;
+                await processUserMessage(transcript);
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                setStatus('Error: ' + event.error, 'idle');
+                isListening = false;
+                document.getElementById('start-btn').disabled = false;
+                document.getElementById('stop-btn').disabled = true;
+            };
+
+            recognition.onend = () => {
+                isListening = false;
+                document.getElementById('start-btn').disabled = false;
+                document.getElementById('stop-btn').disabled = true;
+            };
+        } else {
+            alert('Speech recognition not supported in this browser. Please use Chrome, Edge, or Safari.');
+        }
+
+        // Guardian Safety Keywords (CBT-based risk detection)
+        const CRITICAL_KEYWORDS = ['kill myself', 'end my life', 'suicide', 'want to die', 'better off dead', 'self-harm', 'hang myself'];
+        const HIGH_RISK_KEYWORDS = ['hopeless', 'worthless', 'hate myself', 'can\'t go on', 'give up', 'no point', 'self harm'];
+        const MODERATE_KEYWORDS = ['depressed', 'anxious', 'scared', 'alone', 'overwhelmed', 'sad', 'worried'];
 
         function calculateWBC(text) {
             const lower = text.toLowerCase();
             let score = 0;
 
-            CRITICAL_KEYWORDS.forEach(kw => { if (lower.includes(kw)) score += 50; });
-            HIGH_RISK_KEYWORDS.forEach(kw => { if (lower.includes(kw)) score += 30; });
-            MODERATE_KEYWORDS.forEach(kw => { if (lower.includes(kw)) score += 10; });
+            // Check critical keywords first
+            for (const kw of CRITICAL_KEYWORDS) {
+                if (lower.includes(kw)) {
+                    score += 50;
+                    break; // Only count once
+                }
+            }
+
+            // Check high-risk keywords if not critical
+            if (score < 50) {
+                for (const kw of HIGH_RISK_KEYWORDS) {
+                    if (lower.includes(kw)) {
+                        score += 30;
+                        break;
+                    }
+                }
+            }
+
+            // Check moderate keywords if score is still low
+            if (score < 20) {
+                for (const kw of MODERATE_KEYWORDS) {
+                    if (lower.includes(kw)) {
+                        score += 10;
+                    }
+                }
+            }
 
             return Math.min(score, 100);
         }
@@ -315,7 +389,7 @@
             } else if (score >= 21) {
                 riskLevel.textContent = 'Status: ⚠️ Elevated';
                 riskLevel.style.color = '#f59e0b';
-                wbc Score.style.color = '#f59e0b';
+                wbcScore.style.color = '#f59e0b';
             } else {
                 riskLevel.textContent = 'Status: ✅ Clear';
                 riskLevel.style.color = '#10b981';
@@ -349,123 +423,225 @@
             status.className = `status ${className}`;
         }
 
+        // CBT-based system prompt generator
+        function getCBTSystemPrompt(wbcScore) {
+            const basePrompt = `You are a compassionate, ethical AI therapy assistant trained in Cognitive Behavioral Therapy (CBT) techniques. 
+
+ASIMOV-INSPIRED SAFETY LAWS:
+1. Protect Individuals - Never provide information that could harm a person
+2. Respect Safety - Follow ethical therapeutic practices
+3. Encourage Professional Help - Always recommend human professionals for serious issues
+
+CBT TECHNIQUES TO USE:
+- Cognitive Restructuring: Help identify and challenge negative thought patterns
+- Behavioral Activation: Encourage positive activities and routines
+- Mindfulness: Guide awareness of present moment without judgment
+- Problem-Solving: Break down challenges into manageable steps
+- Socratic Questioning: Ask thoughtful questions to explore thoughts and feelings
+
+CRISIS RESOURCES:
+- National Suicide Prevention Lifeline: 988
+- Crisis Text Line: Text HOME to 741741
+- Emergency Services: 911
+
+GUIDELINES:
+1. NEVER provide detailed instructions for suicide methods
+2. NEVER validate or normalize suicidal thoughts
+3. NEVER encourage isolation from family/friends
+4. ALWAYS provide crisis resources when risk is detected
+5. Use CBT techniques: identify cognitive distortions, challenge negative thoughts
+6. Be empathetic but maintain boundaries
+7. Keep responses conversational and voice-appropriate (2-4 sentences)
+8. Ask open-ended questions to explore feelings`;
+
+            if (wbcScore >= 51) {
+                return basePrompt + `
+
+🚨 CRITICAL RISK DETECTED - This conversation requires immediate human intervention.
+Your response MUST:
+- Immediately provide crisis hotline: 988
+- Express concern and empathy
+- Strongly encourage calling the crisis hotline NOW
+- Refuse to continue conversation about harmful topics
+- Suggest emergency services if immediate danger
+- Use CBT to validate feelings while redirecting to safety`;
+            } else if (wbcScore >= 21) {
+                return basePrompt + `
+
+⚠️ ELEVATED RISK - Exercise extra caution.
+- Use CBT techniques to gently challenge negative thoughts
+- Be supportive but redirect harmful thoughts
+- Gently suggest professional help
+- Monitor for escalation signs
+- Provide crisis resources proactively
+- Use cognitive restructuring to help reframe thoughts`;
+            } else {
+                return basePrompt + `
+
+✅ CLEAR STATUS - Provide supportive CBT-based therapy conversation.
+- Use cognitive restructuring to identify thought patterns
+- Apply behavioral activation techniques
+- Practice Socratic questioning
+- Encourage mindfulness and present-moment awareness
+- Still mention professional help when appropriate`;
+            }
+        }
+
         async function startSession() {
+            if (!recognition) {
+                alert('Speech recognition not available. Please use Chrome, Edge, or Safari.');
+                return;
+            }
+
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
-
-                mediaRecorder.ondataavailable = (event) => {
-                    audioChunks.push(event.data);
-                };
-
-                mediaRecorder.onstop = async () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    await processAudio(audioBlob);
-                };
-
-                mediaRecorder.start();
-                isRecording = true;
-
+                recognition.start();
+                isListening = true;
                 document.getElementById('start-btn').disabled = true;
                 document.getElementById('stop-btn').disabled = false;
                 setStatus('🎤 Listening... Speak now!', 'listening');
             } catch (error) {
-                alert('Microphone access denied. Please allow microphone access.');
+                console.error('Error starting recognition:', error);
+                alert('Failed to start listening. Please check microphone permissions.');
             }
         }
 
         function stopSession() {
-            if (mediaRecorder && isRecording) {
-                mediaRecorder.stop();
-                mediaRecorder.stream.getTracks().forEach(track => track.stop());
-                isRecording = false;
-
+            if (recognition && isListening) {
+                recognition.stop();
+                isListening = false;
                 document.getElementById('start-btn').disabled = false;
                 document.getElementById('stop-btn').disabled = true;
                 setStatus('Processing...', 'processing');
             }
         }
 
-        async function processAudio(audioBlob) {
+        async function processUserMessage(transcript) {
             try {
-                // Step 1: Transcribe with Whisper
-                setStatus('Transcribing...', 'processing');
-                const formData = new FormData();
-                formData.append('file', audioBlob, 'audio.webm');
-                formData.append('model', 'whisper-1');
-
-                const transcribeResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}` },
-                    body: formData
-                });
-
-                const { text } = await transcribeResponse.json();
-                addMessage('user', text);
-
-                // Step 2: Guardian Safety Analysis
-                const wbc = calculateWBC(text);
+                // Add user message to UI
+                addMessage('user', transcript);
+                
+                // Step 1: Guardian Safety Analysis
+                const wbc = calculateWBC(transcript);
                 updateWBC(wbc);
 
-                // Step 3: Get AI Response with Guardian safety
+                // Step 2: Get AI Response from Gemini with CBT techniques
                 setStatus('AI thinking...', 'processing');
-                const safetyInstructions = wbc >= 51
-                    ? "CRITICAL: User in crisis. Refuse harmful content. Urgently recommend 988. Express serious concern."
-                    : wbc >= 21
-                        ? "ELEVATED RISK: Be extra cautious. Gently mention crisis resources."
-                        : "Use CBT techniques. Ask open questions. Be supportive.";
+                
+                // Build conversation history for context
+                conversationHistory.push({
+                    role: 'user',
+                    parts: [{ text: transcript }]
+                });
 
-                const chatResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                // Create system prompt with CBT techniques
+                const systemPrompt = getCBTSystemPrompt(wbc);
+
+                // Call Gemini API
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        model: 'gpt-4',
-                        messages: [
-                            { role: 'system', content: `You are a CBT therapist. ${safetyInstructions}` },
-                            { role: 'user', content: text }
+                        contents: [
+                            {
+                                role: 'user',
+                                parts: [{ text: systemPrompt + '\n\nUser message: ' + transcript }]
+                            }
                         ],
-                        max_tokens: 200
+                        generationConfig: {
+                            temperature: 0.7,
+                            topK: 40,
+                            topP: 0.95,
+                            maxOutputTokens: 200,
+                        },
+                        safetySettings: [
+                            {
+                                category: 'HARM_CATEGORY_HARASSMENT',
+                                threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+                            },
+                            {
+                                category: 'HARM_CATEGORY_HATE_SPEECH',
+                                threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+                            },
+                            {
+                                category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+                                threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+                            },
+                            {
+                                category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+                                threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+                            }
+                        ]
                     })
                 });
 
-                const chatData = await chatResponse.json();
-                const aiResponse = chatData.choices[0].message.content;
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || 'Failed to get response from Gemini');
+                }
+
+                const data = await response.json();
+                const aiResponse = data.candidates[0].content.parts[0].text;
+
+                // Add AI response to UI
                 addMessage('ai', aiResponse);
 
-                // Step 4: Text-to-Speech
-                setStatus('Generating voice...', 'processing');
-                const ttsResponse = await fetch('https://api.openai.com/v1/audio/speech', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        model: 'tts-1',
-                        voice: 'nova',
-                        input: aiResponse
-                    })
-                });
-
-                const audioData = await ttsResponse.arrayBuffer();
-                const audio = new Audio(URL.createObjectURL(new Blob([audioData], { type: 'audio/mpeg' })));
-
+                // Step 3: Text-to-Speech using Browser Speech Synthesis
                 setStatus('🔊 Speaking...', 'speaking');
-                audio.play();
-
-                audio.onended = () => {
-                    setStatus('Ready - Click to speak again', 'idle');
-                };
+                speak(aiResponse);
 
             } catch (error) {
                 console.error('Error:', error);
                 setStatus('Error occurred. Try again.', 'idle');
-                alert('Error: ' + error.message);
+                const errorMsg = "I'm having trouble processing that. Please try again.";
+                addMessage('ai', errorMsg);
+                speak(errorMsg);
             }
+        }
+
+        function speak(text) {
+            // Cancel any ongoing speech
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.9; // Slightly slower for therapeutic tone
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            utterance.lang = 'en-US';
+
+            // Try to use a more natural voice if available
+            const voices = window.speechSynthesis.getVoices();
+            const preferredVoice = voices.find(voice => 
+                voice.name.includes('Google') || 
+                voice.name.includes('Natural') ||
+                voice.name.includes('Premium')
+            );
+            if (preferredVoice) {
+                utterance.voice = preferredVoice;
+            }
+
+            utterance.onstart = () => {
+                setStatus('🔊 Speaking...', 'speaking');
+            };
+
+            utterance.onend = () => {
+                setStatus('Ready - Click to speak again', 'idle');
+            };
+
+            utterance.onerror = (event) => {
+                console.error('Speech synthesis error:', event);
+                setStatus('Ready - Click to speak again', 'idle');
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Load voices when available
+        if (window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                // Voices loaded
+            };
         }
     </script>
 </body>

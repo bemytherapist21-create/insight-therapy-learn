@@ -1,6 +1,10 @@
 """
 Quick API Test Script
 Tests OpenAI and Google Gemini API keys
+
+IMPORTANT: Set your API keys as environment variables:
+- OPENAI_API_KEY: Your OpenAI API key
+- GOOGLE_API_KEY: Your Google Gemini API key (optional)
 """
 
 import os
@@ -10,7 +14,13 @@ from openai import OpenAI
 def test_openai():
     print("Testing OpenAI API...")
     try:
-        client = OpenAI(api_key="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")
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            print("❌ OPENAI_API_KEY environment variable not set!")
+            print("   Please set it: export OPENAI_API_KEY='your-key-here'")
+            return False
+        
+        client = OpenAI(api_key=api_key)
         
         # Test simple completion
         response = client.chat.completions.create(
@@ -40,10 +50,14 @@ def test_gemini():
     print("\n" + "="*50)
     print("Testing Google Gemini API...")
     try:
-        # Check if Gemini is configured
-        print("⚠️ Gemini API not found in environment variables")
-        print("If you want to use Gemini, add GOOGLE_API_KEY to your .env")
-        return None
+        api_key = os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            print("⚠️ GOOGLE_API_KEY environment variable not set")
+            print("   If you want to use Gemini, set: export GOOGLE_API_KEY='your-key-here'")
+            return None
+        # Add Gemini API test implementation here if needed
+        print("✅ Gemini API key found (test implementation needed)")
+        return True
     except Exception as e:
         print(f"❌ Gemini API: FAILED")
         print(f"Error: {e}")

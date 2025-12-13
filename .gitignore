@@ -18,6 +18,14 @@ dist-ssr
 .env.development.local
 .env.test.local
 .env.production.local
+.env*.local
+
+# Security: Prevent accidental commits of secrets
+*.key
+*.pem
+*.p12
+secrets.json
+credentials.json
 
 # Test coverage
 coverage

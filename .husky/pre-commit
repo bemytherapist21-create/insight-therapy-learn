@@ -1,1 +1,23 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run lint-staged
 npx lint-staged
+
+# Check for potential secrets in staged files
+echo "🔍 Checking for potential secrets..."
+git diff --cached --name-only | while read file; do
+  if [ -f "$file" ]; then
+    # Check for common secret patterns
+    if grep -E "(api[_-]?key|apikey|secret|password|token|credential)\s*[=:]\s*['\"]?[a-zA-Z0-9]{20,}" "$file" 2>/dev/null; then
+      echo "❌ SECURITY WARNING: Potential secret detected in $file"
+      echo "   Please remove any hardcoded API keys, secrets, or credentials."
+      echo "   Use environment variables instead."
+      exit 1
+    fi
+  fi
+done
+
+if [ $? -eq 0 ]; then
+  echo "✅ No secrets detected"
+fi
