@@ -1,20 +1,25 @@
 {
     "builds": [
         {
-            "src": "api/**/*.py",
-            "use": "@vercel/python"
-        }
-    ],
-    "rewrites": [
-        {
-            "source": "/((?!api).*)",
-            "destination": "/index.html"
+            "src": "package.json",
+            "use": "@vercel/static-build",
+            "config": {
+                "distDir": "dist"
+            }
         }
     ],
     "routes": [
         {
             "src": "/api/(.*)",
             "dest": "/api/$1"
+        },
+        {
+            "src": "/(.*\\.(js|css|json|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webp|mp4|webm))",
+            "dest": "/$1"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/index.html"
         }
     ],
     "headers": [
@@ -39,8 +44,5 @@
                 }
             ]
         }
-    ],
-    "env": {
-        "OPENAI_API_KEY": "@openai-api-key"
-    }
+    ]
 }
