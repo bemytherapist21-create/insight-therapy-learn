@@ -213,7 +213,7 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
             {/* Heartbeat Icon with Ripples */}
             <div className="flex justify-center mb-6 py-8">
               <div className="relative flex items-center justify-center">
-                {/* Ripple rings */}
+                {/* Ripple rings - only when listening */}
                 {isListening && (
                   <>
                     <div className="absolute w-48 h-48 rounded-full border-2 border-cyan-500/30 animate-ping" style={{ animationDuration: '2s' }}></div>
@@ -221,15 +221,20 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
                   </>
                 )}
 
-                {/* Main blue circle */}
+                {/* Main circle */}
                 <div className={`w-32 h-32 rounded-full flex items-center justify-center shadow-2xl relative z-10 transition-all duration-500 ${isListening
-                  ? 'bg-gradient-to-br from-blue-400 to-cyan-500'
-                  : 'bg-gradient-to-br from-blue-500 to-cyan-600'
+                    ? 'bg-gradient-to-br from-blue-400 to-cyan-500'
+                    : 'bg-white/5 border-2 border-white/20'
                   }`}>
-                  {/* Heartbeat/Waveform icon */}
-                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={isListening ? 'animate-pulse' : ''}>
-                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                  </svg>
+                  {isListening ? (
+                    /* Heartbeat icon when session active */
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="animate-pulse">
+                      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                  ) : (
+                    /* Muted mic icon when idle */
+                    <MicOff className="w-12 h-12 text-white/40" />
+                  )}
                 </div>
               </div>
             </div>
