@@ -25,6 +25,7 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
   const navigate = useNavigate();
 
   const [isListening, setIsListening] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const recognitionRef = useRef<any>(null);
@@ -166,6 +167,15 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
     }
   };
 
+  const toggleMute = () => {
+    setIsMuted(!isMuted);
+    if (!isMuted) {
+      toast.info('Microphone muted');
+    } else {
+      toast.info('Microphone unmuted');
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="max-w-4xl mx-auto flex items-center justify-center h-96">
@@ -244,14 +254,12 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
               ) : (
                 <div className="space-y-3 w-full max-w-xs mx-auto">
                   <Button
-                    onClick={() => {
-                      toast.info('Microphone unmuted');
-                    }}
+                    onClick={toggleMute}
                     variant="outline"
-                    className="w-full bg-black/40 border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300 hover:border-red-400"
+                    className={`w-full ${isMuted ? 'bg-black/40 border-red-500/50 text-red-400' : 'bg-black/40 border-gray-500/50 text-gray-300'} hover:bg-red-500/10 hover:text-red-300 hover:border-red-400`}
                   >
                     <MicOff className="w-4 h-4 mr-2" />
-                    Unmute Microphone
+                    {isMuted ? 'Unmute' : 'Mute'} Microphone
                   </Button>
 
                   <Button
