@@ -3,7 +3,12 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { EMOTION_COLORS, API_ENDPOINTS } from '@/config/constants';
-import { TranscriptEntry } from '@/hooks/useVoiceTherapy';
+
+interface TranscriptEntry {
+    role: 'user' | 'assistant';
+    text: string;
+    emotion?: string;
+}
 
 interface AvatarDisplayProps {
     avatarUrl: string | null;
