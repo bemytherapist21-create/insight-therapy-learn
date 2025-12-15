@@ -198,30 +198,35 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
               </div>
             </div>
 
-            {/* Mic Icon */}
+            {/* Heartbeat Icon with Ripples */}
             <div className="flex justify-center mb-6 py-8">
-              <div className="relative">
-                <div
-                  className={`w-28 h-28 rounded-full flex items-center justify-center shadow-lg backdrop-blur-sm z-10 relative transition-all duration-500 ${isListening
-                    ? 'bg-blue-500/30 border-blue-400 animate-pulse'
-                    : 'bg-white/10 border-white/10'
-                    } border`}
-                  style={{ transform: 'none' }}
-                >
-                  {isListening ? (
-                    <Mic className="w-10 h-10 text-blue-400 animate-pulse" />
-                  ) : (
-                    <MicOff className="w-10 h-10 text-white/50" />
-                  )}
+              <div className="relative flex items-center justify-center">
+                {/* Ripple rings */}
+                {isListening && (
+                  <>
+                    <div className="absolute w-48 h-48 rounded-full border-2 border-cyan-500/30 animate-ping" style={{ animationDuration: '2s' }}></div>
+                    <div className="absolute w-40 h-40 rounded-full border-2 border-cyan-500/40 animate-ping" style={{ animationDuration: '1.5s' }}></div>
+                  </>
+                )}
+
+                {/* Main blue circle */}
+                <div className={`w-32 h-32 rounded-full flex items-center justify-center shadow-2xl relative z-10 transition-all duration-500 ${isListening
+                  ? 'bg-gradient-to-br from-blue-400 to-cyan-500'
+                  : 'bg-gradient-to-br from-blue-500 to-cyan-600'
+                  }`}>
+                  {/* Heartbeat/Waveform icon */}
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={isListening ? 'animate-pulse' : ''}>
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                  </svg>
                 </div>
               </div>
             </div>
 
             {/* Status and Button */}
             <div className="w-full text-center">
-              <div className="h-8 mb-6">
-                <p className="text-lg font-medium" style={{ opacity: 1, transform: 'none' }}>
-                  <span className="text-white/50">{getStatusText()}</span>
+              <div className="h-8 mb-8">
+                <p className="text-lg font-medium text-white/50">
+                  {getStatusText()}
                 </p>
               </div>
 
@@ -235,13 +240,27 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
                   Start Session
                 </Button>
               ) : (
-                <Button
-                  onClick={stopListening}
-                  className="bg-red-500 hover:bg-red-600 hover:shadow-glow px-8 min-w-[200px]"
-                >
-                  <Square className="w-5 h-5 mr-2" />
-                  Stop Session
-                </Button>
+                <div className="space-y-3 w-full max-w-xs mx-auto">
+                  <Button
+                    onClick={() => {
+                      toast.info('Microphone unmuted');
+                    }}
+                    variant="outline"
+                    className="w-full bg-black/40 border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300 hover:border-red-400"
+                  >
+                    <MicOff className="w-4 h-4 mr-2" />
+                    Unmute Microphone
+                  </Button>
+
+                  <Button
+                    onClick={stopListening}
+                    variant="outline"
+                    className="w-full bg-black/40 border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300 hover:border-red-400"
+                  >
+                    <Phone className="w-4 h-4 mr-2" />
+                    End Session
+                  </Button>
+                </div>
               )}
             </div>
           </div>
