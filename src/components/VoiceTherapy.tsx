@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Phone, MicOff, Video } from 'lucide-react';
+import { Loader2, Phone, MicOff, Video, Mic, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -156,6 +156,14 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
     }
   };
 
+  const stopListening = () => {
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+      toast.info('Stopped listening');
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="max-w-4xl mx-auto flex items-center justify-center h-96">
@@ -194,10 +202,17 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
             <div className="flex justify-center mb-6 py-8">
               <div className="relative">
                 <div
-                  className="w-28 h-28 rounded-full flex items-center justify-center shadow-lg backdrop-blur-sm z-10 relative transition-colors duration-500 bg-white/10 border border-white/10"
+                  className={`w-28 h-28 rounded-full flex items-center justify-center shadow-lg backdrop-blur-sm z-10 relative transition-all duration-500 ${isListening
+                    ? 'bg-blue-500/30 border-blue-400 animate-pulse'
+                    : 'bg-white/10 border-white/10'
+                    } border`}
                   style={{ transform: 'none' }}
                 >
-                  <MicOff className="w-10 h-10 text-white/50" />
+                  {isListening ? (
+                    <Mic className="w-10 h-10 text-blue-400 animate-pulse" />
+                  ) : (
+                    <MicOff className="w-10 h-10 text-white/50" />
+                  )}
                 </div>
               </div>
             </div>
@@ -210,14 +225,24 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
                 </p>
               </div>
 
-              <Button
-                onClick={startListening}
-                disabled={isListening || isSpeaking}
-                className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:shadow-glow px-8 min-w-[200px]"
-              >
-                <Phone className="w-5 h-5 mr-2" />
-                Start Session
-              </Button>
+              {!isListening ? (
+                <Button
+                  onClick={startListening}
+                  disabled={isSpeaking}
+                  className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:shadow-glow px-8 min-w-[200px]"
+                >
+                  <Phone className="w-5 h-5 mr-2" />
+                  Start Session
+                </Button>
+              ) : (
+                <Button
+                  onClick={stopListening}
+                  className="bg-red-500 hover:bg-red-600 hover:shadow-glow px-8 min-w-[200px]"
+                >
+                  <Square className="w-5 h-5 mr-2" />
+                  Stop Session
+                </Button>
+              )}
             </div>
           </div>
         </Card>
