@@ -3,7 +3,6 @@
  * Replaces OpenAI Realtime API with cd-irvan pipeline approach
  */
 
-import { supabase } from '@/lib/supabase';
 import { logger } from './loggingService';
 
 const PYTHON_API_URL = import.meta.env.VITE_PYTHON_API_URL || 'http://localhost:8000';

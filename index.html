@@ -3,12 +3,12 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- Security Headers (via meta tags for static hosting) -->
+  <!-- Note: X-Frame-Options should be set via HTTP headers, not meta tags -->
   <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-  <meta http-equiv="X-Frame-Options" content="DENY" />
   <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
 
@@ -19,7 +19,7 @@
       default-src 'self';
       script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://static.cloudflareinsights.com;
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-      font-src 'self' https://fonts.gstatic.com data:;
+      font-src 'self' https://fonts.gstatic.com https://r2cdn.perplexity.ai data:;
       img-src 'self' data: https: blob:;
       connect-src 'self' https://*.supabase.co https://ipapi.co https://api.d-id.com https://script.google.com wss://*.supabase.co;
       media-src 'self' data: https: blob:;

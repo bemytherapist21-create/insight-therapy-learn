@@ -5,7 +5,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/services/loggingService';
 
 interface VoiceSafetyData {
@@ -110,13 +110,14 @@ export function useGeminiVoiceTherapy() {
                 setConversationId(data.conversationId);
             }
 
-            // Update Guardian safety
+            // Update Guardian safety (check both data.safety and direct properties)
+            const safetyData = data.safety || data;
             const safety: VoiceSafetyData = {
-                wbcScore: data.wbcScore || 0,
-                riskLevel: data.riskLevel || 'clear',
-                colorCode: data.colorCode || '#10b981',
-                requiresIntervention: data.requiresIntervention || false,
-                crisisDetected: data.crisisDetected || false
+                wbcScore: safetyData.wbcScore || data.wbcScore || 0,
+                riskLevel: (safetyData.riskLevel || data.riskLevel || 'clear') as 'clear' | 'clouded' | 'critical',
+                colorCode: safetyData.colorCode || data.colorCode || '#10b981',
+                requiresIntervention: safetyData.requiresIntervention || data.requiresIntervention || false,
+                crisisDetected: safetyData.crisisDetected || data.crisisDetected || false
             };
 
             setWbcScore(safety.wbcScore);
@@ -127,8 +128,8 @@ export function useGeminiVoiceTherapy() {
                 logger.warn('Crisis detected in voice therapy', { wbc: safety.wbcScore });
             }
 
-            // Add AI response
-            const aiResponse = data.response;
+            // Add AI response (Edge Function returns 'message' in chat, may also have 'response')
+            const aiResponse = data.message || data.response || "I'm here to help. Could you tell me more?";
             setMessages(prev => [...prev, { role: 'assistant', text: aiResponse }]);
 
             // Speak the response using browser TTS
@@ -141,7 +142,25 @@ export function useGeminiVoiceTherapy() {
 
         } catch (error) {
             logger.error('Voice therapy processing failed', error as Error);
-            const errorMsg = "I'm having trouble processing that. Please try again.";
+            
+            // Provide more helpful error messages
+            let errorMsg = "I'm having trouble processing that. Please try again.";
+            if (error instanceof Error) {
+                if (error.message.includes('Not authenticated') || error.message.includes('401') || error.message.includes('403')) {
+                    errorMsg = "Please log in to use voice therapy. Redirecting to login...";
+                    // Redirect to login after a short delay
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
+                } else if (error.message.includes('network') || error.message.includes('Failed to fetch')) {
+                    errorMsg = "Network error. Please check your internet connection.";
+                } else if (error.message.includes('Edge Function') || error.message.includes('functions')) {
+                    errorMsg = "Therapy service unavailable. Please try again in a moment.";
+                } else {
+                    errorMsg = `Error: ${error.message}`;
+                }
+            }
+            
             setMessages(prev => [...prev, { role: 'assistant', text: errorMsg }]);
             speak(errorMsg);
         }

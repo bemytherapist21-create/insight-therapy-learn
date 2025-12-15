@@ -252,40 +252,103 @@ serve(async (req) => {
       .order('created_at', { ascending: true })
       .limit(10);
 
-    // Prepare messages for AI
-    const messages = [
-      { role: 'system', content: getSystemPrompt(safety.riskLevel) },
-      ...(history || []).map(m => ({ role: m.role, content: m.content }))
-    ];
-
-    // Call Lovable AI
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
+    // Call Google Gemini API directly
+    const GOOGLE_GEMINI_API_KEY = Deno.env.get('GOOGLE_GEMINI_API_KEY');
+    if (!GOOGLE_GEMINI_API_KEY) {
+      throw new Error('GOOGLE_GEMINI_API_KEY not configured');
     }
 
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages,
-        temperature: 0.7,
-        max_tokens: 1000
-      }),
+    // Convert messages format for Gemini API
+    // Gemini uses a different format: contents array with parts
+    const contents = [];
+    
+    // Add system prompt as first user message (Gemini doesn't have system role)
+    const systemPrompt = getSystemPrompt(safety.riskLevel);
+    contents.push({
+      role: 'user',
+      parts: [{ text: systemPrompt + '\n\nYou are now ready to help the user. Please respond to their messages with empathy and following the safety guidelines above.' }]
     });
+    contents.push({
+      role: 'model',
+      parts: [{ text: 'I understand. I will follow the safety guidelines and provide supportive, empathetic responses while prioritizing user safety.' }]
+    });
+    
+    // Add conversation history
+    for (const msg of history || []) {
+      if (msg.role === 'user') {
+        contents.push({
+          role: 'user',
+          parts: [{ text: msg.content }]
+        });
+      } else if (msg.role === 'assistant') {
+        contents.push({
+          role: 'model',
+          parts: [{ text: msg.content }]
+        });
+      }
+    }
+    
+    // Add current user message
+    contents.push({
+      role: 'user',
+      parts: [{ text: message }]
+    });
+
+    const aiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: contents,
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 1000,
+          },
+          safetySettings: [
+            {
+              category: 'HARM_CATEGORY_HARASSMENT',
+              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+            },
+            {
+              category: 'HARM_CATEGORY_HATE_SPEECH',
+              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+            },
+            {
+              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+            },
+            {
+              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+            }
+          ]
+        }),
+      }
+    );
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error('AI API error:', aiResponse.status, errorText);
-      throw new Error(`AI API error: ${aiResponse.status}`);
+      console.error('Gemini API error:', aiResponse.status, errorText);
+      throw new Error(`Gemini API error: ${aiResponse.status}`);
     }
 
     const aiData = await aiResponse.json();
-    const assistantMessage = aiData.choices[0].message.content;
+    
+    // Check if response was blocked by safety filters
+    if (!aiData.candidates || !aiData.candidates[0] || !aiData.candidates[0].content) {
+      throw new Error('Gemini API returned no response (possibly blocked by safety filters)');
+    }
+    
+    if (aiData.candidates[0].finishReason === 'SAFETY') {
+      throw new Error('Response blocked by Gemini safety filters');
+    }
+    
+    const assistantMessage = aiData.candidates[0].content.parts[0].text;
 
     // Save assistant response
     await supabase.from('messages').insert({

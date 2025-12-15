@@ -1,279 +1,392 @@
-import { useGeminiVoiceTherapy } from '@/hooks/useGeminiVoiceTherapy';
-import { CrisisIntervention } from '@/components/safety/CrisisIntervention';
-import { useAuth } from '@/hooks/useAuth';
-import { useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { createClient } from '@supabase/supabase-js';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+    Mic, Square, Volume2, VolumeX, AlertCircle,
+    Phone, ArrowLeft, Loader2, ShieldCheck, HeartPulse
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
-export default function GeminiVoiceTherapy() {
-    const { user, loading } = useAuth();
+// --- Types & Configuration ---
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.error("Missing Supabase Environment Variables");
+}
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+interface Message {
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: number;
+}
+
+// Risk keywords for client-side Guardian
+const CRITICAL_KEYWORDS = ['kill myself', 'end my life', 'suicide', 'want to die', 'better off dead'];
+const HIGH_RISK_KEYWORDS = ['hopeless', 'worthless', 'hate myself', 'can\'t go on', 'give up'];
+
+export default function VoiceTherapy() {
     const navigate = useNavigate();
 
+    // State
+    const [isListening, setIsListening] = useState(false);
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [transcript, setTranscript] = useState('');
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [wbcScore, setWbcScore] = useState(100);
+    const [riskLevel, setRiskLevel] = useState<'clear' | 'clouded' | 'critical'>('clear');
+    const [showCrisisModal, setShowCrisisModal] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    // Refs
+    const recognitionRef = useRef<any>(null);
+    const synthRef = useRef<SpeechSynthesis>(window.speechSynthesis);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // --- Initialization ---
+
     useEffect(() => {
-        if (!loading && !user) {
-            navigate('/login');
+        // Initialize Speech Recognition
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false; // We want to stop when user stops speaking to process
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                setIsListening(true);
+                setIsProcessing(false);
+            };
+
+            recognition.onresult = (event: any) => {
+                const current = event.resultIndex;
+                const transcriptText = event.results[current][0].transcript;
+                setTranscript(transcriptText);
+            };
+
+            recognition.onend = () => {
+                setIsListening(false);
+                // If we have a transcript, process it
+                if (transcript.trim().length > 0) {
+                    handleUserMessage(transcript);
+                    setTranscript(''); // Clear buffer
+                }
+            };
+
+            recognition.onerror = (event: any) => {
+                console.error('Speech recognition error', event.error);
+                setIsListening(false);
+                if (event.error === 'not-allowed') {
+                    setError('Microphone access denied. Please allow permission.');
+                }
+            };
+
+            recognitionRef.current = recognition;
+        } else {
+            setError('Speech recognition is not supported in this browser.');
         }
-    }, [user, loading, navigate]);
 
-    const {
-        isListening,
-        isSpeaking,
-        messages,
-        wbcScore,
-        riskLevel,
-        showCrisisModal,
-        startListening,
-        stopListening,
-        stopSpeaking,
-        closeCrisisModal
-    } = useGeminiVoiceTherapy();
+        return () => {
+            if (recognitionRef.current) recognitionRef.current.stop();
+            synthRef.current.cancel();
+        };
+    }, [transcript]); // Depend on transcript to capture latest value in onend closure
 
-    if (loading) {
-        return (
-            <div style={{ minHeight: '100vh', background: '#0a0e27', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>
-                Loading...
-            </div>
-        );
-    }
+    // Scroll to bottom of chat
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
 
-    if (!user) {
-        return null;
-    }
+    // --- Logic ---
+
+    const calculateRisk = (text: string) => {
+        const lower = text.toLowerCase();
+        let score = wbcScore; // Start from current score context
+
+        if (CRITICAL_KEYWORDS.some(k => lower.includes(k))) {
+            score = Math.max(0, score - 50);
+            setRiskLevel('critical');
+            setShowCrisisModal(true);
+        } else if (HIGH_RISK_KEYWORDS.some(k => lower.includes(k))) {
+            score = Math.max(0, score - 20);
+            if (riskLevel !== 'critical') setRiskLevel('clouded');
+        } else {
+            // Slow recovery
+            score = Math.min(100, score + 5);
+            if (score > 60 && riskLevel !== 'critical') setRiskLevel('clear');
+        }
+        setWbcScore(score);
+    };
+
+    const handleUserMessage = async (text: string) => {
+        if (!text.trim()) return;
+
+        // 1. Update UI
+        const newUserMsg: Message = { role: 'user', content: text, timestamp: Date.now() };
+        setMessages(prev => [...prev, newUserMsg]);
+        setIsProcessing(true);
+
+        // 2. Safety Check
+        calculateRisk(text);
+
+        try {
+            // 3. Call Supabase Edge Function
+            const { data, error } = await supabase.functions.invoke('therapy-chat', {
+                body: {
+                    message: text,
+                    conversationId: null // or pass existing ID if maintaining session
+                }
+            });
+
+            if (error) throw error;
+
+            const aiResponse = data.response || data.message || data.reply || "I'm listening. Please go on.";
+
+            // 4. Process Response
+            const newAiMsg: Message = { role: 'assistant', content: aiResponse, timestamp: Date.now() };
+            setMessages(prev => [...prev, newAiMsg]);
+
+            // 5. Speak
+            speak(aiResponse);
+
+        } catch (err: any) {
+            console.error('API Error:', err);
+            toast.error("Unable to connect to therapist. Please check your connection.");
+            setIsProcessing(false);
+        }
+    };
+
+    const speak = (text: string) => {
+        if (!synthRef.current) return;
+
+        // Cancel existing speech
+        synthRef.current.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.9; // Therapeutic pace
+        utterance.pitch = 1.0;
+
+        // Attempt to pick a natural voice
+        const voices = synthRef.current.getVoices();
+        const preferredVoice = voices.find(v => v.name.includes('Google') || v.name.includes('Samantha'));
+        if (preferredVoice) utterance.voice = preferredVoice;
+
+        utterance.onstart = () => {
+            setIsSpeaking(true);
+            setIsProcessing(false);
+        };
+
+        utterance.onend = () => {
+            setIsSpeaking(false);
+            // Auto-resume listening for natural flow (unless stopped manually)
+            if (!error && riskLevel !== 'critical') {
+                setTimeout(() => startListening(), 500);
+            }
+        };
+
+        synthRef.current.speak(utterance);
+    };
+
+    const startListening = () => {
+        if (recognitionRef.current && !isListening && !isSpeaking) {
+            try {
+                recognitionRef.current.start();
+            } catch (e) {
+                // Ignore "already started" errors
+                console.log("Recognition already active");
+            }
+        }
+    };
+
+    const stopSession = () => {
+        if (recognitionRef.current) recognitionRef.current.stop();
+        synthRef.current.cancel();
+        setIsListening(false);
+        setIsSpeaking(false);
+        setIsProcessing(false);
+    };
+
+    // --- Render ---
 
     return (
-        <div style={{
-            minHeight: '100vh',
-            background: '#0a0e27',
-            color: '#e5e7eb',
-            padding: '20px'
-        }}>
-            <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-                {/* Header */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '30px' }}>
-                    <button
-                        onClick={() => navigate('/ai-therapy')}
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#9ca3af',
-                            cursor: 'pointer',
-                            fontSize: '14px'
-                        }}
-                    >
-                        ← Back to Options
-                    </button>
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 flex flex-col">
+            {/* Header */}
+            <header className="p-4 border-b bg-white dark:bg-slate-900 sticky top-0 z-10">
+                <div className="container mx-auto flex items-center justify-between">
+                    <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="gap-2">
+                        <ArrowLeft className="w-4 h-4" /> Exit Session
+                    </Button>
+                    <div className="flex items-center gap-2">
+                        <ShieldCheck className="w-5 h-5 text-emerald-500" />
+                        <span className="text-sm font-medium text-slate-500">Guardian Protected</span>
+                    </div>
                 </div>
+            </header>
 
-                {/* Main Grid */}
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: window.innerWidth > 968 ? '1fr 1fr' : '1fr',
-                    gap: '30px',
-                    marginTop: '40px'
-                }}>
-                    {/* Left Panel - Voice Controls */}
-                    <div style={{
-                        background: 'linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%)',
-                        borderRadius: '20px',
-                        padding: '40px',
-                        textAlign: 'center',
-                        minHeight: '500px'
-                    }}>
-                        <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: 'white', marginBottom: '10px' }}>
-                            AI Voice Therapist
-                        </h1>
-                        <span style={{
-                            display: 'inline-block',
-                            background: '#10b981',
-                            color: 'white',
-                            padding: '6px 16px',
-                            borderRadius: '20px',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            marginBottom: '40px'
-                        }}>
-                            ONLINE
-                        </span>
+            <main className="flex-1 container mx-auto p-4 max-w-4xl flex flex-col gap-6">
 
-                        <div style={{
-                            width: '120px',
-                            height: '120px',
-                            margin: '60px auto',
-                            background: 'rgba(255, 255, 255, 0.1)',
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}>
-                            <svg
-                                style={{
-                                    width: '60px',
-                                    height: '60px',
-                                    opacity: isListening ? 1 : 0.5,
-                                    animation: isListening ? 'pulse 2s infinite' : 'none'
-                                }}
-                                fill="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
-                                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-                            </svg>
-                        </div>
-
-                        <p style={{ fontSize: '16px', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '30px' }}>
-                            {isSpeaking ? '🔊 AI Speaking...' : isListening ? '🎤 Listening...' : 'Ready to connect'}
-                        </p>
-
+                {/* Status Dashboard */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card className="p-6 flex items-center justify-between bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-none shadow-lg">
                         <div>
-                            {!isListening && (
-                                <button
-                                    onClick={startListening}
-                                    disabled={isSpeaking}
-                                    style={{
-                                        background: '#3b82f6',
-                                        color: 'white',
-                                        border: 'none',
-                                        padding: '16px 40px',
-                                        borderRadius: '12px',
-                                        fontSize: '16px',
-                                        fontWeight: '600',
-                                        cursor: isSpeaking ? 'not-allowed' : 'pointer',
-                                        opacity: isSpeaking ? 0.5 : 1
-                                    }}
-                                >
-                                    📞 Start Session
-                                </button>
+                            <h2 className="text-2xl font-bold mb-1">AI Therapist</h2>
+                            <p className="text-indigo-100 flex items-center gap-2">
+                                <span className={`w-2 h-2 rounded-full ${isListening || isSpeaking ? 'bg-green-400 animate-pulse' : 'bg-slate-400'}`}></span>
+                                {isListening ? 'Listening...' : isSpeaking ? 'Speaking...' : isProcessing ? 'Thinking...' : 'Ready'}
+                            </p>
+                        </div>
+                        <div className="relative w-16 h-16 flex items-center justify-center">
+                            {(isListening || isSpeaking) && (
+                                <span className="absolute inset-0 bg-white opacity-20 rounded-full animate-ping"></span>
                             )}
-                            {isListening && (
-                                <button
-                                    onClick={stopListening}
-                                    style={{
-                                        background: '#ef4444',
-                                        color: 'white',
-                                        border: 'none',
-                                        padding: '16px 40px',
-                                        borderRadius: '12px',
-                                        fontSize: '16px',
-                                        fontWeight: '600',
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    ⏹️ Stop
-                                </button>
-                            )}
+                            {isSpeaking ? <Volume2 className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
                         </div>
-                    </div>
+                    </Card>
 
-                    {/* Right Panel - Avatar & Transcript */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        {/* AI Avatar */}
-                        <div style={{
-                            background: '#1a1f3a',
-                            borderRadius: '20px',
-                            padding: '30px'
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', color: '#9ca3af', fontSize: '14px' }}>
-                                <svg style={{ width: '20px', height: '20px' }} fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" />
-                                </svg>
-                                AI Avatar
-                            </div>
-                            <div style={{
-                                width: '200px',
-                                height: '200px',
-                                margin: '20px auto',
-                                background: '#0a0e27',
-                                borderRadius: '50%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: '#4b5563',
-                                fontSize: '14px'
-                            }}>
-                                Therapist
-                            </div>
-                            <div style={{ textAlign: 'center', color: '#6b7280', fontSize: '13px' }}>
-                                Visual presence online
-                            </div>
+                    <Card className="p-6 flex flex-col justify-center">
+                        <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm text-slate-500 font-medium flex items-center gap-2">
+                                <HeartPulse className="w-4 h-4" /> Well-Being Score
+                            </span>
+                            <Badge variant={riskLevel === 'critical' ? 'destructive' : riskLevel === 'clouded' ? 'default' : 'default'} className={riskLevel === 'clear' ? 'bg-emerald-500' : ''}>
+                                {riskLevel.toUpperCase()}
+                            </Badge>
                         </div>
-
-                        {/* Conversation */}
-                        <div style={{
-                            background: '#1a1f3a',
-                            borderRadius: '20px',
-                            padding: '30px'
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', color: '#9ca3af', fontSize: '14px' }}>
-                                <svg style={{ width: '20px', height: '20px' }} fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
-                                </svg>
-                                Conversation
-                            </div>
-                            <div style={{
-                                minHeight: '200px',
-                                maxHeight: '400px',
-                                overflowY: 'auto',
-                                color: '#6b7280',
-                                fontSize: '14px'
-                            }}>
-                                {messages.length === 0 ? (
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '40px' }}>
-                                        Transcript will appear here...
-                                    </div>
-                                ) : (
-                                    <div>
-                                        {messages.map((msg, idx) => (
-                                            <div
-                                                key={idx}
-                                                style={{
-                                                    marginBottom: '15px',
-                                                    padding: '12px 16px',
-                                                    borderRadius: '12px',
-                                                    background: msg.role === 'user' ? '#1e40af' : '#065f46',
-                                                    color: 'white',
-                                                    marginLeft: msg.role === 'user' ? '40px' : '0',
-                                                    marginRight: msg.role === 'ai' ? '40px' : '0'
-                                                }}
-                                            >
-                                                <div style={{ fontSize: '11px', opacity: 0.7, marginBottom: '4px', fontWeight: '600' }}>
-                                                    {msg.role === 'user' ? 'You' : 'AI Therapist'}
-                                                </div>
-                                                <div>{msg.text}</div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                        <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-4 overflow-hidden">
+                            <div
+                                className={`h-full transition-all duration-1000 ease-out ${wbcScore > 60 ? 'bg-emerald-500' : wbcScore > 30 ? 'bg-amber-500' : 'bg-rose-500'
+                                    }`}
+                                style={{ width: `${wbcScore}%` }}
+                            />
                         </div>
-                    </div>
+                        <p className="text-xs text-right mt-1 text-slate-400">{wbcScore}/100</p>
+                    </Card>
                 </div>
 
-                {/* Guardian Notice */}
-                <div style={{
-                    background: 'linear-gradient(90deg, #7c3aed 0%, #4c1d95 100%)',
-                    padding: '15px 30px',
-                    borderRadius: '15px',
-                    textAlign: 'center',
-                    marginTop: '30px',
-                    fontSize: '14px'
-                }}>
-                    🛡️ <strong style={{ color: '#c4b5fd' }}>Project Guardian Protected</strong> - If you're experiencing a crisis, please contact the 988 Suicide & Crisis Lifeline
-                </div>
-            </div>
+                {/* Conversation Area */}
+                <Card className="flex-1 min-h-[400px] max-h-[600px] overflow-hidden flex flex-col shadow-sm border-slate-200 dark:border-slate-800">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50 dark:bg-slate-900/50">
+                        {messages.length === 0 ? (
+                            <div className="h-full flex flex-col items-center justify-center text-slate-400 p-8 text-center">
+                                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                                    <Mic className="w-8 h-8 opacity-50" />
+                                </div>
+                                <p className="text-lg font-medium mb-2">Start a Safe Space Session</p>
+                                <p className="text-sm max-w-md">
+                                    Click "Start Session" below. Your conversation is private, secure, and monitored by our Guardian safety system.
+                                </p>
+                            </div>
+                        ) : (
+                            messages.map((msg, idx) => (
+                                <motion.div
+                                    key={idx}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                                >
+                                    <div className={`max-w-[80%] rounded-2xl p-4 ${msg.role === 'user'
+                                            ? 'bg-indigo-600 text-white rounded-tr-none'
+                                            : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-tl-none shadow-sm'
+                                        }`}>
+                                        <p className="text-sm leading-relaxed">{msg.content}</p>
+                                    </div>
+                                </motion.div>
+                            ))
+                        )}
 
-            {/* Crisis Modal */}
-            {showCrisisModal && (
-                <CrisisIntervention
-                    isOpen={showCrisisModal}
-                    onClose={closeCrisisModal}
-                />
-            )}
+                        {/* Live Transcript Bubble */}
+                        {isListening && transcript && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-end">
+                                <div className="max-w-[80%] rounded-2xl p-4 bg-indigo-600/50 text-white/80 rounded-tr-none italic">
+                                    {transcript}...
+                                </div>
+                            </motion.div>
+                        )}
 
-            <style>{`
-                @keyframes pulse {
-                    0%, 100% { transform: scale(1); opacity: 1; }
-                    50% { transform: scale(1.1); opacity: 0.7; }
-                }
-            `}</style>
+                        {/* Processing Indicator */}
+                        {isProcessing && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
+                                <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl rounded-tl-none border border-slate-200 dark:border-slate-700 flex gap-2 items-center">
+                                    <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />
+                                    <span className="text-xs text-slate-500">Therapist is thinking...</span>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        <div ref={messagesEndRef} />
+                    </div>
+
+                    {/* Controls Footer */}
+                    <div className="p-4 bg-white dark:bg-slate-900 border-t flex items-center justify-center gap-4">
+                        {!isListening && !isSpeaking ? (
+                            <Button size="lg" onClick={startListening} className="h-14 px-8 text-lg rounded-full bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-200 dark:shadow-none transition-all hover:scale-105">
+                                <Mic className="mr-2 w-5 h-5" /> Start Session
+                            </Button>
+                        ) : (
+                            <Button size="lg" variant="destructive" onClick={stopSession} className="h-14 px-8 text-lg rounded-full shadow-xl transition-all hover:scale-105">
+                                <Square className="mr-2 w-5 h-5 fill-current" /> Stop Session
+                            </Button>
+                        )}
+                    </div>
+                </Card>
+
+                {/* Error Display */}
+                {error && (
+                    <div className="bg-rose-50 text-rose-600 p-3 rounded-lg text-sm text-center border border-rose-100 flex items-center justify-center gap-2">
+                        <AlertCircle className="w-4 h-4" /> {error}
+                    </div>
+                )}
+            </main>
+
+            {/* Crisis Intervention Modal */}
+            <AnimatePresence>
+                {showCrisisModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-slate-900/90 z-50 flex items-center justify-center p-4"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95 }}
+                            animate={{ scale: 1 }}
+                            className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl p-6 shadow-2xl border-t-4 border-rose-500"
+                        >
+                            <div className="text-center">
+                                <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Phone className="w-8 h-8" />
+                                </div>
+                                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">We care about you</h2>
+                                <p className="text-slate-600 dark:text-slate-300 mb-6">
+                                    It sounds like you're going through a very difficult time. Please connect with a human who can help immediately.
+                                </p>
+
+                                <div className="space-y-3">
+                                    <Button className="w-full h-12 text-lg bg-rose-600 hover:bg-rose-700" onClick={() => window.open('tel:988')}>
+                                        Call 988 Crisis Lifeline
+                                    </Button>
+                                    <Button variant="outline" className="w-full h-12" onClick={() => window.open('sms:741741')}>
+                                        Text HOME to 741741
+                                    </Button>
+                                    <Button variant="ghost" className="w-full mt-2 text-slate-400" onClick={() => setShowCrisisModal(false)}>
+                                        I'm safe, return to session
+                                    </Button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

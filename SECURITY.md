@@ -129,3 +129,4 @@ Before deploying to production:
 - [Supabase Security Best Practices](https://supabase.com/docs/guides/platform/security)
 - [OpenAI API Security](https://platform.openai.com/docs/guides/safety-best-practices)
 
+
