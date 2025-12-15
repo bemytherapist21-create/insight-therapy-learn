@@ -57,7 +57,21 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
         if (event.error === 'not-allowed') {
           toast.error('Microphone access denied. Please allow microphone in browser settings.');
         } else if (event.error === 'network') {
-          toast.error('Network error. Please check your internet connection.');
+          toast.error('Speech recognition service unavailable. Please check your internet connection and try again.');
+        } else if (event.error === 'no-speech') {
+          toast.info('No speech detected. Please try speaking again.');
+          // Auto-restart if just no speech detected
+          if (isListening) {
+            setTimeout(() => {
+              try {
+                recognitionRef.current?.start();
+              } catch (e) {
+                // Ignore if already started
+              }
+            }, 500);
+          }
+        } else {
+          toast.error(`Speech recognition error: ${event.error}`);
         }
       };
 
@@ -154,8 +168,9 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
       recognitionRef.current.start();
       setIsListening(true);
       toast.success('Listening... Please speak now');
-    } catch (error) {
-      toast.error('Failed to start microphone. Please check permissions.');
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Unknown error';
+      toast.error(`Failed to start: ${errorMessage}`);
     }
   };
 
@@ -223,8 +238,8 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
 
                 {/* Main circle */}
                 <div className={`w-32 h-32 rounded-full flex items-center justify-center shadow-2xl relative z-10 transition-all duration-500 ${isListening
-                    ? 'bg-gradient-to-br from-blue-400 to-cyan-500'
-                    : 'bg-white/5 border-2 border-white/20'
+                  ? 'bg-gradient-to-br from-blue-400 to-cyan-500'
+                  : 'bg-white/5 border-2 border-white/20'
                   }`}>
                   {isListening ? (
                     /* Heartbeat icon when session active */
