@@ -1,34 +1,160 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Mic, Square, VolumeX, Shield } from 'lucide-react';
-import { useGeminiVoiceTherapy } from '@/hooks/useGeminiVoiceTherapy';
+import { Loader2, Phone, MicOff, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { CrisisIntervention } from './safety/CrisisIntervention';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-export const VoiceTherapy = () => {
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+interface VoiceTherapyProps {
+  onBack?: () => void;
+}
+
+export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
-  const {
-    isListening,
-    isSpeaking,
-    messages,
-    wbcScore,
-    riskLevel,
-    showCrisisModal,
-    startListening,
-    stopListening,
-    stopSpeaking,
-    closeCrisisModal
-  } = useGeminiVoiceTherapy();
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/auth');
     }
   }, [user, authLoading, navigate]);
+
+  // Initialize speech recognition - EXACTLY like standalone
+  useEffect(() => {
+    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = 'en-US';
+
+      recognitionRef.current.onresult = async (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        await processUserMessage(transcript);
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        setIsListening(false);
+
+        if (event.error === 'not-allowed') {
+          toast.error('Microphone access denied. Please allow microphone in browser settings.');
+        } else if (event.error === 'network') {
+          toast.error('Network error. Please check your internet connection.');
+        }
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {
+          // Ignore
+        }
+      }
+      window.speechSynthesis.cancel();
+    };
+  }, []);
+
+  const processUserMessage = async (transcript: string) => {
+    // Add user message
+    const userMsg: Message = { role: 'user', content: transcript };
+    setMessages(prev => [...prev, userMsg]);
+
+    try {
+      // Get user session for authenticated call
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/therapy-chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+        },
+        body: JSON.stringify({
+          message: transcript,
+          conversationId: null
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const data = await response.json();
+      const aiMessage = data.reply || data.message || 'I apologize, I couldn\'t generate a response.';
+
+      // Add AI message
+      const assistantMsg: Message = { role: 'assistant', content: aiMessage };
+      setMessages(prev => [...prev, assistantMsg]);
+
+      // Speak the response
+      speak(aiMessage);
+
+    } catch (error) {
+      const errorMsg = 'I apologize, there was an error. Please try again.';
+      setMessages(prev => [...prev, { role: 'assistant', content: errorMsg }]);
+      speak(errorMsg);
+    }
+  };
+
+  const speak = (text: string) => {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+
+      utterance.onstart = () => {
+        setIsSpeaking(true);
+      };
+
+      utterance.onend = () => {
+        setIsSpeaking(false);
+      };
+
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  const startListening = () => {
+    if (!recognitionRef.current) {
+      toast.error('Speech recognition not supported. Please use Chrome, Edge, or Safari.');
+      return;
+    }
+
+    try {
+      recognitionRef.current.start();
+      setIsListening(true);
+      toast.success('Listening... Please speak now');
+    } catch (error) {
+      toast.error('Failed to start microphone. Please check permissions.');
+    }
+  };
 
   if (authLoading) {
     return (
@@ -38,151 +164,137 @@ export const VoiceTherapy = () => {
     );
   }
 
-  const getRiskColor = () => {
-    if (riskLevel === 'critical') return 'text-red-600';
-    if (riskLevel === 'clouded') return 'text-yellow-600';
-    return 'text-green-600';
-  };
-
   const getStatusText = () => {
-    if (isSpeaking) return '🔊 AI Speaking...';
-    if (isListening) return '🎤 Listening...';
-    return 'Ready - Click to speak';
+    if (isSpeaking) return 'AI Speaking...';
+    if (isListening) return 'Listening...';
+    return 'Ready to connect';
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Header with Guardian Badge */}
-      <div className="text-center mb-6">
-        <div className="inline-flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold mb-4">
-          <Shield className="w-4 h-4" />
-          Guardian Protected
-        </div>
-        <p className="text-purple-100 text-sm">
-          🎙️ Free browser speech recognition • 🧠 Powered by Gemini
-        </p>
-      </div>
-
-      {/* Guardian Status Card */}
-      <Card className="p-6 mb-6 bg-white/95 backdrop-blur">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-sm text-gray-600 mb-1">Well-Being Score</div>
-            <div className={`text-3xl font-bold ${getRiskColor()}`}>
-              {wbcScore}
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-sm text-gray-600 mb-1">Status</div>
-            <div className={`font-semibold ${getRiskColor()}`}>
-              {riskLevel.charAt(0).toUpperCase() + riskLevel.slice(1)}
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* Status Display */}
-      <div className="text-center mb-6">
-        <div className={`inline-block px-6 py-3 rounded-full ${isListening ? 'bg-blue-500 animate-pulse' :
-          isSpeaking ? 'bg-green-500' :
-            'bg-white/90'
-          }`}>
-          <span className={`font-semibold ${isListening || isSpeaking ? 'text-white' : 'text-gray-800'
-            }`}>
-            {getStatusText()}
-          </span>
-        </div>
-      </div>
-
-      {/* Controls */}
-      <div className="flex gap-4 mb-6 justify-center flex-wrap">
-        <Button
-          onClick={startListening}
-          disabled={isListening || isSpeaking}
-          size="lg"
-          className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-6 text-lg"
-        >
-          {isListening ? (
-            <>
-              <Mic className="mr-2 h-6 w-6 animate-pulse" />
-              Listening...
-            </>
-          ) : (
-            <>
-              <Mic className="mr-2 h-6 w-6" />
-              Start Therapy Session
-            </>
-          )}
-        </Button>
-
-        {isListening && (
-          <Button
-            onClick={stopListening}
-            size="lg"
-            variant="outline"
-            className="px-8 py-6 text-lg border-2"
-          >
-            <Square className="mr-2 h-6 w-6" />
-            Stop
-          </Button>
-        )}
-
-        {isSpeaking && (
-          <Button
-            onClick={stopSpeaking}
-            size="lg"
-            variant="destructive"
-            className="px-8 py-6 text-lg"
-          >
-            <VolumeX className="mr-2 h-6 w-6" />
-            Mute AI
-          </Button>
-        )}
-      </div>
-
-      {/* Conversation Transcript */}
-      <Card className="p-6 bg-white/95 backdrop-blur min-h-[300px] max-h-[500px] overflow-y-auto">
-        {messages.length === 0 ? (
-          <div className="text-center text-gray-400 py-16">
-            <Mic className="mx-auto h-12 w-12 mb-3 opacity-30" />
-            <p className="text-lg mb-2">Click "Start Therapy Session" to begin</p>
-            <p className="text-sm">Your voice will be analyzed with Guardian safety protection</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {messages.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`p-4 rounded-lg ${msg.role === 'user'
-                  ? 'bg-blue-50 ml-8'
-                  : 'bg-green-50 mr-8'
-                  }`}
-              >
-                <div className="text-xs font-semibold text-gray-600 mb-1">
-                  {msg.role === 'user' ? 'You' : 'AI Therapist'}
-                </div>
-                <div className="text-gray-800">{msg.text}</div>
+    <div className="max-w-4xl mx-auto h-[600px]">
+      {/* Two Column Grid */}
+      <div className="grid md:grid-cols-2 gap-6 h-full">
+        {/* Left Panel - Voice Controls */}
+        <Card className="glass-card overflow-hidden h-full">
+          <div className="p-8 flex flex-col items-center justify-between h-full">
+            {/* Header */}
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-white mb-2">AI Voice Therapist</h2>
+              <div className="flex items-center justify-center gap-2">
+                <Badge className="bg-green-500 transition-colors duration-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                  </svg>
+                  calm
+                </Badge>
               </div>
-            ))}
-          </div>
-        )}
-      </Card>
+            </div>
 
-      {/* Safety Notice */}
+            {/* Mic Icon */}
+            <div className="flex justify-center mb-6 py-8">
+              <div className="relative">
+                <div
+                  className="w-28 h-28 rounded-full flex items-center justify-center shadow-lg backdrop-blur-sm z-10 relative transition-colors duration-500 bg-white/10 border border-white/10"
+                  style={{ transform: 'none' }}
+                >
+                  <MicOff className="w-10 h-10 text-white/50" />
+                </div>
+              </div>
+            </div>
+
+            {/* Status and Button */}
+            <div className="w-full text-center">
+              <div className="h-8 mb-6">
+                <p className="text-lg font-medium" style={{ opacity: 1, transform: 'none' }}>
+                  <span className="text-white/50">{getStatusText()}</span>
+                </p>
+              </div>
+
+              <Button
+                onClick={startListening}
+                disabled={isListening || isSpeaking}
+                className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:shadow-glow px-8 min-w-[200px]"
+              >
+                <Phone className="w-5 h-5 mr-2" />
+                Start Session
+              </Button>
+            </div>
+          </div>
+        </Card>
+
+        {/* Right Panel - Avatar and Conversation */}
+        <Card className="glass-card overflow-hidden h-full">
+          <div className="p-6 flex flex-col h-full">
+            {/* AI Avatar Section */}
+            <div className="mb-4 shrink-0">
+              <div className="flex items-center gap-2 mb-2">
+                <Video className="w-4 h-4 text-white/70" />
+                <h3 className="text-sm font-medium text-white/70">AI Avatar</h3>
+              </div>
+
+              <div className="aspect-video bg-black/40 rounded-lg overflow-hidden border border-white/10 relative group">
+                <div className="w-full h-full flex items-center justify-center text-white/30 bg-gradient-to-b from-black/0 to-black/20">
+                  <div className="text-center">
+                    <img
+                      src="https://create-images-results.d-id.com/DefaultPresenters/Noelle_f/image.jpeg"
+                      alt="AI Therapist"
+                      className="w-24 h-24 rounded-full mx-auto mb-3 opacity-50 grayscale group-hover:grayscale-0 transition-all duration-500"
+                    />
+                    <p className="text-xs font-medium opacity-70">Visual presence active</p>
+                  </div>
+                </div>
+
+                <div className="absolute inset-0 flex items-end justify-center pb-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <p className="text-[10px] text-white/40 bg-black/60 px-2 py-1 rounded">
+                    Avatar animates during long responses
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Conversation Section */}
+            <div className="flex-1 min-h-0 flex flex-col">
+              <h3 className="text-sm font-medium text-white/70 mb-2 shrink-0">Conversation</h3>
+
+              <div className="flex-1 bg-black/20 rounded-lg border border-white/5 overflow-hidden">
+                <ScrollArea className="h-full w-full p-3">
+                  <div className="space-y-3">
+                    {messages.length === 0 ? (
+                      <div className="h-full flex items-center justify-center py-8">
+                        <p className="text-white/30 text-sm text-center italic">
+                          Transcript will appear here...
+                        </p>
+                      </div>
+                    ) : (
+                      messages.map((msg, idx) => (
+                        <div
+                          key={idx}
+                          className={`p-3 rounded-lg ${msg.role === 'user'
+                            ? 'bg-blue-500/20 ml-4'
+                            : 'bg-green-500/20 mr-4'
+                            }`}
+                        >
+                          <div className="text-xs text-white/60 mb-1">
+                            {msg.role === 'user' ? '🎤 You' : '🔊 AI Therapist'}
+                          </div>
+                          <div className="text-sm text-white">{msg.content}</div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Guardian Notice */}
       <div className="mt-6 p-4 bg-gradient-to-r from-purple-500/20 to-purple-600/20 rounded-lg border border-purple-500/30">
         <p className="text-sm text-white/80 text-center">
-          🛡️ <strong>Project Guardian Protected</strong> - If you're experiencing a crisis,
-          please contact the 988 Suicide & Crisis Lifeline.
+          🛡️ <strong>Project Guardian Protected</strong> - If you're experiencing a crisis, please contact the 988 Suicide &amp; Crisis Lifeline.
         </p>
       </div>
-
-      {/* Crisis Modal */}
-      {showCrisisModal && (
-        <CrisisIntervention
-          isOpen={showCrisisModal}
-          onClose={closeCrisisModal}
-        />
-      )}
     </div>
   );
 };

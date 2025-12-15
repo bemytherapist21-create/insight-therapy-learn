@@ -43,7 +43,7 @@ const App = () => (
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/ai-therapy" element={<AITherapy />} />
                 <Route path="/ai-therapy/chat" element={<AITherapyChat />} />
-                <Route path="/ai-therapy/voice" element={<GeminiVoiceTherapy />} />
+                <Route path="/ai-therapy/voice" element={<AITherapyVoice />} />
                 <Route path="/ai-therapy/voice-simple" element={<SimpleVoiceTherapy />} />
                 <Route path="/insight-fusion" element={<InsightFusion />} />
                 <Route path="/ai-learning" element={<AILearning />} />

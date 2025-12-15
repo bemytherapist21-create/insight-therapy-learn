@@ -7,6 +7,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/services/loggingService';
+import { toast } from 'sonner';
 
 interface VoiceSafetyData {
     wbcScore: number;
@@ -50,6 +51,15 @@ export function useGeminiVoiceTherapy() {
             recognitionRef.current.onerror = (event: any) => {
                 logger.error('Speech recognition error', new Error(event.error));
                 setIsListening(false);
+
+                // Show user-friendly error message for permission issues
+                if (event.error === 'not-allowed' || event.error === 'permission-denied') {
+                    toast.error('Microphone access denied. Please click the 🎤 icon in your browser address bar and allow microphone access.');
+                } else if (event.error === 'network') {
+                    toast.error('Network error. Please check your internet connection and microphone permissions.');
+                } else {
+                    toast.error(`Microphone error: ${event.error}`);
+                }
             };
 
             recognitionRef.current.onend = () => {
@@ -65,17 +75,35 @@ export function useGeminiVoiceTherapy() {
         };
     }, []);
 
-    const startListening = () => {
-        if (recognitionRef.current) {
+    const startListening = async () => {
+        if (!recognitionRef.current) {
+            toast.error('Speech recognition not supported in this browser. Please use Chrome, Edge, or Safari.');
+            return;
+        }
+
+        // Check if we need to request microphone permission
+        if (navigator.permissions && navigator.permissions.query) {
             try {
-                recognitionRef.current.start();
-                setIsListening(true);
-                logger.info('Started listening');
-            } catch (error) {
-                logger.error('Failed to start listening', error as Error);
+                const permissionStatus = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+
+                if (permissionStatus.state === 'denied') {
+                    toast.error('Microphone access blocked. Please click the 🔒 icon in your browser address bar and allow microphone access, then reload the page.');
+                    return;
+                }
+            } catch (err) {
+                // Permission API not fully supported, continue anyway
+                console.log('Permission API not supported, trying anyway');
             }
-        } else {
-            alert('Speech recognition not supported in this browser. Please use Chrome, Edge, or Safari.');
+        }
+
+        try {
+            recognitionRef.current.start();
+            setIsListening(true);
+            logger.info('Started listening');
+            toast.success('Listening... Please speak now');
+        } catch (error) {
+            logger.error('Failed to start listening', error as Error);
+            toast.error('Failed to start microphone. Please check your browser permissions.');
         }
     };
 
@@ -142,7 +170,7 @@ export function useGeminiVoiceTherapy() {
 
         } catch (error) {
             logger.error('Voice therapy processing failed', error as Error);
-            
+
             // Provide more helpful error messages
             let errorMsg = "I'm having trouble processing that. Please try again.";
             if (error instanceof Error) {
@@ -160,7 +188,7 @@ export function useGeminiVoiceTherapy() {
                     errorMsg = `Error: ${error.message}`;
                 }
             }
-            
+
             setMessages(prev => [...prev, { role: 'assistant', text: errorMsg }]);
             speak(errorMsg);
         }
