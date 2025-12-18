@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Hands, Results } from '@mediapipe/hands';
-import { Camera } from '@mediapipe/camera_utils';
+import * as mediapipeHands from '@mediapipe/hands';
+import * as mediapipeCamera from '@mediapipe/camera_utils';
+
+// Handle both ESM and CJS imports
+const Hands = (mediapipeHands as any).Hands || mediapipeHands;
+const Camera = (mediapipeCamera as any).Camera || mediapipeCamera;
+type Results = mediapipeHands.Results;
 
 export interface GestureEvent {
     type: 'swipe-left' | 'swipe-right' | 'swipe-up' | 'swipe-down' | 'pinch' | 'point' | 'double-pinch';
