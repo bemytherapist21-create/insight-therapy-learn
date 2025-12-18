@@ -220,14 +220,36 @@ export const useHandGestures = (enabled: boolean) => {
         initializeHands();
 
         return () => {
-            if (cameraRef.current) {
-                cameraRef.current.stop();
-            }
-            if (handsRef.current) {
-                handsRef.current.close();
-            }
-            if (videoRef.current && document.body.contains(videoRef.current)) {
-                document.body.removeChild(videoRef.current);
+            try {
+                console.log('[HandGestures] Cleaning up...');
+
+                if (cameraRef.current) {
+                    try {
+                        cameraRef.current.stop();
+                    } catch (e) {
+                        console.warn('[HandGestures] Camera stop error:', e);
+                    }
+                }
+
+                if (handsRef.current) {
+                    try {
+                        handsRef.current.close();
+                    } catch (e) {
+                        console.warn('[HandGestures] Hands close error:', e);
+                    }
+                }
+
+                if (videoRef.current && document.body.contains(videoRef.current)) {
+                    try {
+                        document.body.removeChild(videoRef.current);
+                    } catch (e) {
+                        console.warn('[HandGestures] Video remove error:', e);
+                    }
+                }
+
+                console.log('[HandGestures] ✅ Cleanup complete');
+            } catch (error) {
+                console.error('[HandGestures] Cleanup failed:', error);
             }
         };
     }, [enabled, onResults]);
