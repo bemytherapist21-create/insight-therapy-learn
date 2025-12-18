@@ -33,16 +33,12 @@ export const HandGestureOverlay = ({ enabled, onToggle }: HandGestureOverlayProp
                     window.history.forward();
                     break;
                 case 'swipe-up':
-                    // Zoom in
-                    const currentZoomIn = parseFloat(document.body.style.zoom || '1');
-                    const newZoomIn = Math.min(currentZoomIn + 0.1, 2.0); // Max 200%
-                    document.body.style.zoom = newZoomIn.toString();
+                    // Navigate back
+                    window.history.back();
                     break;
                 case 'swipe-down':
-                    // Zoom out
-                    const currentZoomOut = parseFloat(document.body.style.zoom || '1');
-                    const newZoomOut = Math.max(currentZoomOut - 0.1, 0.5); // Min 50%
-                    document.body.style.zoom = newZoomOut.toString();
+                    // Navigate forward
+                    window.history.forward();
                     break;
                 case 'pinch':
                     // Only click interactive elements (with mirror fix)
