@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import * as handTrack from 'handtrackjs';
 
 export interface GestureEvent {
-    type: 'swipe-left' | 'swipe-right' | 'swipe-up' | 'swipe-down' | 'pinch' | 'point' | 'double-pinch';
+    type: 'swipe-left' | 'swipe-right' | 'swipe-up' | 'swipe-down' | 'click';
     x?: number;
     y?: number;
     confidence: number;
@@ -11,111 +10,133 @@ export interface GestureEvent {
 export const useHandGestures = (enabled: boolean) => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const modelRef = useRef<any>(null);
     const [isReady, setIsReady] = useState(false);
     const [gesture, setGesture] = useState<GestureEvent | null>(null);
 
-    // Previous hand position for gesture detection
-    const prevPositionRef = useRef<{ x: number; y: number; time: number } | null>(null);
+    const prevFrameRef = useRef<ImageData | null>(null);
+    const motionCenterRef = useRef<{ x: number; y: number } | null>(null);
     const lastGestureTimeRef = useRef<number>(0);
-    const handStateRef = useRef<'open' | 'closed' | null>(null);
 
-    // Detect gestures from hand predictions
-    const detectGesture = useCallback((predictions: any[]) => {
-        if (predictions.length === 0) {
-            prevPositionRef.current = null;
-            handStateRef.current = null;
+    // Detect motion in video frames
+    const detectMotion = useCallback((currentFrame: ImageData) => {
+        if (!prevFrameRef.current) {
+            prevFrameRef.current = currentFrame;
+            return null;
+        }
+
+        const prev = prevFrameRef.current.data;
+        const curr = currentFrame.data;
+        const width = currentFrame.width;
+        const height = currentFrame.height;
+
+        // Calculate motion by comparing pixels
+        let motionX = 0;
+        let motionY = 0;
+        let motionPixels = 0;
+        const threshold = 30; // Motion sensitivity
+
+        // Sample pixels (not every pixel for performance)
+        for (let y = 0; y < height; y += 10) {
+            for (let x = 0; x < width; x += 10) {
+                const i = (y * width + x) * 4;
+                const diff = Math.abs(curr[i] - prev[i]) +
+                    Math.abs(curr[i + 1] - prev[i + 1]) +
+                    Math.abs(curr[i + 2] - prev[i + 2]);
+
+                if (diff > threshold) {
+                    motionX += x;
+                    motionY += y;
+                    motionPixels++;
+                }
+            }
+        }
+
+        prevFrameRef.current = currentFrame;
+
+        if (motionPixels < 50) return null; // Not enough motion
+
+        // Calculate center of motion
+        const centerX = motionX / motionPixels / width;
+        const centerY = motionY / motionPixels / height;
+
+        return { x: centerX, y: centerY, strength: motionPixels };
+    }, []);
+
+    // Detect gestures from motion
+    const detectGesture = useCallback((motion: { x: number; y: number; strength: number } | null) => {
+        if (!motion) {
+            motionCenterRef.current = null;
             return;
         }
 
-        const hand = predictions[0];
-        const bbox = hand.bbox;
         const now = Date.now();
 
-        // Calculate hand center
-        const x = (bbox[0] + bbox[2] / 2) / videoRef.current!.width;
-        const y = (bbox[1] + bbox[3] / 2) / videoRef.current!.height;
+        // Detect swipes
+        if (motionCenterRef.current && now - lastGestureTimeRef.current > 500) {
+            const deltaX = motion.x - motionCenterRef.current.x;
+            const deltaY = motion.y - motionCenterRef.current.y;
+            const threshold = 0.2;
 
-        // Detect open/closed hand (pinch simulation)
-        const handSize = bbox[2] * bbox[3];
-        const isClosed = handSize < 15000; // Threshold for closed hand
-        const currentHandState = isClosed ? 'closed' : 'open';
-
-        // Detect pinch (hand closing)
-        if (handStateRef.current === 'open' && currentHandState === 'closed') {
-            if (now - lastGestureTimeRef.current > 500) {
+            if (Math.abs(deltaX) > threshold && Math.abs(deltaX) > Math.abs(deltaY)) {
                 setGesture({
-                    type: 'pinch',
-                    x,
-                    y,
-                    confidence: hand.score
+                    type: deltaX > 0 ? 'swipe-right' : 'swipe-left',
+                    x: motion.x,
+                    y: motion.y,
+                    confidence: Math.min(motion.strength / 500, 1)
+                });
+                lastGestureTimeRef.current = now;
+            } else if (Math.abs(deltaY) > threshold && Math.abs(deltaY) > Math.abs(deltaX)) {
+                setGesture({
+                    type: deltaY > 0 ? 'swipe-down' : 'swipe-up',
+                    x: motion.x,
+                    y: motion.y,
+                    confidence: Math.min(motion.strength / 500, 1)
                 });
                 lastGestureTimeRef.current = now;
             }
         }
 
-        handStateRef.current = currentHandState;
-
-        // Detect swipes
-        if (prevPositionRef.current && now - prevPositionRef.current.time > 100) {
-            const deltaX = x - prevPositionRef.current.x;
-            const deltaY = y - prevPositionRef.current.y;
-            const threshold = 0.15;
-
-            if (now - lastGestureTimeRef.current > 300) {
-                if (Math.abs(deltaX) > threshold && Math.abs(deltaX) > Math.abs(deltaY)) {
-                    setGesture({
-                        type: deltaX > 0 ? 'swipe-right' : 'swipe-left',
-                        x,
-                        y,
-                        confidence: hand.score
-                    });
-                    lastGestureTimeRef.current = now;
-                } else if (Math.abs(deltaY) > threshold && Math.abs(deltaY) > Math.abs(deltaX)) {
-                    setGesture({
-                        type: deltaY > 0 ? 'swipe-down' : 'swipe-up',
-                        x,
-                        y,
-                        confidence: hand.score
-                    });
-                    lastGestureTimeRef.current = now;
-                }
-            }
-        }
-
-        // Detect point gesture (hand visible and moving)
-        if (currentHandState === 'open' && now - lastGestureTimeRef.current > 200) {
+        // Detect click (sudden motion stop)
+        if (motion.strength < 100 && motionCenterRef.current && now - lastGestureTimeRef.current > 500) {
             setGesture({
-                type: 'point',
-                x,
-                y,
-                confidence: hand.score
+                type: 'click',
+                x: motionCenterRef.current.x,
+                y: motionCenterRef.current.y,
+                confidence: 0.7
             });
+            lastGestureTimeRef.current = now;
         }
 
-        prevPositionRef.current = { x, y, time: now };
+        motionCenterRef.current = { x: motion.x, y: motion.y };
     }, []);
 
-    // Run detection loop
-    const runDetection = useCallback(async () => {
-        if (!modelRef.current || !videoRef.current || !canvasRef.current) return;
+    // Process video frames
+    const processFrame = useCallback(() => {
+        if (!videoRef.current || !canvasRef.current || !enabled) return;
 
-        const predictions = await modelRef.current.detect(videoRef.current);
-        detectGesture(predictions);
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        const context = canvas.getContext('2d', { willReadFrequently: true });
 
-        // Draw predictions on canvas for debugging (optional)
-        const context = canvasRef.current.getContext('2d');
-        if (context) {
-            context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-            modelRef.current.renderPredictions(predictions, canvasRef.current, context, videoRef.current);
+        if (!context || video.readyState !== video.HAVE_ENOUGH_DATA) {
+            requestAnimationFrame(processFrame);
+            return;
         }
 
-        if (enabled) {
-            requestAnimationFrame(runDetection);
-        }
-    }, [enabled, detectGesture]);
+        // Draw video frame to canvas
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Initialize Handtrack.js
+        // Get frame data
+        const frameData = context.getImageData(0, 0, canvas.width, canvas.height);
+
+        // Detect motion
+        const motion = detectMotion(frameData);
+        detectGesture(motion);
+
+        requestAnimationFrame(processFrame);
+    }, [enabled, detectMotion, detectGesture]);
+
+    // Initialize camera
     useEffect(() => {
         if (!enabled) {
             // Cleanup
@@ -127,43 +148,40 @@ export const useHandGestures = (enabled: boolean) => {
             return;
         }
 
-        const initializeHandTracking = async () => {
+        const initializeCamera = async () => {
             try {
                 // Create video element
                 const video = document.createElement('video');
-                video.width = 640;
-                video.height = 480;
+                video.width = 320; // Low resolution for performance
+                video.height = 240;
+                video.autoplay = true;
+                video.playsInline = true;
                 videoRef.current = video;
 
-                // Create canvas for rendering
+                // Create canvas
                 const canvas = document.createElement('canvas');
-                canvas.width = 640;
-                canvas.height = 480;
+                canvas.width = 320;
+                canvas.height = 240;
                 canvas.style.display = 'none';
                 document.body.appendChild(canvas);
                 canvasRef.current = canvas;
 
-                // Load model
-                const model = await handTrack.load({
-                    flipHorizontal: false, // We'll handle flipping ourselves
-                    maxNumHands: 1,
-                    iouThreshold: 0.3,
-                    scoreThreshold: 0.6
+                // Get camera stream
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 320, height: 240, facingMode: 'user' }
                 });
-                modelRef.current = model;
 
-                // Start video
-                await handTrack.startVideo(video);
+                video.srcObject = stream;
+                await video.play();
+
                 setIsReady(true);
-
-                // Start detection loop
-                runDetection();
+                processFrame();
             } catch (error) {
-                console.error('Failed to initialize hand tracking:', error);
+                console.error('Failed to initialize camera:', error);
             }
         };
 
-        initializeHandTracking();
+        initializeCamera();
 
         return () => {
             if (videoRef.current && videoRef.current.srcObject) {
@@ -174,7 +192,7 @@ export const useHandGestures = (enabled: boolean) => {
                 document.body.removeChild(canvasRef.current);
             }
         };
-    }, [enabled, runDetection]);
+    }, [enabled, processFrame]);
 
     return {
         isReady,
