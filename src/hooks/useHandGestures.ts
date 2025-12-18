@@ -170,11 +170,15 @@ export const useHandGestures = (enabled: boolean) => {
 
         const initializeHands = async () => {
             try {
+                console.log('[HandGestures] Starting MediaPipe initialization...');
+
                 // Create video element
                 const video = document.createElement('video');
                 video.style.display = 'none';
                 document.body.appendChild(video);
                 videoRef.current = video;
+
+                console.log('[HandGestures] Initializing MediaPipe Hands...');
 
                 // Initialize MediaPipe Hands
                 const hands = new Hands({
@@ -184,7 +188,7 @@ export const useHandGestures = (enabled: boolean) => {
                 });
 
                 hands.setOptions({
-                    maxNumHands: 1,
+                    maxNumNumHands: 1,
                     modelComplexity: 1,
                     minDetectionConfidence: 0.7,
                     minTrackingConfidence: 0.7
@@ -192,6 +196,8 @@ export const useHandGestures = (enabled: boolean) => {
 
                 hands.onResults(onResults);
                 handsRef.current = hands;
+
+                console.log('[HandGestures] Starting camera...');
 
                 // Initialize camera
                 const camera = new Camera(video, {
@@ -206,9 +212,18 @@ export const useHandGestures = (enabled: boolean) => {
 
                 await camera.start();
                 cameraRef.current = camera;
+
+                console.log('[HandGestures] ✅ Initialization complete!');
                 setIsReady(true);
             } catch (error) {
-                console.error('Failed to initialize hand tracking:', error);
+                console.error('[HandGestures] ❌ Initialization failed:', error);
+                if (error instanceof Error) {
+                    console.error('[HandGestures] Error details:', {
+                        name: error.name,
+                        message: error.message,
+                        stack: error.stack
+                    });
+                }
             }
         };
 
