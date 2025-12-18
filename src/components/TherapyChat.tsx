@@ -28,13 +28,14 @@ export const TherapyChat = () => {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [safety, setSafety] = useState<SafetyStatus | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate('/auth');
+      const currentPath = window.location.pathname;
+      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
     }
   }, [user, authLoading, navigate]);
 
@@ -56,7 +57,7 @@ export const TherapyChat = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke('therapy-chat', {
-        body: { 
+        body: {
           message: userMessage,
           conversationId
         }
@@ -81,7 +82,8 @@ export const TherapyChat = () => {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       if (errorMessage.includes('Authentication required')) {
         toast.error("Please sign in to continue");
-        navigate('/auth');
+        const currentPath = window.location.pathname;
+        navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
       } else {
         toast.error("Failed to send message. Please try again.");
       }
@@ -163,11 +165,10 @@ export const TherapyChat = () => {
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-lg p-3 ${
-                    msg.role === 'user'
-                      ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white'
-                      : 'bg-gradient-to-r from-purple-500 to-purple-600 text-white'
-                  }`}
+                  className={`max-w-[80%] rounded-lg p-3 ${msg.role === 'user'
+                    ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white'
+                    : 'bg-gradient-to-r from-purple-500 to-purple-600 text-white'
+                    }`}
                 >
                   <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                 </div>
@@ -188,7 +189,7 @@ export const TherapyChat = () => {
       {/* Crisis Resources */}
       <Card className="p-3 bg-gradient-to-r from-purple-500 to-purple-600 border-purple-400">
         <p className="text-xs text-center text-white">
-          <strong>Crisis Resources:</strong> National Suicide Prevention Lifeline: 988 | 
+          <strong>Crisis Resources:</strong> National Suicide Prevention Lifeline: 988 |
           Crisis Text Line: Text HOME to 741741 | Emergency: 911
         </p>
       </Card>

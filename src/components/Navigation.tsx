@@ -51,8 +51,8 @@ const Navigation = () => {
                 key={item.name}
                 to={item.path}
                 className={`relative transition-all duration-300 ${isActive(item.path)
-                    ? 'text-primary font-semibold'
-                    : 'text-foreground hover:text-primary'
+                  ? 'text-primary font-semibold'
+                  : 'text-foreground hover:text-primary'
                   }`}
               >
                 {item.name}
@@ -79,7 +79,7 @@ const Navigation = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => navigate('/login')} className="cursor-pointer">
+                  <DropdownMenuItem onClick={() => navigate(`/login?redirect=${encodeURIComponent(location.pathname)}`)} className="cursor-pointer">
                     <LogIn className="w-4 h-4 mr-2" />
                     Login
                   </DropdownMenuItem>
@@ -114,8 +114,8 @@ const Navigation = () => {
                   to={item.path}
                   onClick={() => setIsOpen(false)}
                   className={`py-2 transition-colors ${isActive(item.path)
-                      ? 'text-primary font-semibold'
-                      : 'text-foreground hover:text-primary'
+                    ? 'text-primary font-semibold'
+                    : 'text-foreground hover:text-primary'
                     }`}
                 >
                   {item.name}
@@ -138,7 +138,7 @@ const Navigation = () => {
                     variant="default"
                     className="bg-gradient-primary w-full"
                     onClick={() => {
-                      navigate('/login');
+                      navigate(`/login?redirect=${encodeURIComponent(location.pathname)}`);
                       setIsOpen(false);
                     }}
                   >

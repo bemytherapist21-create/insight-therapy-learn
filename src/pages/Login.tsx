@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,8 @@ import { ROUTES, SUCCESS_MESSAGES } from '@/config/constants';
 
 const Login = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const redirectTo = searchParams.get('redirect') || ROUTES.HOME;
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         email: '',
@@ -48,7 +50,8 @@ const Login = () => {
             // Reset rate limiter on successful login
             rateLimiter.reset('login');
 
-            navigate(ROUTES.HOME);
+            // Redirect to intended page or home
+            navigate(redirectTo);
         } catch (error) {
             errorService.handleError(error, 'Login failed');
         } finally {
