@@ -147,13 +147,27 @@ export const useHandGestures = (enabled: boolean) => {
 
     useEffect(() => {
         if (!enabled) {
-            if (cameraRef.current) {
-                cameraRef.current.stop();
-            }
-            if (handsRef.current) {
-                handsRef.current.close();
+            // Immediate cleanup when disabled
+            try {
+                console.log('[HandGestures] Disabled - cleaning up immediately');
+
+                if (cameraRef.current) {
+                    cameraRef.current.stop();
+                    cameraRef.current = null;
+                }
+                if (handsRef.current) {
+                    handsRef.current.close();
+                    handsRef.current = null;
+                }
+                if (videoRef.current && document.body.contains(videoRef.current)) {
+                    document.body.removeChild(videoRef.current);
+                }
+                videoRef.current = null;
+            } catch (e) {
+                console.warn('[HandGestures] Cleanup on disable error:', e);
             }
             setIsReady(false);
+            setGesture(null);
             return;
         }
 
