@@ -32,7 +32,8 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate('/auth');
+      const currentPath = window.location.pathname;
+      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
     }
   }, [user, authLoading, navigate]);
 

@@ -188,7 +188,7 @@ export const useHandGestures = (enabled: boolean) => {
                 });
 
                 hands.setOptions({
-                    maxNumNumHands: 1,
+                    maxNumHands: 1,
                     modelComplexity: 1,
                     minDetectionConfidence: 0.7,
                     minTrackingConfidence: 0.7
