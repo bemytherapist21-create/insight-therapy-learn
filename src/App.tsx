@@ -73,8 +73,8 @@ const App = () => {
                 onToggle={() => setGesturesEnabled(!gesturesEnabled)}
               />
 
-              {/* Hand Gesture Toggle Button - DISABLED due to MediaPipe production issues */}
-              {false && !gesturesEnabled && (
+              {/* Hand Gesture Toggle Button */}
+              {!gesturesEnabled && (
                 <Button
                   onClick={() => setGesturesEnabled(true)}
                   className="fixed bottom-4 right-4 z-50 rounded-full w-14 h-14 bg-gradient-primary hover:shadow-glow"

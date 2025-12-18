@@ -1,6 +1,4 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Hands, Results } from '@mediapipe/hands';
-import { Camera } from '@mediapipe/camera_utils';
 
 export interface GestureEvent {
     type: 'swipe-left' | 'swipe-right' | 'swipe-up' | 'swipe-down' | 'pinch' | 'point' | 'double-pinch';
@@ -15,19 +13,25 @@ interface HandLandmark {
     z: number;
 }
 
+// Use global MediaPipe loaded from CDN
+declare global {
+    interface Window {
+        Hands: any;
+        Camera: any;
+    }
+}
+
 export const useHandGestures = (enabled: boolean) => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
-    const handsRef = useRef<Hands | null>(null);
-    const cameraRef = useRef<Camera | null>(null);
+    const handsRef = useRef<any>(null);
+    const cameraRef = useRef<any>(null);
     const [isReady, setIsReady] = useState(false);
     const [gesture, setGesture] = useState<GestureEvent | null>(null);
 
-    // Previous hand position for swipe detection
     const prevPositionRef = useRef<{ x: number; y: number } | null>(null);
     const lastGestureTimeRef = useRef<number>(0);
     const lastPinchTimeRef = useRef<number>(0);
 
-    // Calculate distance between two landmarks
     const calculateDistance = (point1: HandLandmark, point2: HandLandmark): number => {
         const dx = point1.x - point2.x;
         const dy = point1.y - point2.y;
@@ -35,30 +39,25 @@ export const useHandGestures = (enabled: boolean) => {
         return Math.sqrt(dx * dx + dy * dy + dz * dz);
     };
 
-    // Detect pinch gesture (thumb tip close to index finger tip)
     const detectPinch = (landmarks: HandLandmark[]): boolean => {
-        const thumbTip = landmarks[4];  // Thumb tip
-        const indexTip = landmarks[8];  // Index finger tip
+        const thumbTip = landmarks[4];
+        const indexTip = landmarks[8];
         const distance = calculateDistance(thumbTip, indexTip);
-        return distance < 0.05; // Threshold for pinch
+        return distance < 0.05;
     };
 
-    // Detect point gesture (only index finger extended)
     const detectPoint = (landmarks: HandLandmark[]): boolean => {
         const indexTip = landmarks[8];
         const indexBase = landmarks[5];
         const middleTip = landmarks[12];
         const middleBase = landmarks[9];
 
-        // Index finger should be extended
         const indexExtended = (indexTip.y < indexBase.y);
-        // Middle finger should be curled
         const middleCurled = (middleTip.y > middleBase.y);
 
         return indexExtended && middleCurled;
     };
 
-    // Detect swipe gestures
     const detectSwipe = (currentX: number, currentY: number): GestureEvent | null => {
         if (!prevPositionRef.current) {
             prevPositionRef.current = { x: currentX, y: currentY };
@@ -67,7 +66,7 @@ export const useHandGestures = (enabled: boolean) => {
 
         const deltaX = currentX - prevPositionRef.current.x;
         const deltaY = currentY - prevPositionRef.current.y;
-        const threshold = 0.15; // Minimum movement to detect swipe
+        const threshold = 0.15;
 
         let gestureType: GestureEvent['type'] | null = null;
 
@@ -91,8 +90,7 @@ export const useHandGestures = (enabled: boolean) => {
         return null;
     };
 
-    // Process hand landmarks and detect gestures
-    const onResults = useCallback((results: Results) => {
+    const onResults = useCallback((results: any) => {
         if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
             prevPositionRef.current = null;
             return;
@@ -101,20 +99,16 @@ export const useHandGestures = (enabled: boolean) => {
         const landmarks = results.multiHandLandmarks[0];
         const now = Date.now();
 
-        // Throttle gesture detection to avoid spam
         if (now - lastGestureTimeRef.current < 300) {
             return;
         }
 
-        // Get palm center for swipe detection
-        const palmCenter = landmarks[9]; // Middle finger base (palm center approximation)
+        const palmCenter = landmarks[9];
 
-        // Detect pinch
         if (detectPinch(landmarks)) {
             const timeSinceLastPinch = now - lastPinchTimeRef.current;
             const isDoublePinch = timeSinceLastPinch < 500;
 
-            // Apply mirror fix (flip X horizontally)
             const x = 1 - landmarks[8].x;
             const y = landmarks[8].y;
 
@@ -130,9 +124,7 @@ export const useHandGestures = (enabled: boolean) => {
             return;
         }
 
-        // Detect point
         if (detectPoint(landmarks)) {
-            // Apply mirror fix (flip X horizontally)
             const x = 1 - landmarks[8].x;
             const y = landmarks[8].y;
 
@@ -146,7 +138,6 @@ export const useHandGestures = (enabled: boolean) => {
             return;
         }
 
-        // Detect swipe
         const swipeGesture = detectSwipe(palmCenter.x, palmCenter.y);
         if (swipeGesture) {
             setGesture(swipeGesture);
@@ -154,10 +145,8 @@ export const useHandGestures = (enabled: boolean) => {
         }
     }, []);
 
-    // Initialize MediaPipe Hands
     useEffect(() => {
         if (!enabled) {
-            // Cleanup if disabled
             if (cameraRef.current) {
                 cameraRef.current.stop();
             }
@@ -170,15 +159,28 @@ export const useHandGestures = (enabled: boolean) => {
 
         const initializeHands = async () => {
             try {
-                // Create video element
+                console.log('[HandGestures] Starting initialization...');
+
+                // Wait for MediaPipe to load from CDN
+                let attempts = 0;
+                while (!window.Hands && attempts < 50) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+
+                if (!window.Hands) {
+                    throw new Error('MediaPipe Hands not loaded from CDN');
+                }
+
+                console.log('[HandGestures] MediaPipe loaded from CDN');
+
                 const video = document.createElement('video');
                 video.style.display = 'none';
                 document.body.appendChild(video);
                 videoRef.current = video;
 
-                // Initialize MediaPipe Hands
-                const hands = new Hands({
-                    locateFile: (file) => {
+                const hands = new window.Hands({
+                    locateFile: (file: string) => {
                         return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
                     }
                 });
@@ -193,8 +195,9 @@ export const useHandGestures = (enabled: boolean) => {
                 hands.onResults(onResults);
                 handsRef.current = hands;
 
-                // Initialize camera
-                const camera = new Camera(video, {
+                console.log('[HandGestures] Starting camera...');
+
+                const camera = new window.Camera(video, {
                     onFrame: async () => {
                         if (handsRef.current) {
                             await handsRef.current.send({ image: video });
@@ -206,9 +209,11 @@ export const useHandGestures = (enabled: boolean) => {
 
                 await camera.start();
                 cameraRef.current = camera;
+
+                console.log('[HandGestures] ✅ Initialization complete!');
                 setIsReady(true);
             } catch (error) {
-                console.error('Failed to initialize hand tracking:', error);
+                console.error('[HandGestures] ❌ Initialization failed:', error);
             }
         };
 
