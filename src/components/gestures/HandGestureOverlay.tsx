@@ -33,12 +33,16 @@ export const HandGestureOverlay = ({ enabled, onToggle }: HandGestureOverlayProp
                     window.history.forward();
                     break;
                 case 'swipe-up':
-                    // Smoother continuous scroll
-                    window.scrollBy({ top: -50, behavior: 'auto' });
+                    // Zoom in
+                    const currentZoomIn = parseFloat(document.body.style.zoom || '1');
+                    const newZoomIn = Math.min(currentZoomIn + 0.1, 2.0); // Max 200%
+                    document.body.style.zoom = newZoomIn.toString();
                     break;
                 case 'swipe-down':
-                    // Smoother continuous scroll
-                    window.scrollBy({ top: 50, behavior: 'auto' });
+                    // Zoom out
+                    const currentZoomOut = parseFloat(document.body.style.zoom || '1');
+                    const newZoomOut = Math.max(currentZoomOut - 0.1, 0.5); // Min 50%
+                    document.body.style.zoom = newZoomOut.toString();
                     break;
                 case 'pinch':
                     // Only click interactive elements (with mirror fix)
