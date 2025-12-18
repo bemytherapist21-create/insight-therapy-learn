@@ -16,6 +16,15 @@ export const HandGestureOverlay = ({ enabled, onToggle }: HandGestureOverlayProp
         if (!gesture) return;
 
         const handleGesture = (gestureEvent: GestureEvent) => {
+            // Helper to check if element is interactive
+            const isInteractive = (element: HTMLElement): boolean => {
+                const tagName = element.tagName.toLowerCase();
+                const isClickable = ['button', 'a', 'input', 'select', 'textarea'].includes(tagName);
+                const hasClickHandler = element.onclick !== null || element.getAttribute('onclick') !== null;
+                const hasRole = element.getAttribute('role') === 'button';
+                return isClickable || hasClickHandler || hasRole || element.closest('button, a') !== null;
+            };
+
             switch (gestureEvent.type) {
                 case 'swipe-left':
                     window.history.back();
@@ -24,29 +33,31 @@ export const HandGestureOverlay = ({ enabled, onToggle }: HandGestureOverlayProp
                     window.history.forward();
                     break;
                 case 'swipe-up':
-                    window.scrollBy({ top: -100, behavior: 'smooth' });
+                    // Smoother continuous scroll
+                    window.scrollBy({ top: -50, behavior: 'auto' });
                     break;
                 case 'swipe-down':
-                    window.scrollBy({ top: 100, behavior: 'smooth' });
+                    // Smoother continuous scroll
+                    window.scrollBy({ top: 50, behavior: 'auto' });
                     break;
                 case 'pinch':
-                    // Simulate click at gesture position
+                    // Only click interactive elements
                     if (gestureEvent.x !== undefined && gestureEvent.y !== undefined) {
                         const x = gestureEvent.x * window.innerWidth;
                         const y = gestureEvent.y * window.innerHeight;
                         const element = document.elementFromPoint(x, y);
-                        if (element && element instanceof HTMLElement) {
+                        if (element && element instanceof HTMLElement && isInteractive(element)) {
                             element.click();
                         }
                     }
                     break;
                 case 'double-pinch':
-                    // Double click simulation
+                    // Only double-click interactive elements
                     if (gestureEvent.x !== undefined && gestureEvent.y !== undefined) {
                         const x = gestureEvent.x * window.innerWidth;
                         const y = gestureEvent.y * window.innerHeight;
                         const element = document.elementFromPoint(x, y);
-                        if (element && element instanceof HTMLElement) {
+                        if (element && element instanceof HTMLElement && isInteractive(element)) {
                             const event = new MouseEvent('dblclick', {
                                 bubbles: true,
                                 cancelable: true,
@@ -57,16 +68,18 @@ export const HandGestureOverlay = ({ enabled, onToggle }: HandGestureOverlayProp
                     }
                     break;
                 case 'point':
-                    // Update hover state
+                    // Only highlight interactive elements
                     if (gestureEvent.x !== undefined && gestureEvent.y !== undefined) {
                         const x = gestureEvent.x * window.innerWidth;
                         const y = gestureEvent.y * window.innerHeight;
                         const element = document.elementFromPoint(x, y);
-                        if (element && element instanceof HTMLElement) {
-                            // Visual feedback for pointing
+                        if (element && element instanceof HTMLElement && isInteractive(element)) {
+                            // Visual feedback for pointing at clickable elements
                             element.style.outline = '2px solid #8b5cf6';
+                            element.style.outlineOffset = '2px';
                             setTimeout(() => {
                                 element.style.outline = '';
+                                element.style.outlineOffset = '';
                             }, 200);
                         }
                     }
