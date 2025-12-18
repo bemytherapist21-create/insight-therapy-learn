@@ -1,11 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import * as mediapipeHands from '@mediapipe/hands';
-import * as mediapipeCamera from '@mediapipe/camera_utils';
-
-// Handle both ESM and CJS imports
-const Hands = (mediapipeHands as any).Hands || mediapipeHands;
-const Camera = (mediapipeCamera as any).Camera || mediapipeCamera;
-type Results = mediapipeHands.Results;
+import { Hands, Results } from '@mediapipe/hands';
+import { Camera } from '@mediapipe/camera_utils';
 
 export interface GestureEvent {
     type: 'swipe-left' | 'swipe-right' | 'swipe-up' | 'swipe-down' | 'pinch' | 'point' | 'double-pinch';
@@ -22,8 +17,8 @@ interface HandLandmark {
 
 export const useHandGestures = (enabled: boolean) => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
-    const handsRef = useRef<typeof Hands | null>(null);
-    const cameraRef = useRef<typeof Camera | null>(null);
+    const handsRef = useRef<Hands | null>(null);
+    const cameraRef = useRef<Camera | null>(null);
     const [isReady, setIsReady] = useState(false);
     const [gesture, setGesture] = useState<GestureEvent | null>(null);
 
@@ -175,15 +170,11 @@ export const useHandGestures = (enabled: boolean) => {
 
         const initializeHands = async () => {
             try {
-                console.log('[HandGestures] Starting MediaPipe initialization...');
-
                 // Create video element
                 const video = document.createElement('video');
                 video.style.display = 'none';
                 document.body.appendChild(video);
                 videoRef.current = video;
-
-                console.log('[HandGestures] Initializing MediaPipe Hands...');
 
                 // Initialize MediaPipe Hands
                 const hands = new Hands({
@@ -202,8 +193,6 @@ export const useHandGestures = (enabled: boolean) => {
                 hands.onResults(onResults);
                 handsRef.current = hands;
 
-                console.log('[HandGestures] Starting camera...');
-
                 // Initialize camera
                 const camera = new Camera(video, {
                     onFrame: async () => {
@@ -217,18 +206,9 @@ export const useHandGestures = (enabled: boolean) => {
 
                 await camera.start();
                 cameraRef.current = camera;
-
-                console.log('[HandGestures] ✅ Initialization complete!');
                 setIsReady(true);
             } catch (error) {
-                console.error('[HandGestures] ❌ Initialization failed:', error);
-                if (error instanceof Error) {
-                    console.error('[HandGestures] Error details:', {
-                        name: error.name,
-                        message: error.message,
-                        stack: error.stack
-                    });
-                }
+                console.error('Failed to initialize hand tracking:', error);
             }
         };
 
