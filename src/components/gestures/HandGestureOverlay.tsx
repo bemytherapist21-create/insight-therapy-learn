@@ -21,9 +21,9 @@ export const HandGestureOverlay = ({ enabled, onToggle }: HandGestureOverlayProp
         const handleGesture = (gestureEvent: GestureEvent) => {
             switch (gestureEvent.type) {
                 case 'point':
-                    // Move cursor to index finger position
+                    // Move cursor to index finger position (flip X for mirror effect)
                     if (gestureEvent.x !== undefined && gestureEvent.y !== undefined) {
-                        const x = gestureEvent.x * window.innerWidth;
+                        const x = (1 - gestureEvent.x) * window.innerWidth; // Flip horizontally
                         const y = gestureEvent.y * window.innerHeight;
                         setCursorPosition({ x, y });
                     }
