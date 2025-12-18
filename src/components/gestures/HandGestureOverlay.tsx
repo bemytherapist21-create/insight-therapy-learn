@@ -27,18 +27,20 @@ export const HandGestureOverlay = ({ enabled, onToggle }: HandGestureOverlayProp
 
             switch (gestureEvent.type) {
                 case 'swipe-left':
+                    // Navigate left (back)
                     window.history.back();
                     break;
                 case 'swipe-right':
+                    // Navigate right (forward)
                     window.history.forward();
                     break;
                 case 'swipe-up':
-                    // Navigate back
-                    window.history.back();
+                    // Navigate up (scroll up)
+                    window.scrollBy({ top: -100, behavior: 'smooth' });
                     break;
                 case 'swipe-down':
-                    // Navigate forward
-                    window.history.forward();
+                    // Navigate down (scroll down)
+                    window.scrollBy({ top: 100, behavior: 'smooth' });
                     break;
                 case 'pinch':
                     // Only click interactive elements (with mirror fix)
