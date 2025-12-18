@@ -11,31 +11,70 @@ import {
   CheckCircle,
   Loader2,
   Sparkles,
-  BookOpen
+  BookOpen,
+  Mic,
+  MicOff
 } from 'lucide-react';
 import { useState } from 'react';
-import { researchService, ResearchResult } from '@/services/researchService';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { InlineWidget } from "react-calendly";
 
 const CALENDLY_URL = "https://calendly.com/bhupeshpandey62/30min";
 
 const InsightFusion = () => {
   const [query, setQuery] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<ResearchResult | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const navigate = useNavigate();
 
   const handleBooking = () => {
     window.open(CALENDLY_URL, '_blank');
   };
 
-  const handleResearch = async () => {
-    if (!query.trim()) return;
+  const handleVoiceInput = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      toast.error('Voice input is not supported in your browser');
+      return;
+    }
 
-    setLoading(true);
-    setResult(null);
-    const data = await researchService.generateInsight(query);
-    setResult(data);
-    setLoading(false);
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      toast.info('Listening... Speak your question');
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setQuery(transcript);
+      toast.success('Voice input captured!');
+    };
+
+    recognition.onerror = (event: any) => {
+      setIsListening(false);
+      toast.error(`Voice input error: ${event.error}`);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
+  const handleResearch = () => {
+    if (!query.trim()) {
+      toast.error('Please enter a research question');
+      return;
+    }
+
+    // Navigate to dedicated research page
+    navigate(`/insight-fusion/Generate/StrategicInsight?q=${encodeURIComponent(query)}`);
   };
 
   const services = [
@@ -106,61 +145,31 @@ const InsightFusion = () => {
               </div>
 
               <div className="flex flex-col gap-4">
-                <textarea
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Ask a strategic question (e.g., 'What are the emerging trends in mental health tech for 2025?')"
-                  className="w-full bg-white/5 border border-white/10 rounded-lg p-4 text-white placeholder:text-gray-400 focus:ring-2 focus:ring-purple-500 min-h-[100px]"
-                />
+                <div className="relative">
+                  <textarea
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Ask a strategic question (e.g., 'What are the emerging trends in mental health tech for 2025?') or use voice input"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg p-4 pr-14 text-white placeholder:text-gray-400 focus:ring-2 focus:ring-purple-500 min-h-[100px]"
+                  />
+                  <Button
+                    onClick={handleVoiceInput}
+                    disabled={isListening}
+                    className={`absolute right-2 top-2 p-2 h-10 w-10 rounded-full ${isListening ? 'bg-red-500 hover:bg-red-600 animate-pulse' : 'bg-purple-500 hover:bg-purple-600'}`}
+                    title="Voice Input"
+                  >
+                    {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                  </Button>
+                </div>
                 <Button
                   onClick={handleResearch}
-                  disabled={loading || !query.trim()}
+                  disabled={!query.trim()}
                   className="bg-gradient-primary hover:shadow-glow w-full"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Analyzing Market Data...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Generate Strategic Insight
-                    </>
-                  )}
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Generate Strategic Insight
                 </Button>
               </div>
-
-              {result && (
-                <div className="mt-6 text-left animate-scale-in">
-                  <div className="bg-white/5 rounded-lg p-6 border border-white/10">
-                    <h3 className="text-lg font-bold text-white mb-4 flex items-center">
-                      <Lightbulb className="w-5 h-5 mr-2 text-yellow-400" />
-                      Strategic Brief
-                    </h3>
-                    <div className="prose prose-invert max-w-none text-sm text-gray-300 whitespace-pre-wrap">
-                      {result.content}
-                    </div>
-                    {result.citations.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-white/10">
-                        <h4 className="text-xs font-semibold text-gray-400 mb-2 flex items-center">
-                          <BookOpen className="w-3 h-3 mr-1" />
-                          Sources
-                        </h4>
-                        <ul className="grid grid-cols-1 gap-1">
-                          {result.citations.map((cite, i) => (
-                            <li key={i}>
-                              <a href={cite} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 hover:underline truncate block">
-                                {cite}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Booking Call to Action */}
