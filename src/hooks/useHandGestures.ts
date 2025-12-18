@@ -22,8 +22,8 @@ interface HandLandmark {
 
 export const useHandGestures = (enabled: boolean) => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
-    const handsRef = useRef<Hands | null>(null);
-    const cameraRef = useRef<Camera | null>(null);
+    const handsRef = useRef<typeof Hands | null>(null);
+    const cameraRef = useRef<typeof Camera | null>(null);
     const [isReady, setIsReady] = useState(false);
     const [gesture, setGesture] = useState<GestureEvent | null>(null);
 
