@@ -97,7 +97,15 @@ export const HandGestureOverlay = ({ enabled, onToggle }: HandGestureOverlayProp
     if (!enabled) return null;
 
     return (
-        <div className="fixed bottom-4 right-4 z-50">
+        <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+            {/* Experimental Warning */}
+            <div className="bg-orange-500/90 backdrop-blur-sm border border-orange-400 rounded-lg px-3 py-2 text-xs text-white">
+                <div className="font-bold flex items-center gap-1">
+                    ⚠️ EXPERIMENTAL FEATURE
+                </div>
+                <div className="text-orange-100">May impact performance</div>
+            </div>
+
             {/* Status indicator */}
             <div className="flex items-center gap-3 bg-black/80 backdrop-blur-sm border border-purple-500/30 rounded-full px-4 py-2">
                 <div className="flex items-center gap-2">
@@ -119,7 +127,7 @@ export const HandGestureOverlay = ({ enabled, onToggle }: HandGestureOverlayProp
 
             {/* Gesture feedback */}
             {gesture && (
-                <div className="mt-2 bg-purple-500/20 backdrop-blur-sm border border-purple-500/50 rounded-lg px-3 py-1 text-xs text-white animate-fade-in">
+                <div className="bg-purple-500/20 backdrop-blur-sm border border-purple-500/50 rounded-lg px-3 py-1 text-xs text-white animate-fade-in">
                     {gesture.type.replace('-', ' ').toUpperCase()}
                 </div>
             )}

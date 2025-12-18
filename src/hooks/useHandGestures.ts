@@ -1,198 +1,231 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { Hands, Results } from '@mediapipe/hands';
+import { Camera } from '@mediapipe/camera_utils';
 
 export interface GestureEvent {
-    type: 'swipe-left' | 'swipe-right' | 'swipe-up' | 'swipe-down' | 'click';
+    type: 'swipe-left' | 'swipe-right' | 'swipe-up' | 'swipe-down' | 'pinch' | 'point' | 'double-pinch';
     x?: number;
     y?: number;
     confidence: number;
 }
 
+interface HandLandmark {
+    x: number;
+    y: number;
+    z: number;
+}
+
 export const useHandGestures = (enabled: boolean) => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
-    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const handsRef = useRef<Hands | null>(null);
+    const cameraRef = useRef<Camera | null>(null);
     const [isReady, setIsReady] = useState(false);
     const [gesture, setGesture] = useState<GestureEvent | null>(null);
 
-    const prevFrameRef = useRef<ImageData | null>(null);
-    const motionCenterRef = useRef<{ x: number; y: number } | null>(null);
+    // Previous hand position for swipe detection
+    const prevPositionRef = useRef<{ x: number; y: number } | null>(null);
     const lastGestureTimeRef = useRef<number>(0);
+    const lastPinchTimeRef = useRef<number>(0);
 
-    // Detect motion in video frames
-    const detectMotion = useCallback((currentFrame: ImageData) => {
-        if (!prevFrameRef.current) {
-            prevFrameRef.current = currentFrame;
+    // Calculate distance between two landmarks
+    const calculateDistance = (point1: HandLandmark, point2: HandLandmark): number => {
+        const dx = point1.x - point2.x;
+        const dy = point1.y - point2.y;
+        const dz = point1.z - point2.z;
+        return Math.sqrt(dx * dx + dy * dy + dz * dz);
+    };
+
+    // Detect pinch gesture (thumb tip close to index finger tip)
+    const detectPinch = (landmarks: HandLandmark[]): boolean => {
+        const thumbTip = landmarks[4];  // Thumb tip
+        const indexTip = landmarks[8];  // Index finger tip
+        const distance = calculateDistance(thumbTip, indexTip);
+        return distance < 0.05; // Threshold for pinch
+    };
+
+    // Detect point gesture (only index finger extended)
+    const detectPoint = (landmarks: HandLandmark[]): boolean => {
+        const indexTip = landmarks[8];
+        const indexBase = landmarks[5];
+        const middleTip = landmarks[12];
+        const middleBase = landmarks[9];
+
+        // Index finger should be extended
+        const indexExtended = (indexTip.y < indexBase.y);
+        // Middle finger should be curled
+        const middleCurled = (middleTip.y > middleBase.y);
+
+        return indexExtended && middleCurled;
+    };
+
+    // Detect swipe gestures
+    const detectSwipe = (currentX: number, currentY: number): GestureEvent | null => {
+        if (!prevPositionRef.current) {
+            prevPositionRef.current = { x: currentX, y: currentY };
             return null;
         }
 
-        const prev = prevFrameRef.current.data;
-        const curr = currentFrame.data;
-        const width = currentFrame.width;
-        const height = currentFrame.height;
+        const deltaX = currentX - prevPositionRef.current.x;
+        const deltaY = currentY - prevPositionRef.current.y;
+        const threshold = 0.15; // Minimum movement to detect swipe
 
-        // Calculate motion by comparing pixels
-        let motionX = 0;
-        let motionY = 0;
-        let motionPixels = 0;
-        const threshold = 30; // Motion sensitivity
+        let gestureType: GestureEvent['type'] | null = null;
 
-        // Sample pixels (not every pixel for performance)
-        for (let y = 0; y < height; y += 10) {
-            for (let x = 0; x < width; x += 10) {
-                const i = (y * width + x) * 4;
-                const diff = Math.abs(curr[i] - prev[i]) +
-                    Math.abs(curr[i + 1] - prev[i + 1]) +
-                    Math.abs(curr[i + 2] - prev[i + 2]);
-
-                if (diff > threshold) {
-                    motionX += x;
-                    motionY += y;
-                    motionPixels++;
-                }
-            }
+        if (Math.abs(deltaX) > threshold && Math.abs(deltaX) > Math.abs(deltaY)) {
+            gestureType = deltaX > 0 ? 'swipe-right' : 'swipe-left';
+        } else if (Math.abs(deltaY) > threshold && Math.abs(deltaY) > Math.abs(deltaX)) {
+            gestureType = deltaY > 0 ? 'swipe-down' : 'swipe-up';
         }
 
-        prevFrameRef.current = currentFrame;
+        prevPositionRef.current = { x: currentX, y: currentY };
 
-        if (motionPixels < 50) return null; // Not enough motion
+        if (gestureType) {
+            return {
+                type: gestureType,
+                x: currentX,
+                y: currentY,
+                confidence: Math.min(Math.abs(deltaX), Math.abs(deltaY)) / threshold
+            };
+        }
 
-        // Calculate center of motion
-        const centerX = motionX / motionPixels / width;
-        const centerY = motionY / motionPixels / height;
+        return null;
+    };
 
-        return { x: centerX, y: centerY, strength: motionPixels };
-    }, []);
-
-    // Detect gestures from motion
-    const detectGesture = useCallback((motion: { x: number; y: number; strength: number } | null) => {
-        if (!motion) {
-            motionCenterRef.current = null;
+    // Process hand landmarks and detect gestures
+    const onResults = useCallback((results: Results) => {
+        if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+            prevPositionRef.current = null;
             return;
         }
 
+        const landmarks = results.multiHandLandmarks[0];
         const now = Date.now();
 
-        // Detect swipes
-        if (motionCenterRef.current && now - lastGestureTimeRef.current > 500) {
-            const deltaX = motion.x - motionCenterRef.current.x;
-            const deltaY = motion.y - motionCenterRef.current.y;
-            const threshold = 0.2;
-
-            if (Math.abs(deltaX) > threshold && Math.abs(deltaX) > Math.abs(deltaY)) {
-                setGesture({
-                    type: deltaX > 0 ? 'swipe-right' : 'swipe-left',
-                    x: motion.x,
-                    y: motion.y,
-                    confidence: Math.min(motion.strength / 500, 1)
-                });
-                lastGestureTimeRef.current = now;
-            } else if (Math.abs(deltaY) > threshold && Math.abs(deltaY) > Math.abs(deltaX)) {
-                setGesture({
-                    type: deltaY > 0 ? 'swipe-down' : 'swipe-up',
-                    x: motion.x,
-                    y: motion.y,
-                    confidence: Math.min(motion.strength / 500, 1)
-                });
-                lastGestureTimeRef.current = now;
-            }
-        }
-
-        // Detect click (sudden motion stop)
-        if (motion.strength < 100 && motionCenterRef.current && now - lastGestureTimeRef.current > 500) {
-            setGesture({
-                type: 'click',
-                x: motionCenterRef.current.x,
-                y: motionCenterRef.current.y,
-                confidence: 0.7
-            });
-            lastGestureTimeRef.current = now;
-        }
-
-        motionCenterRef.current = { x: motion.x, y: motion.y };
-    }, []);
-
-    // Process video frames
-    const processFrame = useCallback(() => {
-        if (!videoRef.current || !canvasRef.current || !enabled) return;
-
-        const video = videoRef.current;
-        const canvas = canvasRef.current;
-        const context = canvas.getContext('2d', { willReadFrequently: true });
-
-        if (!context || video.readyState !== video.HAVE_ENOUGH_DATA) {
-            requestAnimationFrame(processFrame);
+        // Throttle gesture detection to avoid spam
+        if (now - lastGestureTimeRef.current < 300) {
             return;
         }
 
-        // Draw video frame to canvas
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        // Get palm center for swipe detection
+        const palmCenter = landmarks[9]; // Middle finger base (palm center approximation)
 
-        // Get frame data
-        const frameData = context.getImageData(0, 0, canvas.width, canvas.height);
+        // Detect pinch
+        if (detectPinch(landmarks)) {
+            const timeSinceLastPinch = now - lastPinchTimeRef.current;
+            const isDoublePinch = timeSinceLastPinch < 500;
 
-        // Detect motion
-        const motion = detectMotion(frameData);
-        detectGesture(motion);
+            // Apply mirror fix (flip X horizontally)
+            const x = 1 - landmarks[8].x;
+            const y = landmarks[8].y;
 
-        requestAnimationFrame(processFrame);
-    }, [enabled, detectMotion, detectGesture]);
+            setGesture({
+                type: isDoublePinch ? 'double-pinch' : 'pinch',
+                x,
+                y,
+                confidence: 0.9
+            });
 
-    // Initialize camera
+            lastPinchTimeRef.current = now;
+            lastGestureTimeRef.current = now;
+            return;
+        }
+
+        // Detect point
+        if (detectPoint(landmarks)) {
+            // Apply mirror fix (flip X horizontally)
+            const x = 1 - landmarks[8].x;
+            const y = landmarks[8].y;
+
+            setGesture({
+                type: 'point',
+                x,
+                y,
+                confidence: 0.85
+            });
+            lastGestureTimeRef.current = now;
+            return;
+        }
+
+        // Detect swipe
+        const swipeGesture = detectSwipe(palmCenter.x, palmCenter.y);
+        if (swipeGesture) {
+            setGesture(swipeGesture);
+            lastGestureTimeRef.current = now;
+        }
+    }, []);
+
+    // Initialize MediaPipe Hands
     useEffect(() => {
         if (!enabled) {
-            // Cleanup
-            if (videoRef.current && videoRef.current.srcObject) {
-                const stream = videoRef.current.srcObject as MediaStream;
-                stream.getTracks().forEach(track => track.stop());
+            // Cleanup if disabled
+            if (cameraRef.current) {
+                cameraRef.current.stop();
+            }
+            if (handsRef.current) {
+                handsRef.current.close();
             }
             setIsReady(false);
             return;
         }
 
-        const initializeCamera = async () => {
+        const initializeHands = async () => {
             try {
                 // Create video element
                 const video = document.createElement('video');
-                video.width = 320; // Low resolution for performance
-                video.height = 240;
-                video.autoplay = true;
-                video.playsInline = true;
+                video.style.display = 'none';
+                document.body.appendChild(video);
                 videoRef.current = video;
 
-                // Create canvas
-                const canvas = document.createElement('canvas');
-                canvas.width = 320;
-                canvas.height = 240;
-                canvas.style.display = 'none';
-                document.body.appendChild(canvas);
-                canvasRef.current = canvas;
-
-                // Get camera stream
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { width: 320, height: 240, facingMode: 'user' }
+                // Initialize MediaPipe Hands
+                const hands = new Hands({
+                    locateFile: (file) => {
+                        return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+                    }
                 });
 
-                video.srcObject = stream;
-                await video.play();
+                hands.setOptions({
+                    maxNumHands: 1,
+                    modelComplexity: 1,
+                    minDetectionConfidence: 0.7,
+                    minTrackingConfidence: 0.7
+                });
 
+                hands.onResults(onResults);
+                handsRef.current = hands;
+
+                // Initialize camera
+                const camera = new Camera(video, {
+                    onFrame: async () => {
+                        if (handsRef.current) {
+                            await handsRef.current.send({ image: video });
+                        }
+                    },
+                    width: 640,
+                    height: 480
+                });
+
+                await camera.start();
+                cameraRef.current = camera;
                 setIsReady(true);
-                processFrame();
             } catch (error) {
-                console.error('Failed to initialize camera:', error);
+                console.error('Failed to initialize hand tracking:', error);
             }
         };
 
-        initializeCamera();
+        initializeHands();
 
         return () => {
-            if (videoRef.current && videoRef.current.srcObject) {
-                const stream = videoRef.current.srcObject as MediaStream;
-                stream.getTracks().forEach(track => track.stop());
+            if (cameraRef.current) {
+                cameraRef.current.stop();
             }
-            if (canvasRef.current && document.body.contains(canvasRef.current)) {
-                document.body.removeChild(canvasRef.current);
+            if (handsRef.current) {
+                handsRef.current.close();
+            }
+            if (videoRef.current && document.body.contains(videoRef.current)) {
+                document.body.removeChild(videoRef.current);
             }
         };
-    }, [enabled, processFrame]);
+    }, [enabled, onResults]);
 
     return {
         isReady,
