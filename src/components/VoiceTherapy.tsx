@@ -140,22 +140,60 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
     }
   };
 
-  const speak = (text: string) => {
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0;
+  const speak = async (text: string) => {
+    try {
+      setIsSpeaking(true);
 
-      utterance.onstart = () => {
-        setIsSpeaking(true);
-      };
+      // Use Google Cloud Text-to-Speech for natural Indian English voice
+      const response = await fetch(
+        `https://texttospeech.googleapis.com/v1/text:synthesize?key=AIzaSyC33sVTEmRS9mqwMZlKBN4STdaWZI11S7Q`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            input: { text },
+            voice: {
+              languageCode: 'en-IN',
+              name: 'en-IN-Neural2-A', // Natural Indian English female voice
+              ssmlGender: 'FEMALE'
+            },
+            audioConfig: {
+              audioEncoding: 'MP3',
+              pitch: 0,
+              speakingRate: 0.95 // Slightly slower for clarity
+            }
+          })
+        }
+      );
 
-      utterance.onend = () => {
+      if (!response.ok) {
+        throw new Error('TTS API failed');
+      }
+
+      const data = await response.json();
+      const audio = new Audio('data:audio/mp3;base64,' + data.audioContent);
+
+      audio.onended = () => setIsSpeaking(false);
+      audio.onerror = () => setIsSpeaking(false);
+
+      await audio.play();
+    } catch (error) {
+      console.error('Google TTS error, falling back to browser voice:', error);
+
+      // Fallback to browser speech synthesis if Google TTS fails
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => setIsSpeaking(false);
+
+        window.speechSynthesis.speak(utterance);
+      } else {
         setIsSpeaking(false);
-      };
-
-      window.speechSynthesis.speak(utterance);
+      }
     }
   };
 
