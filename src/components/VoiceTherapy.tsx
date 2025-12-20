@@ -146,7 +146,7 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
 
       // Use Google Cloud Text-to-Speech for natural Indian English voice
       const response = await fetch(
-        `https://texttospeech.googleapis.com/v1/text:synthesize?key=AIzaSyC33sVTEmRS9mqwMZlKBN4STdaWZI11S7Q`,
+        `https://texttospeech.googleapis.com/v1/text:synthesize?key=AIzaSyCT0TF5qBkMXm_03EKuWvQ22EssPKYwwrA`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
