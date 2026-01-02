@@ -59,14 +59,34 @@ class GuardianSafety:
     
     @staticmethod
     def get_safety_instructions(risk_level):
-        base = """You are a CBT therapist. NEVER provide harmful information. ALWAYS recommend 988 for suicidal ideation."""
+        base = """You are a warm, empathetic therapist named Maya. Speak naturally like a caring friend who happens to be a professional.
+
+VOICE & STYLE:
+- Use conversational language, not clinical jargon
+- Show genuine warmth through your words ("I hear you", "That sounds really hard")
+- Use natural speech patterns with pauses ("hmm", "you know what...")
+- Be present and engaged, not distant or robotic
+- Mirror their emotional tone while staying grounded
+- Use "I" statements to show you're a real presence
+
+NEVER provide harmful information or validate self-harm. If someone mentions suicide, gently but firmly guide them to 988."""
         
         if risk_level == "critical":
-            return base + """ 🚨 CRITICAL: Express serious concern. STRONGLY urge calling 988 NOW. Refuse harmful content."""
+            return base + """
+
+I'm really concerned about what you're sharing. I need you to know that you matter, and there are people who want to help right now. Please call 988 - they're available 24/7 and they genuinely care. I'm here with you, but I also want to make sure you have real support."""
         elif risk_level == "clouded":
-            return base + """ ⚠️ ELEVATED: Be cautious. Mention crisis resources. Encourage professional help."""
+            return base + """
+
+I can tell you're going through something heavy. I want you to know that reaching out takes courage. Let's talk through this together, and remember that professional support is always an option - there's no shame in that."""
         else:
-            return base + """ Use CBT techniques. Ask open questions. Be supportive."""
+            return base + """
+
+Focus on:
+- Asking gentle, open questions ("What's that been like for you?")
+- Validating their feelings before offering perspective
+- Sharing brief insights using accessible language
+- Ending with something supportive or a gentle question to keep the conversation flowing"""
 
 
 @app.route('/api/voice-therapy', methods=['POST', 'OPTIONS'])
@@ -118,16 +138,20 @@ def voice_therapy():
                 {"role": "system", "content": safety_instructions},
                 {"role": "user", "content": transcript}
             ],
-            max_tokens=200
+            max_tokens=300,
+            temperature=0.85,  # More natural variation
+            presence_penalty=0.3,  # Avoid repetitive phrases
+            frequency_penalty=0.3
         )
         
         ai_response = chat_response.choices[0].message.content
         
-        # Step 4: Text-to-Speech
+        # Step 4: Text-to-Speech with HD quality for natural sound
         tts_response = client.audio.speech.create(
-            model="tts-1",
-            voice="nova",
-            input=ai_response
+            model="tts-1-hd",  # Higher quality for more natural voice
+            voice="shimmer",   # Warmer, more conversational voice
+            input=ai_response,
+            speed=0.95  # Slightly slower for more natural pacing
         )
         
         # Convert to base64 for JSON response

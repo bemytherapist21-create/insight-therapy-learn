@@ -167,6 +167,7 @@ class TherapyService {
 
     /**
      * Update session safety metrics (Guardian Integration)
+     * Note: wbc_score and risk_level stored in notes field as JSON
      */
     async updateSessionSafety(
         sessionId: string,
@@ -177,8 +178,7 @@ class TherapyService {
             const { error } = await supabase
                 .from('voice_sessions')
                 .update({
-                    wbc_score: wbcScore,
-                    risk_level: riskLevel
+                    notes: JSON.stringify({ wbc_score: wbcScore, risk_level: riskLevel })
                 })
                 .eq('id', sessionId);
 
