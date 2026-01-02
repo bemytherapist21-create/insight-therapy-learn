@@ -140,11 +140,10 @@ export default function SimpleVoiceTherapy() {
                 </Card>
 
                 {/* Crisis Modal */}
-                {showCrisisModal && (
-                    <CrisisIntervention
-                        onClose={closeCrisisModal}
-                    />
-                )}
+                <CrisisIntervention
+                    isOpen={showCrisisModal}
+                    onClose={closeCrisisModal}
+                />
             </div>
         </div>
     );
