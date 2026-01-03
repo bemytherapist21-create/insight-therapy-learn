@@ -13,13 +13,70 @@ interface HandLandmark {
     z: number;
 }
 
-// Use global MediaPipe loaded from CDN
+// Use global MediaPipe loaded from CDN (loaded on-demand)
 declare global {
     interface Window {
         Hands: any;
         Camera: any;
     }
 }
+
+const ensureScript = (() => {
+    const cache: Record<string, Promise<void>> = {};
+
+    return (id: string, src: string) => {
+        if (cache[id]) return cache[id];
+
+        cache[id] = new Promise<void>((resolve, reject) => {
+            const existing = document.getElementById(id) as HTMLScriptElement | null;
+            if (existing) {
+                // If already loaded, resolve immediately; otherwise wait for it.
+                if ((existing as any).dataset.loaded === 'true') return resolve();
+                existing.addEventListener('load', () => resolve(), { once: true });
+                existing.addEventListener('error', () => reject(new Error(`Failed to load script: ${src}`)), { once: true });
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.id = id;
+            script.src = src;
+            script.crossOrigin = 'anonymous';
+            script.async = true;
+            script.onload = () => {
+                (script as any).dataset.loaded = 'true';
+                resolve();
+            };
+            script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+            document.head.appendChild(script);
+        });
+
+        return cache[id];
+    };
+})();
+
+const ensureMediaPipeLoaded = async () => {
+    // Keep order for compatibility (matches previous index.html order)
+    await ensureScript(
+        'mediapipe-camera-utils',
+        'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js'
+    );
+    await ensureScript(
+        'mediapipe-control-utils',
+        'https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js'
+    );
+    await ensureScript(
+        'mediapipe-drawing-utils',
+        'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js'
+    );
+    await ensureScript(
+        'mediapipe-hands',
+        'https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js'
+    );
+
+    if (!window.Hands || !window.Camera) {
+        throw new Error('MediaPipe failed to initialize');
+    }
+};
 
 export const useHandGestures = (enabled: boolean) => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -175,18 +232,9 @@ export const useHandGestures = (enabled: boolean) => {
             try {
                 console.log('[HandGestures] Starting initialization...');
 
-                // Wait for MediaPipe to load from CDN
-                let attempts = 0;
-                while (!window.Hands && attempts < 50) {
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    attempts++;
-                }
+                await ensureMediaPipeLoaded();
 
-                if (!window.Hands) {
-                    throw new Error('MediaPipe Hands not loaded from CDN');
-                }
-
-                console.log('[HandGestures] MediaPipe loaded from CDN');
+                console.log('[HandGestures] MediaPipe loaded');
 
                 const video = document.createElement('video');
                 video.style.display = 'none';
