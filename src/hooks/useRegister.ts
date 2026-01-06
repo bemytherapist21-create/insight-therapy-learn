@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/safeClient';
 import { useToast } from '@/hooks/use-toast';
 import { API_ENDPOINTS, SUCCESS_MESSAGES } from '@/config/constants';
 import { registrationSchema, RegistrationFormData } from '@/lib/validation';
