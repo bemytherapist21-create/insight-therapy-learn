@@ -29,8 +29,8 @@ serve(async (req) => {
       );
     }
 
-    // Use a warm, natural voice for therapy
-    const selectedVoice = voiceId || "English_expressive_narrator";
+    // Use custom cloned voice for therapy
+    const selectedVoice = voiceId || "moss_audio_bccfab56-ed6a-11f0-b6f2-dec5318e06e3";
     
     console.log(`Generating TTS for text: "${text.substring(0, 50)}..." with voice: ${selectedVoice}`);
 
