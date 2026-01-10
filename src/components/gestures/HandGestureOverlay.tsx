@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useHandGestures, GestureEvent } from '@/hooks/useHandGestures';
 import { Hand, X, MousePointer2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -153,45 +154,50 @@ export const HandGestureOverlay = ({ enabled, onToggle }: HandGestureOverlayProp
 
     if (!enabled) return null;
 
+    // Render cursor via portal to escape all stacking contexts
+    const cursorElement = handPosition && isReady ? (
+        <div
+            style={{
+                position: 'fixed',
+                left: handPosition.x,
+                top: handPosition.y,
+                transform: 'translate(-50%, -50%)',
+                pointerEvents: 'none',
+                zIndex: 2147483647, // Max z-index value
+                transition: 'left 75ms ease-out, top 75ms ease-out'
+            }}
+        >
+            {/* Outer ring */}
+            <div 
+                className={`absolute inset-0 w-12 h-12 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-all duration-150 ${
+                    isPinching 
+                        ? 'border-green-400 bg-green-400/30 scale-75' 
+                        : 'border-purple-400 bg-purple-400/20'
+                }`}
+            />
+            
+            {/* Inner dot */}
+            <div 
+                className={`absolute w-3 h-3 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-150 ${
+                    isPinching 
+                        ? 'bg-green-400 scale-150' 
+                        : 'bg-purple-500'
+                }`}
+            />
+            
+            {/* Pointer icon */}
+            <MousePointer2 
+                className={`absolute w-5 h-5 translate-x-1 translate-y-1 transition-all duration-150 ${
+                    isPinching ? 'text-green-300 scale-90' : 'text-white drop-shadow-lg'
+                }`}
+            />
+        </div>
+    ) : null;
+
     return (
         <>
-            {/* Hand Cursor Overlay */}
-            {handPosition && isReady && (
-                <div
-                    className="fixed pointer-events-none z-[99999] transition-all duration-75 ease-out"
-                    style={{
-                        left: handPosition.x,
-                        top: handPosition.y,
-                        transform: 'translate(-50%, -50%)'
-                    }}
-                >
-                    {/* Outer ring */}
-                    <div 
-                        className={`absolute inset-0 w-12 h-12 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-all duration-150 ${
-                            isPinching 
-                                ? 'border-green-400 bg-green-400/30 scale-75' 
-                                : 'border-purple-400 bg-purple-400/20'
-                        }`}
-                    />
-                    
-                    {/* Inner dot */}
-                    <div 
-                        className={`absolute w-3 h-3 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-150 ${
-                            isPinching 
-                                ? 'bg-green-400 scale-150' 
-                                : 'bg-purple-500'
-                        }`}
-                    />
-                    
-                    {/* Pointer icon */}
-                    <MousePointer2 
-                        className={`absolute w-5 h-5 translate-x-1 translate-y-1 transition-all duration-150 ${
-                            isPinching ? 'text-green-300 scale-90' : 'text-white drop-shadow-lg'
-                        }`}
-                    />
-                </div>
-            )}
-
+            {/* Render cursor via portal directly to body to escape all stacking contexts */}
+            {cursorElement && createPortal(cursorElement, document.body)}
             {/* Control Panel */}
             <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
                 {/* Experimental Warning */}
