@@ -158,7 +158,7 @@ export const HandGestureOverlay = ({ enabled, onToggle }: HandGestureOverlayProp
             {/* Hand Cursor Overlay */}
             {handPosition && isReady && (
                 <div
-                    className="fixed pointer-events-none z-[9999] transition-all duration-75 ease-out"
+                    className="fixed pointer-events-none z-[99999] transition-all duration-75 ease-out"
                     style={{
                         left: handPosition.x,
                         top: handPosition.y,
