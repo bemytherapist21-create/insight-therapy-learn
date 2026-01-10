@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, MicOff, Video, Mic, Square } from 'lucide-react';
+import { Loader2, MicOff, Video, Mic, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -332,14 +332,34 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
                   </Button>
                 </div>
               ) : (
-                <Button
-                  onClick={stopRecording}
-                  variant="outline"
-                  className="w-full max-w-xs bg-black/40 border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300 hover:border-red-400"
-                >
-                  <Square className="w-4 h-4 mr-2" />
-                  Stop Recording
-                </Button>
+                <div className="space-y-3 w-full max-w-xs mx-auto">
+                  <Button
+                    onClick={() => {
+                      // Toggle mute - stop/start recording
+                      if (mediaRecorderRef.current?.state === 'recording') {
+                        mediaRecorderRef.current.pause();
+                        toast.info('Microphone muted');
+                      } else if (mediaRecorderRef.current?.state === 'paused') {
+                        mediaRecorderRef.current.resume();
+                        toast.info('Microphone unmuted');
+                      }
+                    }}
+                    variant="outline"
+                    className="w-full bg-black/40 border-gray-500/50 text-gray-300 hover:bg-gray-500/10"
+                  >
+                    <Mic className="w-4 h-4 mr-2" />
+                    Mute
+                  </Button>
+
+                  <Button
+                    onClick={stopRecording}
+                    variant="outline"
+                    className="w-full bg-black/40 border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300 hover:border-red-400"
+                  >
+                    <Phone className="w-4 h-4 mr-2" />
+                    End Session
+                  </Button>
+                </div>
               )}
             </div>
           </div>
