@@ -343,10 +343,11 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    // Log detailed error server-side for debugging
     console.error('Error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    // Return generic error message to client
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'An unexpected error occurred. Please try again.' }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
