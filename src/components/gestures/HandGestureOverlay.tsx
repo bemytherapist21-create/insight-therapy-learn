@@ -79,7 +79,8 @@ export const HandGestureOverlay = ({ enabled, onToggle }: HandGestureOverlayProp
                     break;
                 case 'pinch':
                     if (gestureEvent.x !== undefined && gestureEvent.y !== undefined) {
-                        const x = (1 - gestureEvent.x) * window.innerWidth;
+                        // x is already flipped in the hook, just scale to screen
+                        const x = gestureEvent.x * window.innerWidth;
                         const y = gestureEvent.y * window.innerHeight;
                         
                         // Show ripple effect
@@ -104,7 +105,8 @@ export const HandGestureOverlay = ({ enabled, onToggle }: HandGestureOverlayProp
                     break;
                 case 'double-pinch':
                     if (gestureEvent.x !== undefined && gestureEvent.y !== undefined) {
-                        const x = (1 - gestureEvent.x) * window.innerWidth;
+                        // x is already flipped in the hook, just scale to screen
+                        const x = gestureEvent.x * window.innerWidth;
                         const y = gestureEvent.y * window.innerHeight;
                         showClickRipple(x, y);
                         
@@ -126,7 +128,8 @@ export const HandGestureOverlay = ({ enabled, onToggle }: HandGestureOverlayProp
                     break;
                 case 'point':
                     if (gestureEvent.x !== undefined && gestureEvent.y !== undefined) {
-                        const x = (1 - gestureEvent.x) * window.innerWidth;
+                        // x is already flipped in the hook, just scale to screen
+                        const x = gestureEvent.x * window.innerWidth;
                         const y = gestureEvent.y * window.innerHeight;
                         const element = document.elementFromPoint(x, y);
                         if (element && element instanceof HTMLElement) {
