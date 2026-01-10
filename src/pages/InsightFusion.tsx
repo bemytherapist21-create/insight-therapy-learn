@@ -15,7 +15,7 @@ import {
   Mic,
   MicOff
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { InlineWidget } from "react-calendly";
@@ -25,46 +25,104 @@ const CALENDLY_URL = "https://calendly.com/bhupeshpandey62/30min";
 const InsightFusion = () => {
   const [query, setQuery] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
+  
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
 
-  const handleBooking = () => {
-    window.open(CALENDLY_URL, '_blank');
+  const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
+    const arrayBuffer = await audioBlob.arrayBuffer();
+    const base64Audio = btoa(
+      new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+    );
+
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/transcribe-audio`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+      },
+      body: JSON.stringify({
+        audio: base64Audio,
+        mimeType: audioBlob.type
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Transcription failed');
+    }
+
+    const data = await response.json();
+    return data.transcript || '';
   };
 
-  const handleVoiceInput = () => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      toast.error('Voice input is not supported in your browser');
+  const handleVoiceInput = async () => {
+    if (isListening) {
+      // Stop recording
+      if (mediaRecorderRef.current) {
+        mediaRecorderRef.current.stop();
+        setIsListening(false);
+      }
       return;
     }
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4'
+      });
+      
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
 
-    recognition.lang = 'en-US';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
 
-    recognition.onstart = () => {
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType });
+        
+        // Stop microphone stream
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+          streamRef.current = null;
+        }
+
+        setIsProcessing(true);
+        try {
+          const transcript = await transcribeAudio(audioBlob);
+          if (transcript.trim()) {
+            setQuery(transcript);
+            toast.success('Voice input captured!');
+          } else {
+            toast.info('No speech detected. Please try again.');
+          }
+        } catch (error) {
+          console.error('Transcription error:', error);
+          toast.error('Failed to transcribe audio. Please try again.');
+        } finally {
+          setIsProcessing(false);
+        }
+      };
+
+      mediaRecorder.start();
       setIsListening(true);
-      toast.info('Listening... Speak your question');
-    };
+      toast.info('Recording... Click again to stop');
+    } catch (error) {
+      console.error('Microphone error:', error);
+      toast.error('Microphone access denied. Please allow microphone access.');
+    }
+  };
 
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setQuery(transcript);
-      toast.success('Voice input captured!');
-    };
-
-    recognition.onerror = (event: any) => {
-      setIsListening(false);
-      toast.error(`Voice input error: ${event.error}`);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognition.start();
+  const handleBooking = () => {
+    window.open(CALENDLY_URL, '_blank');
   };
 
   const handleResearch = () => {
@@ -154,11 +212,11 @@ const InsightFusion = () => {
                   />
                   <Button
                     onClick={handleVoiceInput}
-                    disabled={isListening}
-                    className={`absolute right-2 top-2 p-2 h-10 w-10 rounded-full ${isListening ? 'bg-red-500 hover:bg-red-600 animate-pulse' : 'bg-purple-500 hover:bg-purple-600'}`}
-                    title="Voice Input"
+                    disabled={isProcessing}
+                    className={`absolute right-2 top-2 p-2 h-10 w-10 rounded-full ${isListening ? 'bg-red-500 hover:bg-red-600 animate-pulse' : isProcessing ? 'bg-gray-500' : 'bg-purple-500 hover:bg-purple-600'}`}
+                    title={isListening ? "Stop Recording" : isProcessing ? "Processing..." : "Voice Input"}
                   >
-                    {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                    {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                   </Button>
                 </div>
                 <Button
