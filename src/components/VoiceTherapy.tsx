@@ -145,18 +145,32 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
       setIsSpeaking(true);
 
       // Use MiniMax TTS via Edge Function for natural voice
-      const { data: ttsData, error: ttsError } = await supabase.functions.invoke('minimax-tts', {
-        body: { text }
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/minimax-tts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+        },
+        body: JSON.stringify({ text })
       });
 
-      if (ttsError || !ttsData?.audioUrl) {
+      if (!response.ok) {
         throw new Error('TTS API failed');
       }
 
-      const audio = new Audio(ttsData.audioUrl);
+      // The function returns raw audio bytes
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
 
-      audio.onended = () => setIsSpeaking(false);
-      audio.onerror = () => setIsSpeaking(false);
+      audio.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+      };
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+      };
 
       await audio.play();
     } catch (error) {
