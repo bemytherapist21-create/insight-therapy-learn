@@ -26,73 +26,119 @@ export const HandGestureOverlay = ({ enabled, onToggle }: HandGestureOverlayProp
         if (!gesture) return;
 
         const handleGesture = (gestureEvent: GestureEvent) => {
-            // Helper to check if element is interactive
-            const isInteractive = (element: HTMLElement): boolean => {
+            // Helper to find the best clickable element
+            const findClickableElement = (element: HTMLElement): HTMLElement | null => {
                 const tagName = element.tagName.toLowerCase();
-                const isClickable = ['button', 'a', 'input', 'select', 'textarea'].includes(tagName);
+                const isClickable = ['button', 'a', 'input', 'select', 'textarea', 'label'].includes(tagName);
                 const hasClickHandler = element.onclick !== null || element.getAttribute('onclick') !== null;
-                const hasRole = element.getAttribute('role') === 'button';
-                return isClickable || hasClickHandler || hasRole || element.closest('button, a') !== null;
+                const hasRole = ['button', 'link', 'menuitem', 'tab', 'checkbox', 'radio'].includes(element.getAttribute('role') || '');
+                const hasCursorPointer = window.getComputedStyle(element).cursor === 'pointer';
+                const hasDataAction = element.hasAttribute('data-action') || element.hasAttribute('data-testid');
+                
+                if (isClickable || hasClickHandler || hasRole || hasCursorPointer || hasDataAction) {
+                    return element;
+                }
+                
+                // Check parent elements up to 5 levels
+                const clickableParent = element.closest('button, a, [role="button"], [onclick], label') as HTMLElement | null;
+                return clickableParent;
+            };
+
+            // Show click ripple effect at position
+            const showClickRipple = (x: number, y: number) => {
+                const ripple = document.createElement('div');
+                ripple.style.cssText = `
+                    position: fixed;
+                    left: ${x}px;
+                    top: ${y}px;
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    background: rgba(34, 197, 94, 0.5);
+                    transform: translate(-50%, -50%) scale(0);
+                    pointer-events: none;
+                    z-index: 10000;
+                    animation: gesture-ripple 0.4s ease-out forwards;
+                `;
+                document.body.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 400);
             };
 
             switch (gestureEvent.type) {
                 case 'swipe-left':
-                    // Navigate left (back)
                     window.history.back();
                     break;
                 case 'swipe-right':
-                    // Navigate right (forward)
                     window.history.forward();
                     break;
                 case 'swipe-up':
-                    // Navigate up (scroll up)
                     window.scrollBy({ top: -100, behavior: 'smooth' });
                     break;
                 case 'swipe-down':
-                    // Navigate down (scroll down)
                     window.scrollBy({ top: 100, behavior: 'smooth' });
                     break;
                 case 'pinch':
-                    // Only click interactive elements (with mirror fix)
                     if (gestureEvent.x !== undefined && gestureEvent.y !== undefined) {
-                        const x = (1 - gestureEvent.x) * window.innerWidth; // Flip horizontally
+                        const x = (1 - gestureEvent.x) * window.innerWidth;
                         const y = gestureEvent.y * window.innerHeight;
+                        
+                        // Show ripple effect
+                        showClickRipple(x, y);
+                        
                         const element = document.elementFromPoint(x, y);
-                        if (element && element instanceof HTMLElement && isInteractive(element)) {
-                            element.click();
+                        if (element && element instanceof HTMLElement) {
+                            const clickable = findClickableElement(element);
+                            if (clickable) {
+                                // Dispatch proper mouse events for better compatibility
+                                const mouseEvent = new MouseEvent('click', {
+                                    bubbles: true,
+                                    cancelable: true,
+                                    view: window,
+                                    clientX: x,
+                                    clientY: y
+                                });
+                                clickable.dispatchEvent(mouseEvent);
+                            }
                         }
                     }
                     break;
                 case 'double-pinch':
-                    // Only double-click interactive elements (with mirror fix)
                     if (gestureEvent.x !== undefined && gestureEvent.y !== undefined) {
-                        const x = (1 - gestureEvent.x) * window.innerWidth; // Flip horizontally
+                        const x = (1 - gestureEvent.x) * window.innerWidth;
                         const y = gestureEvent.y * window.innerHeight;
+                        showClickRipple(x, y);
+                        
                         const element = document.elementFromPoint(x, y);
-                        if (element && element instanceof HTMLElement && isInteractive(element)) {
-                            const event = new MouseEvent('dblclick', {
-                                bubbles: true,
-                                cancelable: true,
-                                view: window
-                            });
-                            element.dispatchEvent(event);
+                        if (element && element instanceof HTMLElement) {
+                            const clickable = findClickableElement(element);
+                            if (clickable) {
+                                const event = new MouseEvent('dblclick', {
+                                    bubbles: true,
+                                    cancelable: true,
+                                    view: window,
+                                    clientX: x,
+                                    clientY: y
+                                });
+                                clickable.dispatchEvent(event);
+                            }
                         }
                     }
                     break;
                 case 'point':
-                    // Only highlight interactive elements (with mirror fix)
                     if (gestureEvent.x !== undefined && gestureEvent.y !== undefined) {
-                        const x = (1 - gestureEvent.x) * window.innerWidth; // Flip horizontally
+                        const x = (1 - gestureEvent.x) * window.innerWidth;
                         const y = gestureEvent.y * window.innerHeight;
                         const element = document.elementFromPoint(x, y);
-                        if (element && element instanceof HTMLElement && isInteractive(element)) {
-                            // Visual feedback for pointing at clickable elements
-                            element.style.outline = '2px solid #8b5cf6';
-                            element.style.outlineOffset = '2px';
-                            setTimeout(() => {
-                                element.style.outline = '';
-                                element.style.outlineOffset = '';
-                            }, 200);
+                        if (element && element instanceof HTMLElement) {
+                            const clickable = findClickableElement(element);
+                            if (clickable) {
+                                clickable.style.outline = '2px solid #8b5cf6';
+                                clickable.style.outlineOffset = '2px';
+                                setTimeout(() => {
+                                    clickable.style.outline = '';
+                                    clickable.style.outlineOffset = '';
+                                }, 200);
+                            }
                         }
                     }
                     break;
