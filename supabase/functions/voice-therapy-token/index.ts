@@ -156,9 +156,10 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
+    // Log detailed error server-side for debugging
     console.error("Error in voice-therapy-token:", error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    // Return generic error message to client
+    return new Response(JSON.stringify({ error: 'Voice therapy session could not be started. Please try again.' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

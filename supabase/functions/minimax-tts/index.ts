@@ -97,9 +97,11 @@ serve(async (req) => {
     });
 
   } catch (error) {
+    // Log detailed error server-side for debugging
     console.error("MiniMax TTS error:", error);
+    // Return generic error message to client
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: "Text-to-speech service unavailable. Please try again." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

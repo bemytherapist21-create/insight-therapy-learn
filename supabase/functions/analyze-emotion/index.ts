@@ -76,9 +76,10 @@ No other text.`
     });
 
   } catch (error) {
+    // Log detailed error server-side for debugging
     console.error("Error:", error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return new Response(JSON.stringify({ error: errorMessage, emotion: "mixed", confidence: 0 }), {
+    // Return generic error message to client with fallback emotion
+    return new Response(JSON.stringify({ error: 'Emotion analysis unavailable', emotion: "mixed", confidence: 0 }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
