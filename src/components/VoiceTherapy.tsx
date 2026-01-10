@@ -1,12 +1,11 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Phone, MicOff, Video, Mic, Square, Keyboard } from 'lucide-react';
+import { Loader2, MicOff, Video, Mic, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/safeClient';
 import { toast } from 'sonner';
 
@@ -29,8 +28,6 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [showTextInput, setShowTextInput] = useState(false);
-  const [textInput, setTextInput] = useState('');
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -110,8 +107,7 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
       toast.success('Recording... Click Stop when done');
     } catch (error) {
       console.error('Microphone error:', error);
-      toast.error('Microphone access denied. Please allow microphone or use text input.');
-      setShowTextInput(true);
+      toast.error('Microphone access denied. Please allow microphone access in your browser settings.');
     }
   }, []);
 
@@ -145,8 +141,7 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
       await processUserMessage(transcript);
     } catch (error) {
       console.error('Processing error:', error);
-      toast.error('Failed to process audio. Try using text input instead.');
-      setShowTextInput(true);
+      toast.error('Failed to process audio. Please try again.');
     } finally {
       setIsProcessing(false);
     }
@@ -252,14 +247,6 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
     }
   };
 
-  const handleTextSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!textInput.trim() || isProcessing) return;
-    
-    const message = textInput.trim();
-    setTextInput('');
-    await processUserMessage(message);
-  };
 
   if (authLoading) {
     return (
@@ -343,30 +330,6 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
                     <Mic className="w-5 h-5 mr-2" />
                     Start Recording
                   </Button>
-                  
-                  <Button
-                    onClick={() => setShowTextInput(!showTextInput)}
-                    variant="outline"
-                    className="w-full bg-black/40 border-gray-500/50 text-gray-300 hover:bg-gray-500/10"
-                  >
-                    <Keyboard className="w-4 h-4 mr-2" />
-                    {showTextInput ? 'Hide' : 'Use'} Text Input
-                  </Button>
-                  
-                  {showTextInput && (
-                    <form onSubmit={handleTextSubmit} className="flex gap-2 mt-2">
-                      <Input
-                        value={textInput}
-                        onChange={(e) => setTextInput(e.target.value)}
-                        placeholder="Type your message..."
-                        className="flex-1 bg-black/40 border-white/20 text-white"
-                        disabled={isProcessing}
-                      />
-                      <Button type="submit" disabled={isProcessing || !textInput.trim()}>
-                        Send
-                      </Button>
-                    </form>
-                  )}
                 </div>
               ) : (
                 <Button
