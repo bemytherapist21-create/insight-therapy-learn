@@ -84,6 +84,7 @@ export const useHandGestures = (enabled: boolean) => {
     const cameraRef = useRef<any>(null);
     const [isReady, setIsReady] = useState(false);
     const [gesture, setGesture] = useState<GestureEvent | null>(null);
+    const [handPosition, setHandPosition] = useState<{ x: number; y: number } | null>(null);
 
     const prevPositionRef = useRef<{ x: number; y: number } | null>(null);
     const lastGestureTimeRef = useRef<number>(0);
@@ -150,11 +151,18 @@ export const useHandGestures = (enabled: boolean) => {
     const onResults = useCallback((results: any) => {
         if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
             prevPositionRef.current = null;
+            setHandPosition(null);
             return;
         }
 
         const landmarks = results.multiHandLandmarks[0];
         const now = Date.now();
+
+        // Always update hand position for cursor (using index finger tip)
+        const indexTip = landmarks[8];
+        const cursorX = (1 - indexTip.x) * window.innerWidth; // Flip horizontally (mirror)
+        const cursorY = indexTip.y * window.innerHeight;
+        setHandPosition({ x: cursorX, y: cursorY });
 
         if (now - lastGestureTimeRef.current < 300) {
             return;
@@ -225,6 +233,7 @@ export const useHandGestures = (enabled: boolean) => {
             }
             setIsReady(false);
             setGesture(null);
+            setHandPosition(null);
             return;
         }
 
@@ -319,6 +328,7 @@ export const useHandGestures = (enabled: boolean) => {
     return {
         isReady,
         gesture,
+        handPosition,
         videoElement: videoRef.current
     };
 };

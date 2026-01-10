@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useHandGestures, GestureEvent } from '@/hooks/useHandGestures';
-import { Hand, X } from 'lucide-react';
+import { Hand, X, MousePointer2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface HandGestureOverlayProps {
@@ -9,7 +9,17 @@ interface HandGestureOverlayProps {
 }
 
 export const HandGestureOverlay = ({ enabled, onToggle }: HandGestureOverlayProps) => {
-    const { isReady, gesture, videoElement } = useHandGestures(enabled);
+    const { isReady, gesture, handPosition, videoElement } = useHandGestures(enabled);
+    const [isPinching, setIsPinching] = useState(false);
+
+    // Track pinch state for cursor styling
+    useEffect(() => {
+        if (gesture?.type === 'pinch' || gesture?.type === 'double-pinch') {
+            setIsPinching(true);
+            const timer = setTimeout(() => setIsPinching(false), 200);
+            return () => clearTimeout(timer);
+        }
+    }, [gesture]);
 
     // Handle gestures
     useEffect(() => {
@@ -95,40 +105,80 @@ export const HandGestureOverlay = ({ enabled, onToggle }: HandGestureOverlayProp
     if (!enabled) return null;
 
     return (
-        <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
-            {/* Experimental Warning */}
-            <div className="bg-orange-500/90 backdrop-blur-sm border border-orange-400 rounded-lg px-3 py-2 text-xs text-white">
-                <div className="font-bold flex items-center gap-1">
-                    ⚠️ EXPERIMENTAL FEATURE
-                </div>
-                <div className="text-orange-100">May impact performance</div>
-            </div>
-
-            {/* Status indicator */}
-            <div className="flex items-center gap-3 bg-black/80 backdrop-blur-sm border border-purple-500/30 rounded-full px-4 py-2">
-                <div className="flex items-center gap-2">
-                    <Hand className={`w-5 h-5 ${isReady ? 'text-green-400 animate-pulse' : 'text-yellow-400'}`} />
-                    <span className="text-sm text-white">
-                        {isReady ? 'Hand Gestures Active' : 'Initializing...'}
-                    </span>
-                </div>
-
-                <Button
-                    onClick={onToggle}
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 w-8 p-0 hover:bg-white/10"
+        <>
+            {/* Hand Cursor Overlay */}
+            {handPosition && isReady && (
+                <div
+                    className="fixed pointer-events-none z-[9999] transition-all duration-75 ease-out"
+                    style={{
+                        left: handPosition.x,
+                        top: handPosition.y,
+                        transform: 'translate(-50%, -50%)'
+                    }}
                 >
-                    <X className="w-4 h-4 text-white" />
-                </Button>
-            </div>
-
-            {/* Gesture feedback */}
-            {gesture && (
-                <div className="bg-purple-500/20 backdrop-blur-sm border border-purple-500/50 rounded-lg px-3 py-1 text-xs text-white animate-fade-in">
-                    {gesture.type.replace('-', ' ').toUpperCase()}
+                    {/* Outer ring */}
+                    <div 
+                        className={`absolute inset-0 w-12 h-12 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-all duration-150 ${
+                            isPinching 
+                                ? 'border-green-400 bg-green-400/30 scale-75' 
+                                : 'border-purple-400 bg-purple-400/20'
+                        }`}
+                    />
+                    
+                    {/* Inner dot */}
+                    <div 
+                        className={`absolute w-3 h-3 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-150 ${
+                            isPinching 
+                                ? 'bg-green-400 scale-150' 
+                                : 'bg-purple-500'
+                        }`}
+                    />
+                    
+                    {/* Pointer icon */}
+                    <MousePointer2 
+                        className={`absolute w-5 h-5 translate-x-1 translate-y-1 transition-all duration-150 ${
+                            isPinching ? 'text-green-300 scale-90' : 'text-white drop-shadow-lg'
+                        }`}
+                    />
                 </div>
             )}
-        </div>
+
+            {/* Control Panel */}
+            <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+                {/* Experimental Warning */}
+                <div className="bg-orange-500/90 backdrop-blur-sm border border-orange-400 rounded-lg px-3 py-2 text-xs text-white">
+                    <div className="font-bold flex items-center gap-1">
+                        ⚠️ EXPERIMENTAL FEATURE
+                    </div>
+                    <div className="text-orange-100">May impact performance</div>
+                </div>
+
+                {/* Status indicator */}
+                <div className="flex items-center gap-3 bg-black/80 backdrop-blur-sm border border-purple-500/30 rounded-full px-4 py-2">
+                    <div className="flex items-center gap-2">
+                        <Hand className={`w-5 h-5 ${isReady ? 'text-green-400 animate-pulse' : 'text-yellow-400'}`} />
+                        <span className="text-sm text-white">
+                            {isReady ? 'Hand Tracking Active' : 'Initializing...'}
+                        </span>
+                    </div>
+
+                    <Button
+                        onClick={onToggle}
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 hover:bg-white/10"
+                    >
+                        <X className="w-4 h-4 text-white" />
+                    </Button>
+                </div>
+
+                {/* Gesture feedback */}
+                {gesture && (
+                    <div className="bg-purple-500/20 backdrop-blur-sm border border-purple-500/50 rounded-lg px-3 py-1 text-xs text-white animate-fade-in">
+                        {gesture.type.replace('-', ' ').toUpperCase()}
+                    </div>
+                )}
+            </div>
+        </>
     );
 };
