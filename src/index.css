@@ -157,4 +157,16 @@ All colors MUST be HSL for consistent theming.
   ::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--primary-glow));
   }
+
+  /* Hand Gesture Click Ripple */
+  @keyframes gesture-ripple {
+    0% {
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(2);
+      opacity: 0;
+    }
+  }
 }
