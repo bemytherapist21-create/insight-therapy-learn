@@ -251,103 +251,72 @@ serve(async (req) => {
       .order('created_at', { ascending: true })
       .limit(10);
 
-    // Call Google Gemini API directly
-    const GOOGLE_GEMINI_API_KEY = Deno.env.get('GOOGLE_GEMINI_API_KEY');
-    if (!GOOGLE_GEMINI_API_KEY) {
-      throw new Error('GOOGLE_GEMINI_API_KEY not configured');
+    // Call Lovable AI Gateway
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    // Convert messages format for Gemini API
-    // Gemini uses a different format: contents array with parts
-    const contents = [];
-    
-    // Add system prompt as first user message (Gemini doesn't have system role)
+    // Build messages array for OpenAI-compatible API
     const systemPrompt = getSystemPrompt(safety.riskLevel);
-    contents.push({
-      role: 'user',
-      parts: [{ text: systemPrompt + '\n\nPlease respond naturally and warmly to the person you\'re speaking with.' }]
-    });
-    contents.push({
-      role: 'model',
-      parts: [{ text: 'Of course. I\'m here and listening. Whatever you want to share, I\'m ready to hear it.' }]
-    });
+    const messages = [
+      { role: 'system', content: systemPrompt }
+    ];
     
     // Add conversation history
     for (const msg of history || []) {
-      if (msg.role === 'user') {
-        contents.push({
-          role: 'user',
-          parts: [{ text: msg.content }]
-        });
-      } else if (msg.role === 'assistant') {
-        contents.push({
-          role: 'model',
-          parts: [{ text: msg.content }]
-        });
-      }
+      messages.push({
+        role: msg.role === 'assistant' ? 'assistant' : 'user',
+        content: msg.content
+      });
     }
     
     // Add current user message
-    contents.push({
-      role: 'user',
-      parts: [{ text: message }]
-    });
+    messages.push({ role: 'user', content: message });
 
     const aiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_GEMINI_API_KEY}`,
+      'https://ai.gateway.lovable.dev/v1/chat/completions',
       {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          contents: contents,
-          generationConfig: {
-            temperature: 0.85,  // More natural variation
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 500,
-          },
-          safetySettings: [
-            {
-              category: 'HARM_CATEGORY_HARASSMENT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              category: 'HARM_CATEGORY_HATE_SPEECH',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            }
-          ]
+          model: 'google/gemini-3-flash-preview',
+          messages,
+          temperature: 0.85,
+          max_tokens: 500,
         }),
       }
     );
 
     if (!aiResponse.ok) {
+      if (aiResponse.status === 429) {
+        return new Response(
+          JSON.stringify({ error: 'Rate limit exceeded. Please try again in a moment.' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      if (aiResponse.status === 402) {
+        return new Response(
+          JSON.stringify({ error: 'AI service requires payment. Please add credits.' }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
       const errorText = await aiResponse.text();
-      console.error('Gemini API error:', aiResponse.status, errorText);
-      throw new Error(`Gemini API error: ${aiResponse.status}`);
+      console.error('Lovable AI Gateway error:', aiResponse.status, errorText);
+      throw new Error(`AI Gateway error: ${aiResponse.status}`);
     }
 
     const aiData = await aiResponse.json();
     
-    // Check if response was blocked by safety filters
-    if (!aiData.candidates || !aiData.candidates[0] || !aiData.candidates[0].content) {
-      throw new Error('Gemini API returned no response (possibly blocked by safety filters)');
+    // Parse OpenAI-compatible response
+    if (!aiData.choices || !aiData.choices[0] || !aiData.choices[0].message) {
+      throw new Error('AI Gateway returned no response');
     }
     
-    if (aiData.candidates[0].finishReason === 'SAFETY') {
-      throw new Error('Response blocked by Gemini safety filters');
-    }
-    
-    const assistantMessage = aiData.candidates[0].content.parts[0].text;
+    const assistantMessage = aiData.choices[0].message.content;
 
     // Save assistant response
     await supabase.from('messages').insert({
