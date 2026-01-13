@@ -19,6 +19,7 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { InlineWidget } from "react-calendly";
+import { backendAnonKey, backendUrl } from '@/config/backend';
 
 const CALENDLY_URL = "https://calendly.com/bhupeshpandey62/30min";
 
@@ -38,16 +39,16 @@ const InsightFusion = () => {
       new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
     );
 
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/transcribe-audio`, {
+    const response = await fetch(`${backendUrl}/functions/v1/transcribe-audio`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+        apikey: backendAnonKey,
       },
       body: JSON.stringify({
         audio: base64Audio,
-        mimeType: audioBlob.type
-      })
+        mimeType: audioBlob.type,
+      }),
     });
 
     if (!response.ok) {
