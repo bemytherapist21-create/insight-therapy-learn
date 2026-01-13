@@ -136,7 +136,7 @@ const Navigation = () => {
           <div className="flex items-center justify-between">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 hover-lift">
-              <img src={brainLogo} alt="The Everything AI Logo" className="w-10 h-10 object-contain" />
+              <img src={brainLogo} alt="The Everything AI Logo" className="w-14 h-14 object-contain" />
               <span className="text-2xl font-bold bg-gradient-to-r from-[#8A2BE2] to-[#FF8C00] bg-clip-text text-transparent">
                 The Everything AI
               </span>
