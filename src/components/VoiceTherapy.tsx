@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/safeClient';
 import { toast } from 'sonner';
+import { CrisisResourcesBanner } from '@/components/safety/CrisisResourcesBanner';
 
 // Voice Therapy - Gemini via Lovable AI (NO OpenAI, NO Browser Speech API)
 
@@ -434,9 +435,7 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
 
       {/* Guardian Notice */}
       <div className="mt-6 p-4 bg-gradient-to-r from-purple-500/20 to-purple-600/20 rounded-lg border border-purple-500/30">
-        <p className="text-sm text-white/80 text-center">
-          🛡️ <strong>Project Guardian Protected</strong> - If you're experiencing a crisis, please contact the 988 Suicide &amp; Crisis Lifeline.
-        </p>
+        <CrisisResourcesBanner variant="minimal" />
       </div>
     </div>
   );
