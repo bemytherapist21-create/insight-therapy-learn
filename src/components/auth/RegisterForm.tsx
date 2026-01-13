@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CountrySelector } from '@/components/ui/country-selector';
 import { Loader2 } from 'lucide-react';
 import { useRegister } from '@/hooks/useRegister';
 import { calculatePasswordStrength } from '@/lib/validation';
@@ -105,22 +105,14 @@ export const RegisterForm = () => {
                 {/* Country */}
                 <div className="space-y-2">
                     <Label htmlFor="country">Country</Label>
-                    <Select
+                    <CountrySelector
+                        countries={countries}
                         value={formData.country}
                         onValueChange={(value) => updateField('country', value)}
                         disabled={loading}
-                    >
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select country" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {countries.map((country) => (
-                                <SelectItem key={country.code} value={country.code}>
-                                    {country.name}{autoDetectedCountry === country.code ? ' (Auto Detected)' : ''}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                        autoDetectedCountry={autoDetectedCountry}
+                        placeholder="Select your country"
+                    />
                     {errors.country && <p className="text-sm text-red-500">{errors.country}</p>}
                 </div>
             </div>
