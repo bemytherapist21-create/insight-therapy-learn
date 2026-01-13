@@ -1,21 +1,27 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Brain, Sparkles, LogIn, UserPlus, Snowflake, CloudRain } from 'lucide-react';
+import { Menu, X, Brain, Sparkles, LogIn, UserPlus, Snowflake, CloudRain, Leaf, Flower2, Bug, PartyPopper, Palette } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
 import SnowEffect from '@/components/effects/SnowEffect';
 import RainEffect from '@/components/effects/RainEffect';
+import { FallingLeavesEffect } from '@/components/effects/FallingLeavesEffect';
+import { CherryBlossomEffect } from '@/components/effects/CherryBlossomEffect';
+import { FirefliesEffect } from '@/components/effects/FirefliesEffect';
+import { ConfettiEffect } from '@/components/effects/ConfettiEffect';
+
+type EffectType = 'none' | 'snow' | 'rain' | 'leaves' | 'blossoms' | 'fireflies' | 'confetti';
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [snowEnabled, setSnowEnabled] = useState(false);
-  const [rainEnabled, setRainEnabled] = useState(false);
+  const [activeEffect, setActiveEffect] = useState<EffectType>('none');
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
@@ -27,6 +33,15 @@ const Navigation = () => {
     { name: 'Contact', path: '/contact' },
   ];
 
+  const effectOptions = [
+    { id: 'snow' as EffectType, label: 'Let it Snow', icon: Snowflake, color: 'text-sky-400' },
+    { id: 'rain' as EffectType, label: 'Let it Rain', icon: CloudRain, color: 'text-blue-400' },
+    { id: 'leaves' as EffectType, label: 'Falling Leaves', icon: Leaf, color: 'text-orange-400' },
+    { id: 'blossoms' as EffectType, label: 'Cherry Blossoms', icon: Flower2, color: 'text-pink-400' },
+    { id: 'fireflies' as EffectType, label: 'Fireflies', icon: Bug, color: 'text-yellow-400' },
+    { id: 'confetti' as EffectType, label: 'Confetti', icon: PartyPopper, color: 'text-purple-400' },
+  ];
+
   const isActive = (path: string) => location.pathname === path;
 
   const handleSignOut = async () => {
@@ -34,10 +49,30 @@ const Navigation = () => {
     navigate('/');
   };
 
+  const toggleEffect = (effect: EffectType) => {
+    setActiveEffect(activeEffect === effect ? 'none' : effect);
+  };
+
+  const getActiveEffectIcon = () => {
+    const active = effectOptions.find(e => e.id === activeEffect);
+    return active ? active.icon : Palette;
+  };
+
+  const getActiveEffectColor = () => {
+    const active = effectOptions.find(e => e.id === activeEffect);
+    return active ? active.color : 'text-muted-foreground';
+  };
+
+  const ActiveIcon = getActiveEffectIcon();
+
   return (
     <>
-      <SnowEffect enabled={snowEnabled} />
-      <RainEffect enabled={rainEnabled} />
+      <SnowEffect enabled={activeEffect === 'snow'} />
+      <RainEffect enabled={activeEffect === 'rain'} />
+      <FallingLeavesEffect enabled={activeEffect === 'leaves'} />
+      <CherryBlossomEffect enabled={activeEffect === 'blossoms'} />
+      <FirefliesEffect enabled={activeEffect === 'fireflies'} />
+      <ConfettiEffect enabled={activeEffect === 'confetti'} />
       <nav className="fixed top-0 left-0 right-0 z-50 glass-card">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -53,27 +88,47 @@ const Navigation = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
-            {/* Weather Effects - Rain and Snow toggles */}
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setRainEnabled(!rainEnabled)}
-                className={`transition-all duration-300 h-8 w-8 ${rainEnabled ? 'text-blue-400 bg-blue-400/20' : 'text-muted-foreground hover:text-foreground'}`}
-                title="Let it Rain!"
-              >
-                <CloudRain className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setSnowEnabled(!snowEnabled)}
-                className={`transition-all duration-300 h-8 w-8 ${snowEnabled ? 'text-sky-400 bg-sky-400/20' : 'text-muted-foreground hover:text-foreground'}`}
-                title="Let it Snow!"
-              >
-                <Snowflake className="w-4 h-4" />
-              </Button>
-            </div>
+            {/* Seasonal Effects Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`transition-all duration-300 h-8 w-8 ${activeEffect !== 'none' ? `${getActiveEffectColor()} bg-current/20` : 'text-muted-foreground hover:text-foreground'}`}
+                  title="Seasonal Effects"
+                >
+                  <ActiveIcon className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48">
+                {effectOptions.map((effect) => (
+                  <DropdownMenuItem
+                    key={effect.id}
+                    onClick={() => toggleEffect(effect.id)}
+                    className={`cursor-pointer flex items-center gap-2 ${activeEffect === effect.id ? effect.color : ''}`}
+                  >
+                    <effect.icon className={`w-4 h-4 ${activeEffect === effect.id ? effect.color : ''}`} />
+                    {effect.label}
+                    {activeEffect === effect.id && (
+                      <span className="ml-auto text-xs">✓</span>
+                    )}
+                  </DropdownMenuItem>
+                ))}
+                {activeEffect !== 'none' && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => setActiveEffect('none')}
+                      className="cursor-pointer text-muted-foreground"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Turn Off
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             {navItems.map((item) => (
               <Link
                 key={item.name}
@@ -136,6 +191,22 @@ const Navigation = () => {
         {isOpen && (
           <div className="md:hidden mt-4 pb-4 border-t border-glass-border">
             <div className="flex flex-col gap-4 pt-4">
+              {/* Mobile Effects Selector */}
+              <div className="flex flex-wrap gap-2 pb-2 border-b border-glass-border">
+                {effectOptions.map((effect) => (
+                  <Button
+                    key={effect.id}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleEffect(effect.id)}
+                    className={`transition-all duration-300 ${activeEffect === effect.id ? `${effect.color} bg-current/20` : 'text-muted-foreground'}`}
+                  >
+                    <effect.icon className="w-4 h-4 mr-1" />
+                    {effect.label.split(' ')[0]}
+                  </Button>
+                ))}
+              </div>
+              
               {navItems.map((item) => (
                 <Link
                   key={item.name}
