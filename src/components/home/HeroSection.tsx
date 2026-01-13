@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import heroImage from '@/assets/hero-ai.jpg';
-import brainLogo from '@/assets/brain-logo.png';
 
 export const HeroSection = () => {
     const scrollToSection = (id: string) => {
@@ -22,11 +21,7 @@ export const HeroSection = () => {
                 <div className="max-w-4xl mx-auto animate-fade-in">
                     <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 tracking-tight text-white leading-tight">
                         <span className="block mb-1">Welcome to</span>
-                        <span className="flex items-center justify-center gap-2 pb-2 leading-normal">
-                            <span className="bg-gradient-to-r from-[#8A2BE2] to-[#FF8C00] bg-clip-text text-transparent">The</span>
-                            <img src={brainLogo} alt="Brain Logo" className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 object-contain" />
-                            <span className="bg-gradient-to-r from-[#8A2BE2] to-[#FF8C00] bg-clip-text text-transparent">Everything AI</span>
-                        </span>
+                        <span className="block pb-2 leading-normal bg-gradient-to-r from-[#8A2BE2] to-[#FF8C00] bg-clip-text text-transparent">The Everything AI</span>
                     </h1>
                     <p className="text-xl md:text-2xl mb-8 text-white max-w-2xl mx-auto">
                         Revolutionizing therapy, business insights, and learning through
