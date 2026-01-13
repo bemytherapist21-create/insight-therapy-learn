@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Brain, Sparkles, LogIn, UserPlus, Snowflake, CloudRain, Leaf, Flower2, Bug, PartyPopper, Heart, Star, CloudLightning, Volume2, VolumeX } from 'lucide-react';
+import { Menu, X, Sparkles, LogIn, UserPlus, Snowflake, CloudRain, Leaf, Flower2, Bug, PartyPopper, Heart, Star, CloudLightning, Volume2, VolumeX } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +20,7 @@ import { HeartsEffect } from '@/components/effects/HeartsEffect';
 import { StarfieldEffect } from '@/components/effects/StarfieldEffect';
 import { ThunderstormEffect } from '@/components/effects/ThunderstormEffect';
 import { ambientSoundService } from '@/services/ambientSoundService';
+import brainLogo from '@/assets/brain-logo.png';
 
 type EffectType = 'none' | 'snow' | 'rain' | 'leaves' | 'blossoms' | 'fireflies' | 'confetti' | 'bats' | 'hearts' | 'stars' | 'storm';
 
@@ -135,9 +136,7 @@ const Navigation = () => {
           <div className="flex items-center justify-between">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 hover-lift">
-              <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center shadow-glow">
-                <Brain className="w-6 h-6 text-primary-foreground" />
-              </div>
+              <img src={brainLogo} alt="The Everything AI Logo" className="w-10 h-10 object-contain" />
               <span className="text-2xl font-bold bg-gradient-to-r from-[#8A2BE2] to-[#FF8C00] bg-clip-text text-transparent">
                 The Everything AI
               </span>
