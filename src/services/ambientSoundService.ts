@@ -8,16 +8,36 @@ class AmbientSoundService {
   private activeNodes: Map<string, AudioNode[]> = new Map();
   private gainNodes: Map<string, GainNode> = new Map();
   private isPlaying: Map<string, boolean> = new Map();
+  private isAudioSupported: boolean = false;
 
-  private getAudioContext(): AudioContext {
-    if (!this.audioContext || this.audioContext.state === 'closed') {
-      this.audioContext = new AudioContext();
+  constructor() {
+    // Check if AudioContext is available (may not be in some environments)
+    try {
+      this.isAudioSupported = typeof AudioContext !== 'undefined' || typeof (window as any).webkitAudioContext !== 'undefined';
+    } catch {
+      this.isAudioSupported = false;
     }
-    return this.audioContext;
   }
 
-  private createNoiseBuffer(duration: number, type: 'white' | 'pink' | 'brown' = 'white'): AudioBuffer {
+  private getAudioContext(): AudioContext | null {
+    if (!this.isAudioSupported) {
+      return null;
+    }
+    try {
+      if (!this.audioContext || this.audioContext.state === 'closed') {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        this.audioContext = new AudioContextClass();
+      }
+      return this.audioContext;
+    } catch {
+      return null;
+    }
+  }
+
+  private createNoiseBuffer(duration: number, type: 'white' | 'pink' | 'brown' = 'white'): AudioBuffer | null {
     const ctx = this.getAudioContext();
+    if (!ctx) return null;
+    
     const bufferSize = ctx.sampleRate * duration;
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = buffer.getChannelData(0);
@@ -51,10 +71,14 @@ class AmbientSoundService {
     if (this.isPlaying.get('rain')) return;
     
     const ctx = this.getAudioContext();
+    if (!ctx) return;
+    
     const nodes: AudioNode[] = [];
 
     // Create noise source
     const noiseBuffer = this.createNoiseBuffer(2, 'pink');
+    if (!noiseBuffer) return;
+    
     const noise = ctx.createBufferSource();
     noise.buffer = noiseBuffer;
     noise.loop = true;
@@ -92,6 +116,7 @@ class AmbientSoundService {
   // Thunder sound - low frequency rumble with crack
   playThunder(): void {
     const ctx = this.getAudioContext();
+    if (!ctx) return;
 
     // Thunder crack
     const crackOsc = ctx.createOscillator();
@@ -104,6 +129,8 @@ class AmbientSoundService {
 
     // Rumble
     const rumbleBuffer = this.createNoiseBuffer(3, 'brown');
+    if (!rumbleBuffer) return;
+    
     const rumble = ctx.createBufferSource();
     rumble.buffer = rumbleBuffer;
 
@@ -133,9 +160,13 @@ class AmbientSoundService {
     if (this.isPlaying.get('wind')) return;
 
     const ctx = this.getAudioContext();
+    if (!ctx) return;
+    
     const nodes: AudioNode[] = [];
 
     const noiseBuffer = this.createNoiseBuffer(4, 'brown');
+    if (!noiseBuffer) return;
+    
     const noise = ctx.createBufferSource();
     noise.buffer = noiseBuffer;
     noise.loop = true;
@@ -175,6 +206,8 @@ class AmbientSoundService {
     if (this.isPlaying.get('night')) return;
 
     const ctx = this.getAudioContext();
+    if (!ctx) return;
+    
     const nodes: AudioNode[] = [];
 
     // Create chirping oscillators
@@ -228,9 +261,13 @@ class AmbientSoundService {
     if (this.isPlaying.get('fire')) return;
 
     const ctx = this.getAudioContext();
+    if (!ctx) return;
+    
     const nodes: AudioNode[] = [];
 
     const noiseBuffer = this.createNoiseBuffer(1, 'white');
+    if (!noiseBuffer) return;
+    
     const noise = ctx.createBufferSource();
     noise.buffer = noiseBuffer;
     noise.loop = true;
@@ -270,6 +307,8 @@ class AmbientSoundService {
     if (this.isPlaying.get('sparkle')) return;
 
     const ctx = this.getAudioContext();
+    if (!ctx) return;
+    
     const masterGain = ctx.createGain();
     masterGain.gain.value = 0.05;
     masterGain.connect(ctx.destination);
@@ -302,6 +341,8 @@ class AmbientSoundService {
     if (this.isPlaying.get('heartbeat')) return;
 
     const ctx = this.getAudioContext();
+    if (!ctx) return;
+    
     const masterGain = ctx.createGain();
     masterGain.gain.value = 0.15;
     masterGain.connect(ctx.destination);
@@ -348,6 +389,8 @@ class AmbientSoundService {
     if (this.isPlaying.get('party')) return;
 
     const ctx = this.getAudioContext();
+    if (!ctx) return;
+    
     const masterGain = ctx.createGain();
     masterGain.gain.value = 0.08;
     masterGain.connect(ctx.destination);
@@ -381,6 +424,8 @@ class AmbientSoundService {
     if (this.isPlaying.get('spooky')) return;
 
     const ctx = this.getAudioContext();
+    if (!ctx) return;
+    
     const nodes: AudioNode[] = [];
 
     // Low drone

@@ -4,6 +4,7 @@
  */
 
 import { logger } from '@/services/loggingService';
+import { safeSessionStorage } from '@/lib/safeStorage';
 
 class CSRFProtection {
     private tokenKey = 'csrf_token';
@@ -19,7 +20,7 @@ class CSRFProtection {
         const token = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
 
         // Store in sessionStorage (not localStorage, expires with session)
-        sessionStorage.setItem(this.tokenKey, token);
+        safeSessionStorage.setItem(this.tokenKey, token);
         this.token = token;
 
         logger.debug('CSRF token generated');
@@ -33,7 +34,7 @@ class CSRFProtection {
         if (this.token) return this.token;
 
         // Try to get from sessionStorage
-        const stored = sessionStorage.getItem(this.tokenKey);
+        const stored = safeSessionStorage.getItem(this.tokenKey);
         if (stored) {
             this.token = stored;
             return stored;
@@ -64,7 +65,7 @@ class CSRFProtection {
      * Clear the CSRF token (e.g., on logout)
      */
     clearToken(): void {
-        sessionStorage.removeItem(this.tokenKey);
+        safeSessionStorage.removeItem(this.tokenKey);
         this.token = null;
         logger.debug('CSRF token cleared');
     }
