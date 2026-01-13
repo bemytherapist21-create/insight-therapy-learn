@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Brain, Sparkles, LogIn, UserPlus, Snowflake } from 'lucide-react';
+import { Menu, X, Brain, Sparkles, LogIn, UserPlus, Snowflake, CloudRain } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,10 +10,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
 import SnowEffect from '@/components/effects/SnowEffect';
+import RainEffect from '@/components/effects/RainEffect';
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [snowEnabled, setSnowEnabled] = useState(false);
+  const [rainEnabled, setRainEnabled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
@@ -35,6 +37,7 @@ const Navigation = () => {
   return (
     <>
       <SnowEffect enabled={snowEnabled} />
+      <RainEffect enabled={rainEnabled} />
       <nav className="fixed top-0 left-0 right-0 z-50 glass-card">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -50,16 +53,27 @@ const Navigation = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
-            {/* Snow Toggle - next to Home */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSnowEnabled(!snowEnabled)}
-              className={`transition-all duration-300 h-8 w-8 ${snowEnabled ? 'text-sky-400 bg-sky-400/20' : 'text-muted-foreground hover:text-foreground'}`}
-              title="Let it Snow!"
-            >
-              <Snowflake className="w-4 h-4" />
-            </Button>
+            {/* Weather Effects - Rain and Snow toggles */}
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setRainEnabled(!rainEnabled)}
+                className={`transition-all duration-300 h-8 w-8 ${rainEnabled ? 'text-blue-400 bg-blue-400/20' : 'text-muted-foreground hover:text-foreground'}`}
+                title="Let it Rain!"
+              >
+                <CloudRain className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSnowEnabled(!snowEnabled)}
+                className={`transition-all duration-300 h-8 w-8 ${snowEnabled ? 'text-sky-400 bg-sky-400/20' : 'text-muted-foreground hover:text-foreground'}`}
+                title="Let it Snow!"
+              >
+                <Snowflake className="w-4 h-4" />
+              </Button>
+            </div>
             {navItems.map((item) => (
               <Link
                 key={item.name}
