@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Brain, Sparkles, LogIn, UserPlus } from 'lucide-react';
+import { Menu, X, Brain, Sparkles, LogIn, UserPlus, Snowflake } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,9 +9,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
+import SnowEffect from '@/components/effects/SnowEffect';
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [snowEnabled, setSnowEnabled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
@@ -31,18 +33,31 @@ const Navigation = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass-card">
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 hover-lift">
-            <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center shadow-glow">
-              <Brain className="w-6 h-6 text-primary-foreground" />
+    <>
+      <SnowEffect enabled={snowEnabled} />
+      <nav className="fixed top-0 left-0 right-0 z-50 glass-card">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            {/* Logo and Snow Toggle */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSnowEnabled(!snowEnabled)}
+                className={`transition-all duration-300 ${snowEnabled ? 'text-sky-400 bg-sky-400/20' : 'text-muted-foreground hover:text-foreground'}`}
+                title="Let it Snow!"
+              >
+                <Snowflake className="w-5 h-5" />
+              </Button>
+              <Link to="/" className="flex items-center gap-2 hover-lift">
+                <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center shadow-glow">
+                  <Brain className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <span className="text-2xl font-bold bg-gradient-to-r from-[#8A2BE2] to-[#FF8C00] bg-clip-text text-transparent">
+                  The Everything AI
+                </span>
+              </Link>
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-[#8A2BE2] to-[#FF8C00] bg-clip-text text-transparent">
-              The Everything AI
-            </span>
-          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
@@ -160,9 +175,10 @@ const Navigation = () => {
               )}
             </div>
           </div>
-        )}
-      </div>
-    </nav>
+          )}
+        </div>
+      </nav>
+    </>
   );
 };
 
