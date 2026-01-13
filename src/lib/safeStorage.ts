@@ -1,6 +1,6 @@
 /**
  * Safe storage adapter that falls back to in-memory storage
- * when localStorage/sessionStorage is blocked (e.g., in third-party iframes)
+ * when localStorage is blocked (e.g., in third-party iframes)
  */
 
 class MemoryStorage implements Storage {
@@ -32,41 +32,17 @@ class MemoryStorage implements Storage {
   }
 }
 
-function isStorageAvailable(storage: Storage): boolean {
+function isLocalStorageAvailable(): boolean {
   try {
     const testKey = '__storage_test__';
-    storage.setItem(testKey, testKey);
-    storage.removeItem(testKey);
+    localStorage.setItem(testKey, testKey);
+    localStorage.removeItem(testKey);
     return true;
   } catch {
     return false;
   }
 }
 
-// Create singleton memory storage instances for fallback
-const localMemoryStorage = new MemoryStorage();
-const sessionMemoryStorage = new MemoryStorage();
-
-// Safe localStorage wrapper
-export const safeStorage: Storage = (() => {
-  try {
-    if (typeof localStorage !== 'undefined' && isStorageAvailable(localStorage)) {
-      return localStorage;
-    }
-  } catch {
-    // localStorage access threw an error
-  }
-  return localMemoryStorage;
-})();
-
-// Safe sessionStorage wrapper
-export const safeSessionStorage: Storage = (() => {
-  try {
-    if (typeof sessionStorage !== 'undefined' && isStorageAvailable(sessionStorage)) {
-      return sessionStorage;
-    }
-  } catch {
-    // sessionStorage access threw an error
-  }
-  return sessionMemoryStorage;
-})();
+export const safeStorage: Storage = isLocalStorageAvailable()
+  ? localStorage
+  : new MemoryStorage();

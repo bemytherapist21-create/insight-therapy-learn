@@ -10,7 +10,6 @@ import { ArrowRight } from 'lucide-react';
 import { HeroSection } from '@/components/home/HeroSection';
 import { ServiceCard } from '@/components/home/ServiceCard';
 import { ContactForm } from '@/components/home/ContactForm';
-import everythingAiLogo from '@/assets/everything-ai-logo.png';
 
 const Home = () => {
   const services = [
@@ -142,12 +141,10 @@ const Home = () => {
 
             <div className="order-1 lg:order-2 flex justify-center">
               <div className="relative">
-                <div className="w-72 h-72 md:w-96 md:h-96 rounded-2xl flex items-center justify-center overflow-hidden">
-                  <img 
-                    src={everythingAiLogo} 
-                    alt="The Everything AI Logo" 
-                    className="w-full h-full object-contain"
-                  />
+                <div className="w-72 h-72 md:w-96 md:h-96 bg-gradient-to-br from-purple-700 to-orange-500 rounded-full flex items-center justify-center shadow-xl">
+                  <div className="w-56 h-56 md:w-80 md:h-80 bg-black rounded-full flex items-center justify-center p-6 border border-white/10">
+                    <Brain className="w-40 h-40 text-white" />
+                  </div>
                 </div>
 
                 <div className="absolute -top-4 -right-4 w-16 h-16 bg-purple-500 opacity-70 rounded-full animate-pulse"></div>

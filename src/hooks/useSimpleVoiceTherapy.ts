@@ -114,17 +114,18 @@ export function useSimpleVoiceTherapy() {
             }]);
 
             // Generate natural audio using MiniMax TTS
-            const { backendAnonKey, backendUrl } = await import('@/config/backend');
-
-            const ttsResponse = await fetch(`${backendUrl}/functions/v1/minimax-tts`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    apikey: backendAnonKey,
-                    Authorization: `Bearer ${backendAnonKey}`,
-                },
-                body: JSON.stringify({ text: data.response }),
-            });
+            const ttsResponse = await fetch(
+                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/minimax-tts`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+                    },
+                    body: JSON.stringify({ text: data.response }),
+                }
+            );
 
             if (ttsResponse.ok) {
                 const audioBlob2 = await ttsResponse.blob();

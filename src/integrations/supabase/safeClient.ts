@@ -5,12 +5,14 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { safeStorage } from '@/lib/safeStorage';
-import { backendAnonKey, backendUrl } from '@/config/backend';
 
-export const supabase = createClient<Database>(backendUrl, backendAnonKey, {
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: safeStorage,
     persistSession: true,
     autoRefreshToken: true,
-  },
+  }
 });

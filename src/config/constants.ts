@@ -3,8 +3,6 @@
  * Centralized location for magic strings and configuration values
  */
 
-import { backendAnonKey, backendUrl } from '@/config/backend';
-
 // API Endpoints
 export const API_ENDPOINTS = {
     GOOGLE_SHEETS: 'https://script.google.com/macros/s/AKfycbxQ5FgsJfnT55m81KTXsgZGE5qByyFOap_Do6Nb4m_deA-9FR1mMQCLB4bY7xvVgPQk/exec',
@@ -41,8 +39,8 @@ export const UI_CONFIG = {
 
 // External Service URLs
 export const EXTERNAL_SERVICES = {
-    SUPABASE_URL: backendUrl,
-    SUPABASE_KEY: backendAnonKey,
+    SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL || '',
+    SUPABASE_KEY: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '',
 } as const;
 
 // Feature Flags (for gradual rollout of new features)

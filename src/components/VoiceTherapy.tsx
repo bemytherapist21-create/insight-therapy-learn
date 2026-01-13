@@ -7,7 +7,6 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/safeClient';
-import { backendAnonKey, backendUrl } from '@/config/backend';
 import { toast } from 'sonner';
 
 // Voice Therapy - Gemini via Lovable AI (NO OpenAI, NO Browser Speech API)
@@ -59,16 +58,16 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
       new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
     );
 
-    const response = await fetch(`${backendUrl}/functions/v1/transcribe-audio`, {
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/transcribe-audio`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        apikey: backendAnonKey,
+        'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
       },
       body: JSON.stringify({
         audio: base64Audio,
-        mimeType: audioBlob.type,
-      }),
+        mimeType: audioBlob.type
+      })
     });
 
     if (!response.ok) {
@@ -160,17 +159,17 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
         throw new Error('No active session');
       }
 
-      const response = await fetch(`${backendUrl}/functions/v1/therapy-chat`, {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/therapy-chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-          apikey: backendAnonKey,
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
         },
         body: JSON.stringify({
           message: transcript,
-          conversationId: null,
-        }),
+          conversationId: null
+        })
       });
 
       if (!response.ok) {
@@ -200,13 +199,13 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
       setIsSpeaking(true);
 
       // Use MiniMax TTS via Edge Function for natural voice
-      const response = await fetch(`${backendUrl}/functions/v1/minimax-tts`, {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/minimax-tts`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          apikey: backendAnonKey,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
         },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text })
       });
 
       if (!response.ok) {
