@@ -9,6 +9,8 @@ import { CountrySelector } from '@/components/ui/country-selector';
 import { Link } from 'react-router-dom';
 
 const LICENSE_TYPES = [
+    { value: 'rci', label: 'RCI Licensed (Rehabilitation Council of India)' },
+    { value: 'practitioner', label: 'Therapy Practitioner (Unlicensed)' },
     { value: 'lpc', label: 'Licensed Professional Counselor (LPC)' },
     { value: 'lmft', label: 'Licensed Marriage and Family Therapist (LMFT)' },
     { value: 'lcsw', label: 'Licensed Clinical Social Worker (LCSW)' },
@@ -315,22 +317,24 @@ const TherapistRegistrationForm = () => {
                         {errors.licenseType && <p className="text-red-400 text-xs mt-1">{errors.licenseType}</p>}
                     </div>
 
-                    <div>
-                        <label htmlFor="licenseNumber" className="block text-sm font-medium text-white mb-2">
-                            License Number *
-                        </label>
-                        <Input
-                            id="licenseNumber"
-                            type="text"
-                            placeholder="LPC-12345"
-                            value={formData.licenseNumber}
-                            onChange={(e) => updateField('licenseNumber', e.target.value)}
-                            disabled={loading}
-                            maxLength={50}
-                            className={`bg-white/5 border-white/20 text-white placeholder:text-white/50 ${errors.licenseNumber ? 'border-red-500' : ''}`}
-                        />
-                        {errors.licenseNumber && <p className="text-red-400 text-xs mt-1">{errors.licenseNumber}</p>}
-                    </div>
+                    {formData.licenseType !== 'practitioner' && (
+                        <div>
+                            <label htmlFor="licenseNumber" className="block text-sm font-medium text-white mb-2">
+                                License Number *
+                            </label>
+                            <Input
+                                id="licenseNumber"
+                                type="text"
+                                placeholder="RCI-12345 or LPC-12345"
+                                value={formData.licenseNumber}
+                                onChange={(e) => updateField('licenseNumber', e.target.value)}
+                                disabled={loading}
+                                maxLength={50}
+                                className={`bg-white/5 border-white/20 text-white placeholder:text-white/50 ${errors.licenseNumber ? 'border-red-500' : ''}`}
+                            />
+                            {errors.licenseNumber && <p className="text-red-400 text-xs mt-1">{errors.licenseNumber}</p>}
+                        </div>
+                    )}
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4">

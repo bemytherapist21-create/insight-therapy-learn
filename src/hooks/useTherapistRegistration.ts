@@ -8,7 +8,7 @@ const therapistRegistrationSchema = z.object({
     fullName: z.string().trim().min(2, 'Full name must be at least 2 characters').max(100, 'Full name must be less than 100 characters'),
     email: z.string().trim().email('Invalid email address').max(255, 'Email must be less than 255 characters'),
     phone: z.string().trim().min(10, 'Phone number must be at least 10 digits').max(20, 'Phone number must be less than 20 characters'),
-    licenseNumber: z.string().trim().min(3, 'License number is required').max(50, 'License number must be less than 50 characters'),
+    licenseNumber: z.string().trim().max(50, 'License number must be less than 50 characters').optional().or(z.literal('')),
     licenseType: z.string().trim().min(1, 'Please select a license type'),
     specializations: z.string().trim().min(5, 'Please describe your specializations').max(500, 'Specializations must be less than 500 characters'),
     yearsOfExperience: z.string().trim().min(1, 'Years of experience is required'),
@@ -18,6 +18,17 @@ const therapistRegistrationSchema = z.object({
     website: z.string().trim().url('Invalid website URL').optional().or(z.literal('')),
     linkedIn: z.string().trim().url('Invalid LinkedIn URL').optional().or(z.literal('')),
     agreeToTerms: z.boolean().refine(val => val === true, 'You must agree to the terms and conditions'),
+}).superRefine((data, ctx) => {
+    // License number is required unless "practitioner" is selected
+    if (data.licenseType !== 'practitioner') {
+        if (!data.licenseNumber || data.licenseNumber.length < 3) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'License number is required',
+                path: ['licenseNumber'],
+            });
+        }
+    }
 });
 
 export interface TherapistFormData {
