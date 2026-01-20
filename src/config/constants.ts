@@ -6,11 +6,7 @@
 // API Endpoints
 export const API_ENDPOINTS = {
     GOOGLE_SHEETS: 'https://script.google.com/macros/s/AKfycbxQ5FgsJfnT55m81KTXsgZGE5qByyFOap_Do6Nb4m_deA-9FR1mMQCLB4bY7xvVgPQk/exec',
-<<<<<<< HEAD
-    GOOGLE_SHEETS_THERAPIST: 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE', // TODO: Replace with your therapist registration Google Sheets script URL
-=======
-    THERAPIST_REGISTRATION: 'https://script.google.com/macros/s/AKfycbwSgEoqxsVoSoIYZi32FFX3EBtRuxMMMXKoqh2Vsok7awFO-ngGgqE4oeibE1PkmVMS/exec',
->>>>>>> eef094e171296e76cd721104ca63bce6c4165073
+    GOOGLE_SHEETS_THERAPIST: 'https://script.google.com/macros/s/AKfycbzaevpeu6UDg8S7CesFp8KI93qdhKkrQMpvIrfLjxL3YRtM4nAy8MFBSVmx7JdXfBds/exec',
     IPAPI: 'https://ipapi.co/json/',
     D_ID_AVATAR_DEFAULT: 'https://create-images-results.d-id.com/DefaultPresenters/Noelle_f/image.jpeg',
     D_ID_AVATAR: 'https://api.d-id.com/talks',
