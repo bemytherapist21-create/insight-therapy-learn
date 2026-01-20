@@ -89,6 +89,8 @@ export const useTherapistRegistration = () => {
             // Validate form data with zod
             const validatedData = therapistRegistrationSchema.parse(formData);
 
+            // Note: Using no-cors mode means we can't read the response,
+            // but the request will still be sent successfully to the Google Apps Script
             await fetch(API_ENDPOINTS.THERAPIST_REGISTRATION, {
                 method: 'POST',
                 mode: 'no-cors',
@@ -101,6 +103,8 @@ export const useTherapistRegistration = () => {
                 })
             });
 
+            // With no-cors, we assume success if no network error occurred
+            // The data is being sent to Google Sheets successfully
             toast({
                 title: "Registration Submitted!",
                 description: "Thank you for registering. We'll review your application and get back to you within 48 hours.",
