@@ -12,6 +12,7 @@ import os
 from dotenv import load_dotenv
 import tempfile
 from guardian_safety import GuardianSafety, RiskLevel
+from minimax_service import MinimaxVoiceService
 from typing import List, Dict
 
 load_dotenv()
@@ -32,6 +33,13 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Guardian safety instance
 guardian = GuardianSafety()
+
+# Minimax voice service
+try:
+    minimax = MinimaxVoiceService()
+except Exception as e:
+    print(f"Warning: Minimax service not available: {e}")
+    minimax = None
 
 
 class Message(BaseModel):
@@ -168,13 +176,131 @@ async def get_audio(filename: str):
     raise HTTPException(status_code=404, detail="Audio file not found")
 
 
+@app.post("/api/voice-therapy-minimax", response_model=VoiceResponse)
+async def voice_therapy_minimax(
+    audio: UploadFile = File(...),
+    user_id: str = "",
+    session_id: str = "",
+    message_history: str = "[]"  # JSON string of previous messages
+):
+    """
+    Voice therapy pipeline using Minimax AI:
+    1. Transcribe audio (Minimax ASR or Whisper fallback)
+    2. Analyze safety (Guardian)
+    3. Generate response (Minimax LLM with adaptive safety)
+    4. Convert to speech (Minimax TTS with cloned voice)
+    """
+    
+    if not minimax:
+        raise HTTPException(
+            status_code=503, 
+            detail="Minimax service not available. Check API key configuration."
+        )
+    
+    try:
+        # Step 1: Save uploaded audio temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as temp_audio:
+            content = await audio.read()
+            temp_audio.write(content)
+            temp_audio_path = temp_audio.name
+        
+        # Step 2: Transcribe with Minimax (or fallback to Gemini)
+        try:
+            transcript = minimax.speech_to_text(temp_audio_path)
+        except Exception as e:
+            # Fallback to Gemini if Minimax fails
+            print(f"Minimax ASR failed, using Gemini: {e}")
+            
+            import google.generativeai as genai
+            genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+            
+            # Upload audio file to Gemini
+            audio_file = genai.upload_file(temp_audio_path)
+            
+            # Use Gemini to transcribe
+            model = genai.GenerativeModel("gemini-1.5-pro")
+            result = model.generate_content([
+                "Transcribe this audio exactly. Return only the transcribed text, nothing else.",
+                audio_file
+            ])
+            transcript = result.text.strip()
+            print(f"Gemini transcription: {transcript}")
+        
+        # Clean up temp audio file
+        os.unlink(temp_audio_path)
+        
+        # Step 3: Guardian Safety Analysis
+        safety_analysis = guardian.analyze_safety(transcript)
+        
+        # Step 4: Get adaptive safety instructions
+        safety_instructions = guardian.get_safety_instructions(safety_analysis.risk_level)
+        
+        # Step 5: Generate response with Minimax LLM
+        messages = [
+            {"role": "system", "content": safety_instructions}
+        ]
+        
+        # Add CBT therapeutic context
+        cbt_context = """
+        You are a compassionate AI therapist using Cognitive Behavioral Therapy (CBT) techniques:
+        - Ask open-ended questions to understand deeply
+        - Help identify thought patterns and cognitive distortions
+        - Challenge negative thoughts gently and constructively
+        - Encourage behavioral activation and practical coping strategies
+        - Teach mindfulness and emotional regulation techniques
+        - Validate feelings while promoting realistic, balanced thinking
+        - Use a warm, empathetic tone that builds trust
+        - Keep responses conversational and natural (2-3 sentences typically)
+        """
+        messages.append({"role": "system", "content": cbt_context})
+        messages.append({"role": "user", "content": transcript})
+        
+        response_text = minimax.chat_completion(
+            messages=messages,
+            temperature=0.7,
+            max_tokens=300
+        )
+        
+        # Step 6: Convert response to speech with cloned voice
+        audio_bytes = minimax.text_to_speech(
+            text=response_text,
+            speed=1.0,  # Natural speaking speed
+            pitch=0     # Normal pitch (must be integer)
+        )
+        
+        # Save TTS audio
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_tts:
+            temp_tts.write(audio_bytes)
+            tts_audio_path = temp_tts.name
+        
+        # Return response with safety data
+        return VoiceResponse(
+            transcript=transcript,
+            response=response_text,
+            audio_url=f"/audio/{os.path.basename(tts_audio_path)}",
+            safety={
+                "wbc_score": safety_analysis.wbc_score,
+                "risk_level": safety_analysis.risk_level,
+                "color_code": safety_analysis.color_code,
+                "requires_intervention": safety_analysis.requires_intervention
+            },
+            wbc_score=safety_analysis.wbc_score,
+            risk_level=safety_analysis.risk_level,
+            crisis_detected=safety_analysis.crisis_detected
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
     return {
         "status": "healthy",
         "guardian": "active",
-        "openai": "connected" if os.getenv("OPENAI_API_KEY") else "not configured"
+        "openai": "connected" if os.getenv("OPENAI_API_KEY") else "not configured",
+        "minimax": "connected" if minimax else "not configured"
     }
 
 

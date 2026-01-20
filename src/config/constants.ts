@@ -6,6 +6,7 @@
 // API Endpoints
 export const API_ENDPOINTS = {
     GOOGLE_SHEETS: 'https://script.google.com/macros/s/AKfycbxQ5FgsJfnT55m81KTXsgZGE5qByyFOap_Do6Nb4m_deA-9FR1mMQCLB4bY7xvVgPQk/exec',
+    GOOGLE_SHEETS_THERAPIST: 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE', // TODO: Replace with your therapist registration Google Sheets script URL
     IPAPI: 'https://ipapi.co/json/',
     D_ID_AVATAR_DEFAULT: 'https://create-images-results.d-id.com/DefaultPresenters/Noelle_f/image.jpeg',
     D_ID_AVATAR: 'https://api.d-id.com/talks',
@@ -95,4 +96,5 @@ export const SUCCESS_MESSAGES = {
     LOGIN_SUCCESS: 'Welcome back!',
     LOGOUT_SUCCESS: 'You have been signed out.',
     MESSAGE_SENT: "Thank you! We'll get back to you soon.",
+    THERAPIST_REGISTRATION_SENT: "Thank you for your interest! We'll review your application and get back to you soon.",
 } as const;

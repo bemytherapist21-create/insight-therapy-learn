@@ -2,23 +2,22 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { 
-  Bot, 
-  User, 
-  Mic, 
-  MessageCircle, 
+import {
+  Bot,
+  User,
+  Mic,
+  MessageCircle,
   UserPlus,
   TrendingUp,
   Heart,
   Shield
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
 const AITherapy = () => {
   const navigate = useNavigate();
-  
+
   // Simulated live tracking data (in real app, this would come from your backend)
   const [therapistStats, setTherapistStats] = useState({
     ai: 68,
@@ -70,7 +69,7 @@ const AITherapy = () => {
       gradient: 'from-orange-500 to-pink-500',
       action: 'Register & Book',
       requiresRegistration: true,
-      onClick: () => toast.info('Human Therapist registration coming soon!')
+      onClick: () => navigate('/therapist-registration')
     }
   ];
 
@@ -79,7 +78,7 @@ const AITherapy = () => {
       {/* Hero Section */}
       <section className="py-20">
         <div className="container mx-auto px-4">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -91,7 +90,7 @@ const AITherapy = () => {
             <p className="text-xl text-white/80 max-w-3xl mx-auto mb-8">
               Protected by Project Guardian safety framework with real-time risk assessment
             </p>
-            
+
             {/* Live Statistics */}
             <div className="glass-card max-w-2xl mx-auto p-6 mb-8">
               <h3 className="text-2xl font-bold text-white mb-4 flex items-center justify-center gap-2">
@@ -149,7 +148,7 @@ const AITherapy = () => {
                       <CardDescription className="text-white/70 text-center">
                         {option.description}
                       </CardDescription>
-                      
+
                       <div className="space-y-2">
                         {option.features.map((feature, idx) => (
                           <div key={idx} className="flex items-center gap-2 text-white/80">
@@ -159,7 +158,7 @@ const AITherapy = () => {
                         ))}
                       </div>
 
-                      <Button 
+                      <Button
                         className={`w-full bg-gradient-to-r ${option.gradient} hover:shadow-glow transition-all duration-300`}
                         onClick={(e) => {
                           e.stopPropagation();
