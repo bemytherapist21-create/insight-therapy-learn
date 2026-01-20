@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createClient } from '@supabase/supabase-js';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Mic, Square, Volume2, VolumeX, AlertCircle,
@@ -10,17 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-
-// --- Types & Configuration ---
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    console.error("Missing Supabase Environment Variables");
-}
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+import { supabase } from '@/integrations/supabase/safeClient';
+import { CrisisModal } from '@/components/safety/CrisisModal';
 
 interface Message {
     role: 'user' | 'assistant';
@@ -351,40 +341,7 @@ export default function VoiceTherapy() {
             {/* Crisis Intervention Modal */}
             <AnimatePresence>
                 {showCrisisModal && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-slate-900/90 z-50 flex items-center justify-center p-4"
-                    >
-                        <motion.div
-                            initial={{ scale: 0.95 }}
-                            animate={{ scale: 1 }}
-                            className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl p-6 shadow-2xl border-t-4 border-rose-500"
-                        >
-                            <div className="text-center">
-                                <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <Phone className="w-8 h-8" />
-                                </div>
-                                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">We care about you</h2>
-                                <p className="text-slate-600 dark:text-slate-300 mb-6">
-                                    It sounds like you're going through a very difficult time. Please connect with a human who can help immediately.
-                                </p>
-
-                                <div className="space-y-3">
-                                    <Button className="w-full h-12 text-lg bg-rose-600 hover:bg-rose-700" onClick={() => window.open('tel:988')}>
-                                        Call 988 Crisis Lifeline
-                                    </Button>
-                                    <Button variant="outline" className="w-full h-12" onClick={() => window.open('sms:741741')}>
-                                        Text HOME to 741741
-                                    </Button>
-                                    <Button variant="ghost" className="w-full mt-2 text-slate-400" onClick={() => setShowCrisisModal(false)}>
-                                        I'm safe, return to session
-                                    </Button>
-                                </div>
-                            </div>
-                        </motion.div>
-                    </motion.div>
+                    <CrisisModal isOpen={showCrisisModal} onClose={() => setShowCrisisModal(false)} />
                 )}
             </AnimatePresence>
         </div>

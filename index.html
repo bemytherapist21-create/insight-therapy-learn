@@ -7,10 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- MediaPipe for Hand Gestures -->
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <!-- Loaded on-demand when gestures are enabled (see useHandGestures) -->
 
   <!-- Security Headers (via meta tags for static hosting) -->
   <!-- Note: X-Frame-Options should be set via HTTP headers, not meta tags -->
@@ -27,7 +24,7 @@
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       font-src 'self' https://fonts.gstatic.com https://r2cdn.perplexity.ai data:;
       img-src 'self' data: https: blob:;
-      connect-src 'self' http://localhost:8000 https://*.supabase.co https://ipapi.co https://api.d-id.com https://api.perplexity.ai https://script.google.com https://cdn.jsdelivr.net https://generativelanguage.googleapis.com https://texttospeech.googleapis.com wss://*.supabase.co;
+      connect-src 'self' https://*.supabase.co https://ipapi.co https://api.d-id.com https://api.perplexity.ai https://script.google.com https://cdn.jsdelivr.net wss://*.supabase.co https://texttospeech.googleapis.com https://ai.gateway.lovable.dev;
       media-src 'self' data: https: blob:;
       frame-src 'self' https://calendly.com;
       worker-src 'self' blob:;

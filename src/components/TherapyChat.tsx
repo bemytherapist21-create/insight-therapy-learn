@@ -2,12 +2,13 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/safeClient";
 import { Send, AlertCircle, Heart, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-
+import { CrisisResourcesBanner } from "@/components/safety/CrisisResourcesBanner";
+import { useCountryDetection } from "@/hooks/useCountryDetection";
 interface Message {
   role: 'user' | 'assistant';
   content: string;
@@ -31,6 +32,7 @@ export const TherapyChat = () => {
 
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { resources, country } = useCountryDetection();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -71,8 +73,9 @@ export const TherapyChat = () => {
 
       // Show crisis alert if detected
       if (data.safety.crisisDetected) {
+        const crisisLine = resources.find(r => r.type === 'crisis');
         toast.error("Crisis Detected", {
-          description: "Please call 988 (Suicide & Crisis Lifeline) immediately for help.",
+          description: `Please call ${crisisLine?.number || '988'} (${crisisLine?.name || 'Crisis Lifeline'}) immediately for help.${country && country.code !== 'US' ? ` (${country.name})` : ''}`,
           duration: 10000,
         });
       }
@@ -187,12 +190,7 @@ export const TherapyChat = () => {
       </Card>
 
       {/* Crisis Resources */}
-      <Card className="p-3 bg-gradient-to-r from-purple-500 to-purple-600 border-purple-400">
-        <p className="text-xs text-center text-white">
-          <strong>Crisis Resources:</strong> National Suicide Prevention Lifeline: 988 |
-          Crisis Text Line: Text HOME to 741741 | Emergency: 911
-        </p>
-      </Card>
+      <CrisisResourcesBanner />
 
       {/* Input */}
       <div className="flex gap-2">

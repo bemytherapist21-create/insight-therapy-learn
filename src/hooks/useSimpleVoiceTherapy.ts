@@ -113,16 +113,28 @@ export function useSimpleVoiceTherapy() {
                 text: data.response
             }]);
 
-            // Play AI audio response
-            const audioData = atob(data.audio);
-            const audioArray = new Uint8Array(audioData.length);
-            for (let i = 0; i < audioData.length; i++) {
-                audioArray[i] = audioData.charCodeAt(i);
+            // Generate natural audio using MiniMax TTS
+            const ttsResponse = await fetch(
+                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/minimax-tts`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+                    },
+                    body: JSON.stringify({ text: data.response }),
+                }
+            );
+
+            if (ttsResponse.ok) {
+                const audioBlob2 = await ttsResponse.blob();
+                const audioUrl = URL.createObjectURL(audioBlob2);
+                const audio = new Audio(audioUrl);
+                await audio.play();
+            } else {
+                logger.warn('MiniMax TTS failed, no audio playback');
             }
-            const audioBlob2 = new Blob([audioArray], { type: 'audio/mpeg' });
-            const audioUrl = URL.createObjectURL(audioBlob2);
-            const audio = new Audio(audioUrl);
-            await audio.play();
 
             logger.info('Voice therapy response received', {
                 wbc: safety.wbc_score,

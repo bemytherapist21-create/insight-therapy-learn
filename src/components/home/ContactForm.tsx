@@ -6,7 +6,7 @@ import { Mail, Sparkles, Loader2 } from 'lucide-react';
 import { useContactForm } from '@/hooks/useContactForm';
 
 export const ContactForm = () => {
-    const { formData, loading, handleSubmit, updateField } = useContactForm();
+    const { formData, loading, errors, handleSubmit, updateField } = useContactForm();
 
     return (
         <Card className="glass-card animate-fade-in">
@@ -24,8 +24,10 @@ export const ContactForm = () => {
                             onChange={(e) => updateField('name', e.target.value)}
                             required
                             disabled={loading}
-                            className="bg-white/5 border-white/20 text-white placeholder:text-white/50"
+                            maxLength={100}
+                            className={`bg-white/5 border-white/20 text-white placeholder:text-white/50 ${errors.name ? 'border-red-500' : ''}`}
                         />
+                        {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
                     </div>
 
                     <div>
@@ -40,8 +42,10 @@ export const ContactForm = () => {
                             onChange={(e) => updateField('email', e.target.value)}
                             required
                             disabled={loading}
-                            className="bg-white/5 border-white/20 text-white placeholder:text-white/50"
+                            maxLength={255}
+                            className={`bg-white/5 border-white/20 text-white placeholder:text-white/50 ${errors.email ? 'border-red-500' : ''}`}
                         />
+                        {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
                     </div>
 
                     <div>
@@ -56,8 +60,11 @@ export const ContactForm = () => {
                             required
                             disabled={loading}
                             rows={6}
-                            className="bg-white/5 border-white/20 text-white placeholder:text-white/50 resize-none"
+                            maxLength={5000}
+                            className={`bg-white/5 border-white/20 text-white placeholder:text-white/50 resize-none ${errors.message ? 'border-red-500' : ''}`}
                         />
+                        {errors.message && <p className="text-red-400 text-xs mt-1">{errors.message}</p>}
+                        <p className="text-white/40 text-xs mt-1 text-right">{formData.message.length}/5000</p>
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">

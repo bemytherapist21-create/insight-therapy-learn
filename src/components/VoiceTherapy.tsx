@@ -1,15 +1,16 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Phone, MicOff, Video, Mic, Square } from 'lucide-react';
+import { Loader2, MicOff, Video, Mic, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/safeClient';
 import { toast } from 'sonner';
+import { CrisisResourcesBanner } from '@/components/safety/CrisisResourcesBanner';
 
-// Voice Therapy - Gemini via Supabase (NO OpenAI)
+// Voice Therapy - Gemini via Lovable AI (NO OpenAI, NO Browser Speech API)
 
 interface Message {
   role: 'user' | 'assistant';
@@ -24,74 +25,128 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
-  const [isListening, setIsListening] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const recognitionRef = useRef<any>(null);
+  
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
-      const currentPath = window.location.pathname;
-      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
+      toast.error('Please log in to use voice therapy');
+      navigate('/login?redirect=/ai-therapy/voice');
     }
   }, [user, authLoading, navigate]);
 
-  // Initialize speech recognition - EXACTLY like standalone
+  // Cleanup on unmount
   useEffect(() => {
-    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-
-    if (SpeechRecognition) {
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = false;
-      recognitionRef.current.interimResults = false;
-      recognitionRef.current.lang = 'en-US';
-
-      recognitionRef.current.onresult = async (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        await processUserMessage(transcript);
-      };
-
-      recognitionRef.current.onerror = (event: any) => {
-        setIsListening(false);
-
-        if (event.error === 'not-allowed') {
-          toast.error('Microphone access denied. Please allow microphone in browser settings.');
-        } else if (event.error === 'network') {
-          toast.error('Speech recognition service unavailable. Please check your internet connection and try again.');
-        } else if (event.error === 'no-speech') {
-          toast.info('No speech detected. Please try speaking again.');
-          // Auto-restart if just no speech detected
-          if (isListening) {
-            setTimeout(() => {
-              try {
-                recognitionRef.current?.start();
-              } catch (e) {
-                // Ignore if already started
-              }
-            }, 500);
-          }
-        } else {
-          toast.error(`Speech recognition error: ${event.error}`);
-        }
-      };
-
-      recognitionRef.current.onend = () => {
-        setIsListening(false);
-      };
-    }
-
     return () => {
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop();
-        } catch (e) {
-          // Ignore
-        }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
       }
       window.speechSynthesis.cancel();
     };
   }, []);
+
+  // Transcribe audio using Gemini via Lovable AI
+  const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
+    // Convert blob to base64
+    const arrayBuffer = await audioBlob.arrayBuffer();
+    const base64Audio = btoa(
+      new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+    );
+
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/transcribe-audio`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+      },
+      body: JSON.stringify({
+        audio: base64Audio,
+        mimeType: audioBlob.type
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Transcription failed');
+    }
+
+    const data = await response.json();
+    return data.transcript || '';
+  };
+
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4'
+      });
+      
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType });
+        await processRecording(audioBlob);
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      toast.success('Recording... Click Stop when done');
+    } catch (error) {
+      console.error('Microphone error:', error);
+      toast.error('Microphone access denied. Please allow microphone access in your browser settings.');
+    }
+  }, []);
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      
+      // Stop microphone stream
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+    }
+  }, [isRecording]);
+
+  const processRecording = async (audioBlob: Blob) => {
+    setIsProcessing(true);
+    
+    try {
+      // Transcribe audio using Gemini
+      const transcript = await transcribeAudio(audioBlob);
+      
+      if (!transcript.trim()) {
+        toast.info('No speech detected. Please try again.');
+        setIsProcessing(false);
+        return;
+      }
+
+      // Process the transcribed message
+      await processUserMessage(transcript);
+    } catch (error) {
+      console.error('Processing error:', error);
+      toast.error('Failed to process audio. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const processUserMessage = async (transcript: string) => {
     // Add user message
@@ -144,43 +199,39 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
     try {
       setIsSpeaking(true);
 
-      // Use Google Cloud Text-to-Speech for natural Indian English voice
-      const response = await fetch(
-        `https://texttospeech.googleapis.com/v1/text:synthesize?key=AIzaSyCT0TF5qBkMXm_03EKuWvQ22EssPKYwwrA`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            input: { text },
-            voice: {
-              languageCode: 'en-IN',
-              name: 'en-IN-Neural2-A', // Natural Indian English female voice
-              ssmlGender: 'FEMALE'
-            },
-            audioConfig: {
-              audioEncoding: 'MP3',
-              pitch: 0,
-              speakingRate: 0.95 // Slightly slower for clarity
-            }
-          })
-        }
-      );
+      // Use MiniMax TTS via Edge Function for natural voice
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/minimax-tts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+        },
+        body: JSON.stringify({ text })
+      });
 
       if (!response.ok) {
         throw new Error('TTS API failed');
       }
 
-      const data = await response.json();
-      const audio = new Audio('data:audio/mp3;base64,' + data.audioContent);
+      // The function returns raw audio bytes
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
 
-      audio.onended = () => setIsSpeaking(false);
-      audio.onerror = () => setIsSpeaking(false);
+      audio.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+      };
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+      };
 
       await audio.play();
     } catch (error) {
-      console.error('Google TTS error, falling back to browser voice:', error);
+      console.error('MiniMax TTS error, falling back to browser voice:', error);
 
-      // Fallback to browser speech synthesis if Google TTS fails
+      // Fallback to browser speech synthesis if TTS fails
       if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.rate = 1.0;
@@ -197,38 +248,6 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
     }
   };
 
-  const startListening = () => {
-    if (!recognitionRef.current) {
-      toast.error('Speech recognition not supported. Please use Chrome, Edge, or Safari.');
-      return;
-    }
-
-    try {
-      recognitionRef.current.start();
-      setIsListening(true);
-      toast.success('Listening... Please speak now');
-    } catch (error: any) {
-      const errorMessage = error?.message || 'Unknown error';
-      toast.error(`Failed to start: ${errorMessage}`);
-    }
-  };
-
-  const stopListening = () => {
-    if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-      toast.info('Stopped listening');
-    }
-  };
-
-  const toggleMute = () => {
-    setIsMuted(!isMuted);
-    if (!isMuted) {
-      toast.info('Microphone muted');
-    } else {
-      toast.info('Microphone unmuted');
-    }
-  };
 
   if (authLoading) {
     return (
@@ -240,7 +259,8 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
 
   const getStatusText = () => {
     if (isSpeaking) return 'AI Speaking...';
-    if (isListening) return 'Listening...';
+    if (isProcessing) return 'Processing...';
+    if (isRecording) return 'Recording...';
     return 'Ready to connect';
   };
 
@@ -267,8 +287,8 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
             {/* Heartbeat Icon with Ripples */}
             <div className="flex justify-center mb-6 py-8">
               <div className="relative flex items-center justify-center">
-                {/* Ripple rings - only when listening */}
-                {isListening && (
+                {/* Ripple rings - only when recording */}
+                {isRecording && (
                   <>
                     <div className="absolute w-48 h-48 rounded-full border-2 border-cyan-500/30 animate-ping" style={{ animationDuration: '2s' }}></div>
                     <div className="absolute w-40 h-40 rounded-full border-2 border-cyan-500/40 animate-ping" style={{ animationDuration: '1.5s' }}></div>
@@ -276,17 +296,17 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
                 )}
 
                 {/* Main circle */}
-                <div className={`w-32 h-32 rounded-full flex items-center justify-center shadow-2xl relative z-10 transition-all duration-500 ${isListening
+                <div className={`w-32 h-32 rounded-full flex items-center justify-center shadow-2xl relative z-10 transition-all duration-500 ${isRecording || isProcessing
                   ? 'bg-gradient-to-br from-blue-400 to-cyan-500'
                   : 'bg-white/5 border-2 border-white/20'
                   }`}>
-                  {isListening ? (
-                    /* Heartbeat icon when session active */
+                  {isRecording ? (
                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="animate-pulse">
                       <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
                     </svg>
+                  ) : isProcessing ? (
+                    <Loader2 className="w-12 h-12 text-white animate-spin" />
                   ) : (
-                    /* Muted mic icon when idle */
                     <MicOff className="w-12 h-12 text-white/40" />
                   )}
                 </div>
@@ -301,28 +321,39 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
                 </p>
               </div>
 
-              {!isListening ? (
-                <Button
-                  onClick={startListening}
-                  disabled={isSpeaking}
-                  className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:shadow-glow px-8 min-w-[200px]"
-                >
-                  <Phone className="w-5 h-5 mr-2" />
-                  Start Session
-                </Button>
+              {!isRecording ? (
+                <div className="space-y-3">
+                  <Button
+                    onClick={startRecording}
+                    disabled={isSpeaking || isProcessing}
+                    className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:shadow-glow px-8 min-w-[200px]"
+                  >
+                    <Mic className="w-5 h-5 mr-2" />
+                    Start Session
+                  </Button>
+                </div>
               ) : (
                 <div className="space-y-3 w-full max-w-xs mx-auto">
                   <Button
-                    onClick={toggleMute}
+                    onClick={() => {
+                      // Toggle mute - stop/start recording
+                      if (mediaRecorderRef.current?.state === 'recording') {
+                        mediaRecorderRef.current.pause();
+                        toast.info('Microphone muted');
+                      } else if (mediaRecorderRef.current?.state === 'paused') {
+                        mediaRecorderRef.current.resume();
+                        toast.info('Microphone unmuted');
+                      }
+                    }}
                     variant="outline"
-                    className={`w-full ${isMuted ? 'bg-black/40 border-red-500/50 text-red-400' : 'bg-black/40 border-gray-500/50 text-gray-300'} hover:bg-red-500/10 hover:text-red-300 hover:border-red-400`}
+                    className="w-full bg-black/40 border-gray-500/50 text-gray-300 hover:bg-gray-500/10"
                   >
-                    <MicOff className="w-4 h-4 mr-2" />
-                    {isMuted ? 'Unmute' : 'Mute'} Microphone
+                    <Mic className="w-4 h-4 mr-2" />
+                    Mute
                   </Button>
 
                   <Button
-                    onClick={stopListening}
+                    onClick={stopRecording}
                     variant="outline"
                     className="w-full bg-black/40 border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300 hover:border-red-400"
                   >
@@ -404,9 +435,7 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
 
       {/* Guardian Notice */}
       <div className="mt-6 p-4 bg-gradient-to-r from-purple-500/20 to-purple-600/20 rounded-lg border border-purple-500/30">
-        <p className="text-sm text-white/80 text-center">
-          🛡️ <strong>Project Guardian Protected</strong> - If you're experiencing a crisis, please contact the 988 Suicide &amp; Crisis Lifeline.
-        </p>
+        <CrisisResourcesBanner variant="minimal" />
       </div>
     </div>
   );

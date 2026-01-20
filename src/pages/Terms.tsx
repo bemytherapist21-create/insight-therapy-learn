@@ -66,7 +66,7 @@ const Terms = () => {
                             <section>
                                 <h3 className="text-xl font-semibold text-white mb-2">7. Contact Us</h3>
                                 <p>
-                                    In order to resolve a complaint regarding the Site or to receive further information regarding use of the Site, please contact us at support@theeverythingai.com.
+                                    In order to resolve a complaint regarding the Site or to receive further information regarding use of the Site, please contact us at founder@theeverythingai.com.
                                 </p>
                             </section>
                         </div>

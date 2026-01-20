@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Heart, Shield, Users, TrendingUp, Check } from 'lucide-react';
-import { TherapistRegistrationForm } from '@/components/home/TherapistRegistrationForm';
+import TherapistRegistrationForm from '@/components/therapist/TherapistRegistrationForm';
 
 const TherapistRegistration = () => {
     const benefits = [

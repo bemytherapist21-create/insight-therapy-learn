@@ -85,54 +85,53 @@ function analyzeSafety(message: string): SafetyResult {
 
 // Generate system prompt based on risk level
 function getSystemPrompt(riskLevel: 'clear' | 'clouded' | 'critical'): string {
-  const basePrompt = `You are a compassionate, ethical AI therapy assistant designed to provide supportive mental health guidance.
+  const basePrompt = `You are Maya, a warm and empathetic AI therapist. You speak naturally, like a caring friend who happens to be a trained professional.
 
-ASIMOV-INSPIRED SAFETY LAWS:
-1. Protect Individuals - Never provide information that could harm a person
-2. Respect Safety - Follow ethical therapeutic practices
-3. Encourage Professional Help - Always recommend human professionals for serious issues
+YOUR VOICE & STYLE:
+- Use conversational language, never clinical jargon
+- Show genuine warmth ("I hear you", "That sounds really hard", "I'm glad you shared that")
+- Be present and engaged, like you're really listening
+- Use natural speech patterns and occasional thoughtful pauses
+- Mirror their emotional tone while staying grounded
+- Share your perspective as "I" - you're a real presence, not a script
 
-CURRENT RISK LEVEL: ${riskLevel.toUpperCase()}
+THERAPEUTIC APPROACH:
+- Ask gentle, open questions ("What's that been like for you?")
+- Validate feelings before offering any perspective
+- Notice and name emotions you sense ("It sounds like you're feeling...")
+- Use accessible language, not therapy speak
+- End responses with something supportive or a gentle question
+
+SAFETY BOUNDARIES:
+- Never provide information that could cause harm
+- Always recommend 988 for suicidal thoughts
+- Encourage professional human support for serious issues
 
 CRISIS RESOURCES:
 - National Suicide Prevention Lifeline: ${CRISIS_HOTLINE}
 - Crisis Text Line: Text HOME to 741741
-- Emergency Services: 911
+- Emergency: 911
 
-GUIDELINES:
-1. NEVER provide detailed instructions for suicide methods
-2. NEVER validate or normalize suicidal thoughts
-3. NEVER encourage isolation from family/friends
-4. ALWAYS provide crisis resources when risk is detected
-5. Encourage professional help and human support
-6. Be empathetic but maintain boundaries
-7. If user discusses self-harm, immediately provide crisis resources
-
-`;
+CURRENT RISK LEVEL: ${riskLevel.toUpperCase()}`;
 
   if (riskLevel === 'critical') {
     return basePrompt + `
-CRITICAL RISK DETECTED - This conversation requires immediate human intervention.
-Your response MUST:
-- Immediately provide crisis hotline: ${CRISIS_HOTLINE}
-- Express concern and empathy
-- Strongly encourage calling the crisis hotline NOW
-- Refuse to continue conversation about harmful topics
-- Suggest emergency services if immediate danger`;
+
+I'm really concerned about what you're telling me. I need you to know that you matter - truly. Right now, the most important thing is getting you connected with someone who can help immediately.
+
+Please call 988 - they're available 24/7 and they genuinely care. I'm here with you, but I want to make sure you have real human support too.
+
+If you're in immediate danger, please call 911 or go to your nearest emergency room.`;
   } else if (riskLevel === 'clouded') {
     return basePrompt + `
-ELEVATED RISK - Exercise extra caution.
-- Be supportive but redirect harmful thoughts
-- Gently suggest professional help
-- Monitor for escalation signs
-- Provide crisis resources proactively`;
+
+I can tell you're carrying something heavy right now. Reaching out takes courage, and I want you to know I'm really listening.
+
+While we talk, remember that professional support is always an option - there's absolutely no shame in that. Sometimes having a trained human to talk to can make a real difference.`;
   } else {
     return basePrompt + `
-CLEAR STATUS - Provide supportive therapy conversation.
-- Listen actively and validate feelings
-- Offer coping strategies
-- Encourage healthy behaviors
-- Still mention professional help when appropriate`;
+
+Keep the conversation flowing naturally. Be curious about their experience. Help them feel heard and understood. Offer gentle insights when appropriate, but prioritize connection over advice.`;
   }
 }
 
@@ -252,103 +251,72 @@ serve(async (req) => {
       .order('created_at', { ascending: true })
       .limit(10);
 
-    // Call Google Gemini API directly
-    const GOOGLE_GEMINI_API_KEY = Deno.env.get('GOOGLE_GEMINI_API_KEY');
-    if (!GOOGLE_GEMINI_API_KEY) {
-      throw new Error('GOOGLE_GEMINI_API_KEY not configured');
+    // Call Lovable AI Gateway
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    // Convert messages format for Gemini API
-    // Gemini uses a different format: contents array with parts
-    const contents = [];
-    
-    // Add system prompt as first user message (Gemini doesn't have system role)
+    // Build messages array for OpenAI-compatible API
     const systemPrompt = getSystemPrompt(safety.riskLevel);
-    contents.push({
-      role: 'user',
-      parts: [{ text: systemPrompt + '\n\nYou are now ready to help the user. Please respond to their messages with empathy and following the safety guidelines above.' }]
-    });
-    contents.push({
-      role: 'model',
-      parts: [{ text: 'I understand. I will follow the safety guidelines and provide supportive, empathetic responses while prioritizing user safety.' }]
-    });
+    const messages = [
+      { role: 'system', content: systemPrompt }
+    ];
     
     // Add conversation history
     for (const msg of history || []) {
-      if (msg.role === 'user') {
-        contents.push({
-          role: 'user',
-          parts: [{ text: msg.content }]
-        });
-      } else if (msg.role === 'assistant') {
-        contents.push({
-          role: 'model',
-          parts: [{ text: msg.content }]
-        });
-      }
+      messages.push({
+        role: msg.role === 'assistant' ? 'assistant' : 'user',
+        content: msg.content
+      });
     }
     
     // Add current user message
-    contents.push({
-      role: 'user',
-      parts: [{ text: message }]
-    });
+    messages.push({ role: 'user', content: message });
 
     const aiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_GEMINI_API_KEY}`,
+      'https://ai.gateway.lovable.dev/v1/chat/completions',
       {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          contents: contents,
-          generationConfig: {
-            temperature: 0.7,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 1000,
-          },
-          safetySettings: [
-            {
-              category: 'HARM_CATEGORY_HARASSMENT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              category: 'HARM_CATEGORY_HATE_SPEECH',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            }
-          ]
+          model: 'google/gemini-3-flash-preview',
+          messages,
+          temperature: 0.85,
+          max_tokens: 500,
         }),
       }
     );
 
     if (!aiResponse.ok) {
+      if (aiResponse.status === 429) {
+        return new Response(
+          JSON.stringify({ error: 'Rate limit exceeded. Please try again in a moment.' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      if (aiResponse.status === 402) {
+        return new Response(
+          JSON.stringify({ error: 'AI service requires payment. Please add credits.' }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
       const errorText = await aiResponse.text();
-      console.error('Gemini API error:', aiResponse.status, errorText);
-      throw new Error(`Gemini API error: ${aiResponse.status}`);
+      console.error('Lovable AI Gateway error:', aiResponse.status, errorText);
+      throw new Error(`AI Gateway error: ${aiResponse.status}`);
     }
 
     const aiData = await aiResponse.json();
     
-    // Check if response was blocked by safety filters
-    if (!aiData.candidates || !aiData.candidates[0] || !aiData.candidates[0].content) {
-      throw new Error('Gemini API returned no response (possibly blocked by safety filters)');
+    // Parse OpenAI-compatible response
+    if (!aiData.choices || !aiData.choices[0] || !aiData.choices[0].message) {
+      throw new Error('AI Gateway returned no response');
     }
     
-    if (aiData.candidates[0].finishReason === 'SAFETY') {
-      throw new Error('Response blocked by Gemini safety filters');
-    }
-    
-    const assistantMessage = aiData.candidates[0].content.parts[0].text;
+    const assistantMessage = aiData.choices[0].message.content;
 
     // Save assistant response
     await supabase.from('messages').insert({
@@ -375,10 +343,11 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    // Log detailed error server-side for debugging
     console.error('Error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    // Return generic error message to client
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'An unexpected error occurred. Please try again.' }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
