@@ -85,10 +85,28 @@ export const useTherapistRegistration = () => {
         setLoading(true);
         setErrors({});
 
-        try {
-            // Validate form data with zod
-            const validatedData = therapistRegistrationSchema.parse(formData);
+        // First, validate form data with zod
+        const validationResult = therapistRegistrationSchema.safeParse(formData);
+        
+        if (!validationResult.success) {
+            const fieldErrors: Record<string, string> = {};
+            validationResult.error.errors.forEach(err => {
+                if (err.path) {
+                    fieldErrors[err.path[0] as string] = err.message;
+                }
+            });
+            setErrors(fieldErrors);
+            toast({
+                title: "Validation Error",
+                description: "Please check the form for errors.",
+                variant: "destructive",
+            });
+            setLoading(false);
+            return;
+        }
 
+        // Send the validated data to Google Sheets
+        try {
             // Note: Using no-cors mode means we can't read the response,
             // but the request will still be sent successfully to the Google Apps Script
             await fetch(API_ENDPOINTS.THERAPIST_REGISTRATION, {
@@ -98,7 +116,7 @@ export const useTherapistRegistration = () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    ...validatedData,
+                    ...validationResult.data,
                     submittedAt: new Date().toISOString(),
                 })
             });
@@ -110,27 +128,13 @@ export const useTherapistRegistration = () => {
                 description: "Thank you for registering. We'll review your application and get back to you within 48 hours.",
             });
             setFormData(initialFormData);
-        } catch (error) {
-            if (error instanceof z.ZodError) {
-                const fieldErrors: Record<string, string> = {};
-                error.errors.forEach(err => {
-                    if (err.path) {
-                        fieldErrors[err.path[0] as string] = err.message;
-                    }
-                });
-                setErrors(fieldErrors);
-                toast({
-                    title: "Validation Error",
-                    description: "Please check the form for errors.",
-                    variant: "destructive",
-                });
-            } else {
-                toast({
-                    title: "Error",
-                    description: "Please try again or email us directly at founder@theeverythingai.com",
-                    variant: "destructive",
-                });
-            }
+        } catch (networkError) {
+            console.error('Network error during form submission:', networkError);
+            toast({
+                title: "Error",
+                description: "Please try again or email us directly at founder@theeverythingai.com",
+                variant: "destructive",
+            });
         } finally {
             setLoading(false);
         }
