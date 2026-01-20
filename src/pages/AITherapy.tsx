@@ -70,7 +70,7 @@ const AITherapy = () => {
       gradient: 'from-orange-500 to-pink-500',
       action: 'Register & Book',
       requiresRegistration: true,
-      onClick: () => toast.info('Human Therapist registration coming soon!')
+      onClick: () => navigate('/human-therapist-registration')
     }
   ];
 
