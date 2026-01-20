@@ -28,6 +28,7 @@ const Login = lazy(() => import("./pages/Login"));
 const Terms = lazy(() => import("./pages/Terms"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Auth = lazy(() => import("./pages/Auth"));
+const TherapistRegistration = lazy(() => import("./pages/TherapistRegistration"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -62,6 +63,7 @@ const App = () => {
                   <Route path="/login" element={<Login />} />
                   <Route path="/terms" element={<Terms />} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />
+                  <Route path="/therapist-registration" element={<TherapistRegistration />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
