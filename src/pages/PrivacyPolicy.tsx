@@ -16,7 +16,7 @@ const PrivacyPolicy = () => {
                             <section>
                                 <h3 className="text-xl font-semibold text-white mb-2">1. Introduction</h3>
                                 <p>
-                                    Welcome to The Everything AI ("we," "our," or "us"). We are committed to protecting your personal information and your right to privacy. If you have any questions or concerns about this privacy notice or our practices with regard to your personal information, please contact us at privacy@theeverythingai.com.
+                                    Welcome to The Everything AI ("we," "our," or "us"). We are committed to protecting your personal information and your right to privacy. If you have any questions or concerns about this privacy notice or our practices with regard to your personal information, please contact us at founder@theeverythingai.com.
                                 </p>
                             </section>
 
@@ -57,7 +57,7 @@ const PrivacyPolicy = () => {
                             <section>
                                 <h3 className="text-xl font-semibold text-white mb-2">7. Contact Us</h3>
                                 <p>
-                                    If you have questions or comments about this policy, you may email us at privacy@theeverythingai.com.
+                                    If you have questions or comments about this policy, you may email us at founder@theeverythingai.com.
                                 </p>
                             </section>
                         </div>
