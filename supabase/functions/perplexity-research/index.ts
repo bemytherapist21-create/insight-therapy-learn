@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": Deno.env.get("FRONTEND_URL") || "https://insight-therapy-learn.lovable.app",
     "Access-Control-Allow-Headers":
         "authorization, x-client-info, apikey, content-type",
 };
@@ -22,6 +22,21 @@ serve(async (req) => {
         if (!apiKey) {
             throw new Error("PERPLEXITY_API_KEY is not configured in Supabase secrets");
         }
+
+        // Verify JWT authentication
+        const authHeader = req.headers.get("authorization");
+        if (!authHeader) {
+            return new Response(
+                JSON.stringify({ error: "Authentication required" }),
+                {
+                    status: 401,
+                    headers: { ...corsHeaders, "Content-Type": "application/json" },
+                }
+            );
+        }
+
+        // Note: Supabase automatically verifies the JWT when using supabase.functions.invoke()
+        // This endpoint should only be called via the frontend service
 
         // Parse request body
         const { query }: PerplexityRequest = await req.json();

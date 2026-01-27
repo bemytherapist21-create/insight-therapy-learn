@@ -129,8 +129,19 @@ export const useGeminiLive = () => {
                 }));
 
                 // Use Google TTS to speak the response
+                const googleTtsApiKey = import.meta.env.VITE_GOOGLE_TTS_API_KEY;
+                if (!googleTtsApiKey) {
+                  console.warn("[GeminiLive] Google TTS API key not configured, skipping audio");
+                  setState((prev) => ({
+                    ...prev,
+                    isSpeaking: false,
+                    isListening: true,
+                  }));
+                  return;
+                }
+
                 const ttsResponse = await fetch(
-                  `https://texttospeech.googleapis.com/v1/text:synthesize?key=AIzaSyCT0TF5qBkMXm_03EKuWvQ22EssPKYwwrA`,
+                  `https://texttospeech.googleapis.com/v1/text:synthesize?key=${googleTtsApiKey}`,
                   {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
