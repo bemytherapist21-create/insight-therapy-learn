@@ -47,14 +47,26 @@ const InsightFusion = () => {
       ),
     );
 
+    // Get auth token if user is logged in
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData?.session?.access_token;
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    };
+
+    // Add Authorization header if user is authenticated
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
     const response = await fetch(
       `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/transcribe-audio`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        },
+        headers,
         body: JSON.stringify({
           audio: base64Audio,
           mimeType: audioBlob.type,
