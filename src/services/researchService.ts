@@ -13,12 +13,32 @@ class ResearchService {
    */
   async generateInsight(query: string): Promise<ResearchResult | null> {
     try {
-      const { data, error } = await supabase.functions.invoke(
-        "perplexity-research",
-        {
-          body: { query },
-        }
-      );
+      // Get session for auth header
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      };
+
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const response = await fetch("/api/perplexity-research", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ query }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Research failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const error = null;
 
       if (error) {
         // Standardize auth-related errors so the UI can react
