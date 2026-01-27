@@ -45,31 +45,31 @@ serve(async (req) => {
       throw new Error("PERPLEXITY_API_KEY is not configured in Supabase secrets");
     }
 
-    // Verify JWT authentication
+    // Check for JWT authentication (optional - allows anonymous access for Insight Fusion)
     const authHeader = req.headers.get("authorization");
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ error: "Authentication required" }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // Validate JWT using Supabase client
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    let userId = 'anonymous';
     
-    if (claimsError || !claimsData?.claims) {
+    if (authHeader?.startsWith('Bearer ')) {
+      // Validate JWT using Supabase client
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+
+      const token = authHeader.replace('Bearer ', '');
+      const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+      
+      if (!claimsError && claimsData?.claims) {
+        userId = claimsData.claims.sub as string;
+      }
+    }
+    
+    // Verify that either JWT or apikey is present
+    const reqApiKey = req.headers.get('apikey');
+    if (!authHeader && !reqApiKey) {
       return new Response(
-        JSON.stringify({ error: "Invalid or expired token" }),
+        JSON.stringify({ error: "API key required" }),
         {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -102,7 +102,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[perplexity-research] Processing query for user: ${claimsData.claims.sub}`);
+    console.log(`[perplexity-research] Processing query for user: ${userId}`);
 
     // Call Perplexity API
     const response = await fetch("https://api.perplexity.ai/chat/completions", {
