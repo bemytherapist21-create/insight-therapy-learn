@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import { GeminiLiveTherapy } from "@/components/GeminiLiveTherapy";
+import { ArrowLeft, AlertTriangle, Mic } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 
@@ -51,13 +51,34 @@ const AITherapyVoiceLive = () => {
               Live Voice Therapy
             </h1>
             <p className="text-gray-400 max-w-2xl mx-auto">
-              Experience real-time AI-powered therapy using Gemini's advanced
-              Live API
+              This experimental feature is currently unavailable
             </p>
           </div>
 
-          {/* Main Component */}
-          <GeminiLiveTherapy onBack={() => navigate("/ai-therapy")} />
+          {/* Notice Card */}
+          <div className="max-w-2xl mx-auto">
+            <Card className="bg-gray-800/50 border-orange-500/30">
+              <CardContent className="p-8 text-center">
+                <AlertTriangle className="w-16 h-16 text-orange-400 mx-auto mb-4" />
+                <h2 className="text-xl font-semibold text-white mb-4">
+                  Feature Temporarily Unavailable
+                </h2>
+                <p className="text-gray-400 mb-6">
+                  The Gemini Live experimental voice therapy feature has been 
+                  temporarily disabled while we implement enhanced security measures. 
+                  Please use our standard voice therapy option instead.
+                </p>
+                <Button
+                  onClick={() => navigate("/ai-therapy-voice")}
+                  className="bg-gradient-primary hover:shadow-glow"
+                  size="lg"
+                >
+                  <Mic className="w-5 h-5 mr-2" />
+                  Go to Voice Therapy
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </section>
     </div>

@@ -16,17 +16,17 @@ export const TherapistRegistrationForm = () => {
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <label
-                htmlFor="name"
+                htmlFor="fullName"
                 className="block text-sm font-medium text-white mb-2"
               >
                 Full Name *
               </label>
               <Input
-                id="name"
+                id="fullName"
                 type="text"
                 placeholder="Dr. Jane Smith"
-                value={formData.name}
-                onChange={(e) => updateField("name", e.target.value)}
+                value={formData.fullName}
+                onChange={(e) => updateField("fullName", e.target.value)}
                 required
                 disabled={loading}
                 className="bg-white/5 border-white/20 text-white placeholder:text-white/50"
@@ -98,17 +98,17 @@ export const TherapistRegistrationForm = () => {
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <label
-                htmlFor="specialization"
+                htmlFor="specializations"
                 className="block text-sm font-medium text-white mb-2"
               >
                 Specialization/Expertise *
               </label>
               <Input
-                id="specialization"
+                id="specializations"
                 type="text"
                 placeholder="e.g., CBT, Anxiety, Depression"
-                value={formData.specialization}
-                onChange={(e) => updateField("specialization", e.target.value)}
+                value={formData.specializations}
+                onChange={(e) => updateField("specializations", e.target.value)}
                 required
                 disabled={loading}
                 className="bg-white/5 border-white/20 text-white placeholder:text-white/50"
@@ -136,16 +136,16 @@ export const TherapistRegistrationForm = () => {
 
           <div>
             <label
-              htmlFor="message"
+              htmlFor="bio"
               className="block text-sm font-medium text-white mb-2"
             >
               Tell us about yourself *
             </label>
             <Textarea
-              id="message"
+              id="bio"
               placeholder="Share your experience, approach to therapy, and why you'd like to join our platform..."
-              value={formData.message}
-              onChange={(e) => updateField("message", e.target.value)}
+              value={formData.bio}
+              onChange={(e) => updateField("bio", e.target.value)}
               required
               disabled={loading}
               rows={6}

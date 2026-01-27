@@ -1,19 +1,22 @@
 project_id = "sudlkozsotxdzvjpxubu"
 
 [functions.therapy-chat]
-verify_jwt = true
+verify_jwt = false
 
 [functions.voice-therapy-token]
-verify_jwt = true
+verify_jwt = false
 
 [functions.did-avatar]
-verify_jwt = true
+verify_jwt = false
 
 [functions.analyze-emotion]
-verify_jwt = true
+verify_jwt = false
 
 [functions.minimax-tts]
 verify_jwt = false
 
 [functions.transcribe-audio]
+verify_jwt = false
+
+[functions.perplexity-research]
 verify_jwt = false
