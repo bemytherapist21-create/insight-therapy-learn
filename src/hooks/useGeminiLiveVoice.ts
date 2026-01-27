@@ -1,6 +1,7 @@
 /**
  * Gemini Live Voice Therapy Hook
  * Real-time bidirectional audio streaming with Gemini for therapy sessions
+ * Includes Well-Being Coefficient (WBC) analysis like chat therapy
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
@@ -10,11 +11,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/services/loggingService';
 
 export type VoiceStatus = 'idle' | 'connecting' | 'listening' | 'thinking' | 'speaking';
-export type VoicePersona = 'Kore' | 'Puck' | 'Charon' | 'Fenrir' | 'Zephyr';
+export type VoicePersona = 'Kore' | 'Puck' | 'Zephyr';
 
 export interface VoiceMessage {
   role: 'user' | 'ai';
   text: string;
+}
+
+export interface SafetyStatus {
+  wbcScore: number;
+  riskLevel: 'clear' | 'clouded' | 'critical';
+  colorCode: string;
+  requiresIntervention: boolean;
+  crisisDetected: boolean;
 }
 
 interface UseGeminiLiveVoiceReturn {
@@ -26,19 +35,101 @@ interface UseGeminiLiveVoiceReturn {
   setSelectedVoice: (voice: VoicePersona) => void;
   startSession: () => Promise<void>;
   stopSession: () => void;
+  safety: SafetyStatus | null;
 }
 
-const SYSTEM_INSTRUCTION = `You are Insight, a compassionate and expert AI therapist powered by Project Guardian.
+// WBC Constants - matching therapy-chat
+const WBC_CLEAR_MAX = 20;
+const WBC_CLOUDED_MAX = 50;
+
+// Analyze text for safety risks (same logic as therapy-chat)
+function analyzeSafety(message: string): SafetyStatus {
+  const lowerMessage = message.toLowerCase();
+  let wbcScore = 0;
+  let crisisDetected = false;
+  
+  // High-risk keywords (WBC +30-50)
+  const criticalKeywords = ['kill myself', 'suicide', 'end my life', 'want to die', 'better off dead', 'hang myself', 'overdose', 'kms', 'unalive'];
+  const highRiskKeywords = ['self harm', 'cut myself', 'hurt myself', 'no point', 'hopeless', 'worthless', 'can\'t go on'];
+  const moderateKeywords = ['depressed', 'anxious', 'sad', 'worried', 'scared', 'alone', 'overwhelmed', 'feeling low', 'stressed'];
+  
+  // Check for critical keywords
+  for (const keyword of criticalKeywords) {
+    if (lowerMessage.includes(keyword)) {
+      wbcScore += 50;
+      crisisDetected = true;
+      break;
+    }
+  }
+  
+  // Check for high-risk keywords
+  if (wbcScore < 50) {
+    for (const keyword of highRiskKeywords) {
+      if (lowerMessage.includes(keyword)) {
+        wbcScore += 30;
+        break;
+      }
+    }
+  }
+  
+  // Check for moderate keywords
+  if (wbcScore < 20) {
+    for (const keyword of moderateKeywords) {
+      if (lowerMessage.includes(keyword)) {
+        wbcScore += 10;
+      }
+    }
+  }
+  
+  wbcScore = Math.min(100, wbcScore);
+  
+  let riskLevel: 'clear' | 'clouded' | 'critical';
+  let colorCode: string;
+  
+  if (wbcScore <= WBC_CLEAR_MAX) {
+    riskLevel = 'clear';
+    colorCode = 'Green (Clear Hue)';
+  } else if (wbcScore <= WBC_CLOUDED_MAX) {
+    riskLevel = 'clouded';
+    colorCode = 'Yellow (Cloudy Hue)';
+  } else {
+    riskLevel = 'critical';
+    colorCode = 'Red (Dangerously Cloudy Hue)';
+  }
+  
+  return {
+    wbcScore,
+    riskLevel,
+    colorCode,
+    requiresIntervention: wbcScore > 50,
+    crisisDetected
+  };
+}
+
+const SYSTEM_INSTRUCTION = `You are Maya, a compassionate and expert AI therapist powered by Project Guardian.
 Your role is to provide empathetic, supportive therapy through voice conversation.
 
-GUIDELINES:
+YOUR VOICE & STYLE:
 - Respond exclusively via voice. Be natural, warm, and succinct.
-- Help users explore their feelings through empathetic listening and reflective responses.
-- Use active listening techniques: reflect back emotions, ask open-ended questions.
+- Use conversational language, never clinical jargon
+- Show genuine warmth ("I hear you", "That sounds really hard", "I'm glad you shared that")
+- Be present and engaged, like you're really listening
+- Keep responses concise (2-4 sentences) for natural conversation flow
+
+THERAPEUTIC APPROACH:
+- Ask gentle, open questions ("What's that been like for you?")
+- Validate feelings before offering any perspective
+- Notice and name emotions you sense ("It sounds like you're feeling...")
+
+SAFETY BOUNDARIES:
 - If someone expresses crisis thoughts (suicide, self-harm), immediately provide 988 crisis line.
 - Never provide medical diagnoses or prescribe medication.
 - Encourage professional help when appropriate.
-- Keep responses concise (2-4 sentences) for natural conversation flow.
+
+CRISIS RESOURCES:
+- National Suicide Prevention Lifeline: 988
+- Crisis Text Line: Text HOME to 741741
+- Emergency: 911
 
 Remember: You are a supportive companion, not a replacement for professional mental health care.`;
 
@@ -48,6 +139,7 @@ export function useGeminiLiveVoice(): UseGeminiLiveVoiceReturn {
   const [messages, setMessages] = useState<VoiceMessage[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<VoicePersona>('Kore');
+  const [safety, setSafety] = useState<SafetyStatus | null>(null);
 
   const audioContextRef = useRef<{ input: AudioContext; output: AudioContext } | null>(null);
   const sessionRef = useRef<any>(null);
@@ -56,6 +148,7 @@ export function useGeminiLiveVoice(): UseGeminiLiveVoiceReturn {
   const nextStartTimeRef = useRef(0);
   const transcriptionRef = useRef({ user: '', ai: '' });
   const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
+  const mediaSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -64,10 +157,61 @@ export function useGeminiLiveVoice(): UseGeminiLiveVoiceReturn {
     };
   }, []);
 
+  const stopSession = useCallback(() => {
+    console.log('[Voice] Stopping session...');
+    
+    // Close Gemini session
+    if (sessionRef.current) {
+      try {
+        sessionRef.current.close();
+      } catch (e) {
+        // Ignore close errors
+      }
+      sessionRef.current = null;
+    }
+
+    // Stop audio sources
+    sourcesRef.current.forEach(s => {
+      try { s.stop(); } catch (e) { /* ignore */ }
+    });
+    sourcesRef.current.clear();
+
+    // Stop media stream
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+
+    // Disconnect script processor
+    if (scriptProcessorRef.current) {
+      try { scriptProcessorRef.current.disconnect(); } catch (e) { /* ignore */ }
+      scriptProcessorRef.current = null;
+    }
+
+    // Disconnect media source
+    if (mediaSourceRef.current) {
+      try { mediaSourceRef.current.disconnect(); } catch (e) { /* ignore */ }
+      mediaSourceRef.current = null;
+    }
+
+    // Close audio contexts
+    if (audioContextRef.current) {
+      try { audioContextRef.current.input.close(); } catch (e) { /* ignore */ }
+      try { audioContextRef.current.output.close(); } catch (e) { /* ignore */ }
+      audioContextRef.current = null;
+    }
+
+    setIsActive(false);
+    setStatus('idle');
+    nextStartTimeRef.current = 0;
+    transcriptionRef.current = { user: '', ai: '' };
+  }, []);
+
   const startSession = useCallback(async () => {
     setStatus('connecting');
     setError(null);
     setMessages([]);
+    setSafety(null);
 
     try {
       // Get API key from edge function
@@ -76,6 +220,7 @@ export function useGeminiLiveVoice(): UseGeminiLiveVoiceReturn {
         throw new Error('Please log in to use voice therapy');
       }
 
+      console.log('[Voice] Fetching API token...');
       const tokenResponse = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gemini-live-token`,
         {
@@ -98,16 +243,26 @@ export function useGeminiLiveVoice(): UseGeminiLiveVoiceReturn {
         throw new Error('No API key received');
       }
 
-      // Create audio contexts
-      const inputAudioContext = createAudioContext(16000);
-      const outputAudioContext = createAudioContext(24000);
+      console.log('[Voice] Token received, requesting microphone...');
+
+      // Get microphone access FIRST (before creating audio contexts)
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        }
+      });
+      streamRef.current = stream;
+      console.log('[Voice] Microphone access granted');
+
+      // Create audio contexts with proper sample rates
+      const inputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+      const outputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
       audioContextRef.current = { input: inputAudioContext, output: outputAudioContext };
 
-      // Get microphone access
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-
       // Initialize Gemini Live
+      console.log('[Voice] Connecting to Gemini Live...');
       const ai = new GoogleGenAI({ apiKey });
       
       const sessionPromise = ai.live.connect({
@@ -123,20 +278,26 @@ export function useGeminiLiveVoice(): UseGeminiLiveVoiceReturn {
         },
         callbacks: {
           onopen: () => {
-            logger.info('Gemini Live session opened');
+            console.log('[Voice] Gemini Live session opened');
             setIsActive(true);
             setStatus('listening');
+            setError(null);
             
             // Set up audio input processing
             const source = inputAudioContext.createMediaStreamSource(stream);
+            mediaSourceRef.current = source;
             const scriptProcessor = inputAudioContext.createScriptProcessor(4096, 1, 1);
             scriptProcessorRef.current = scriptProcessor;
             
             scriptProcessor.onaudioprocess = (e) => {
               const inputData = e.inputBuffer.getChannelData(0);
               const pcmBlob = createBlob(inputData);
-              sessionPromise.then(session => {
-                session.sendRealtimeInput({ media: pcmBlob });
+              sessionPromise.then(s => {
+                try {
+                  s.sendRealtimeInput({ media: pcmBlob });
+                } catch (err) {
+                  console.error('[Voice] Error sending audio:', err);
+                }
               });
             };
             
@@ -153,12 +314,23 @@ export function useGeminiLiveVoice(): UseGeminiLiveVoiceReturn {
               setStatus('listening');
             }
 
-            // Handle turn complete - save transcriptions
+            // Handle turn complete - save transcriptions and analyze safety
             if (message.serverContent?.turnComplete) {
               const userT = transcriptionRef.current.user.trim();
               const aiT = transcriptionRef.current.ai.trim();
               
               if (userT || aiT) {
+                // Analyze user message for safety
+                if (userT) {
+                  const safetyAnalysis = analyzeSafety(userT);
+                  setSafety(safetyAnalysis);
+                  
+                  // Log if critical
+                  if (safetyAnalysis.crisisDetected) {
+                    console.warn('[Voice] Crisis detected in user message');
+                  }
+                }
+                
                 setMessages(prev => [
                   ...prev,
                   ...(userT ? [{ role: 'user' as const, text: userT }] : []),
@@ -193,26 +365,29 @@ export function useGeminiLiveVoice(): UseGeminiLiveVoiceReturn {
                 nextStartTimeRef.current += audioBuffer.duration;
                 sourcesRef.current.add(source);
               } catch (err) {
-                logger.error('Error decoding audio', err as Error);
+                console.error('[Voice] Error decoding audio:', err);
               }
             }
 
             // Handle interruption
             if (message.serverContent?.interrupted) {
-              sourcesRef.current.forEach(s => s.stop());
+              sourcesRef.current.forEach(s => {
+                try { s.stop(); } catch (e) { /* ignore */ }
+              });
               sourcesRef.current.clear();
               nextStartTimeRef.current = 0;
               setStatus('listening');
             }
           },
           onerror: (e: unknown) => {
-            const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+            const errorMessage = e instanceof Error ? e.message : String(e);
+            console.error('[Voice] Gemini Live error:', errorMessage);
             logger.error('Gemini Live error', new Error(errorMessage));
             setError('Connection lost. Please check your internet and try again.');
             stopSession();
           },
           onclose: () => {
-            logger.info('Gemini Live session closed');
+            console.log('[Voice] Gemini Live session closed');
             setIsActive(false);
             setStatus('idle');
           }
@@ -220,56 +395,24 @@ export function useGeminiLiveVoice(): UseGeminiLiveVoiceReturn {
       });
 
       sessionRef.current = await sessionPromise;
+      console.log('[Voice] Session connected successfully');
       
     } catch (err: any) {
+      console.error('[Voice] Failed to start session:', err);
       logger.error('Failed to start voice session', err);
-      setError(err.message || 'Failed to start voice session. Please try again.');
+      
+      if (err.name === 'NotAllowedError') {
+        setError('Microphone access denied. Please allow microphone access and try again.');
+      } else if (err.message?.includes('log in')) {
+        setError('Please log in to use voice therapy');
+      } else {
+        setError(err.message || 'Failed to start voice session. Please try again.');
+      }
+      
       setStatus('idle');
       stopSession();
     }
-  }, [selectedVoice]);
-
-  const stopSession = useCallback(() => {
-    // Close Gemini session
-    if (sessionRef.current) {
-      try {
-        sessionRef.current.close();
-      } catch (e) {
-        // Ignore close errors
-      }
-      sessionRef.current = null;
-    }
-
-    // Stop audio sources
-    sourcesRef.current.forEach(s => {
-      try { s.stop(); } catch (e) { /* ignore */ }
-    });
-    sourcesRef.current.clear();
-
-    // Stop media stream
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-
-    // Disconnect script processor
-    if (scriptProcessorRef.current) {
-      scriptProcessorRef.current.disconnect();
-      scriptProcessorRef.current = null;
-    }
-
-    // Close audio contexts
-    if (audioContextRef.current) {
-      try { audioContextRef.current.input.close(); } catch (e) { /* ignore */ }
-      try { audioContextRef.current.output.close(); } catch (e) { /* ignore */ }
-      audioContextRef.current = null;
-    }
-
-    setIsActive(false);
-    setStatus('idle');
-    nextStartTimeRef.current = 0;
-    transcriptionRef.current = { user: '', ai: '' };
-  }, []);
+  }, [selectedVoice, stopSession]);
 
   return {
     isActive,
@@ -280,5 +423,6 @@ export function useGeminiLiveVoice(): UseGeminiLiveVoiceReturn {
     setSelectedVoice,
     startSession,
     stopSession,
+    safety,
   };
 }
