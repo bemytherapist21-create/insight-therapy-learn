@@ -7,18 +7,20 @@ function getCorsHeaders(req: Request): Record<string, string> {
     'https://insight-therapy-learn.lovable.app',
     'http://localhost:5173',
     'http://localhost:8080',
+    'https://www.theeverythingai.com',
+    'https://theeverythingai.com',
   ];
-  
+
   const origin = req.headers.get('origin') || '';
-  
+
   // Check exact matches first
   let isAllowed = allowedOrigins.includes(origin);
-  
+
   // Check for lovable.app preview deployments (wildcard pattern)
   if (!isAllowed && origin.match(/^https:\/\/[a-zA-Z0-9-]+--[a-zA-Z0-9-]+\.lovable\.app$/)) {
     isAllowed = true;
   }
-  
+
   return {
     'Access-Control-Allow-Origin': isAllowed ? origin : '',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -62,7 +64,7 @@ serve(async (req) => {
     // Input validation - check request size before parsing
     const contentLength = req.headers.get('content-length');
     const MAX_REQUEST_SIZE_BYTES = 35 * 1024 * 1024; // 35MB max request size
-    
+
     if (contentLength && parseInt(contentLength) > MAX_REQUEST_SIZE_BYTES) {
       return new Response(
         JSON.stringify({ error: 'Request too large. Maximum 35MB allowed.' }),
@@ -71,7 +73,7 @@ serve(async (req) => {
     }
 
     const { audio, mimeType } = await req.json();
-    
+
     if (!audio) {
       return new Response(
         JSON.stringify({ error: 'No audio data provided' }),
@@ -82,7 +84,7 @@ serve(async (req) => {
     // Validate audio size (base64 encoded audio)
     const MAX_AUDIO_SIZE_BYTES = 25 * 1024 * 1024; // 25MB max audio size
     const estimatedSize = (audio.length * 3) / 4; // Base64 is ~33% larger than binary
-    
+
     if (estimatedSize > MAX_AUDIO_SIZE_BYTES) {
       return new Response(
         JSON.stringify({ error: 'Audio file too large. Maximum 25MB allowed.' }),

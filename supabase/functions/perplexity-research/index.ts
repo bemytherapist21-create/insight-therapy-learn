@@ -7,18 +7,20 @@ function getCorsHeaders(req: Request): Record<string, string> {
     'https://insight-therapy-learn.lovable.app',
     'http://localhost:5173',
     'http://localhost:8080',
+    'https://www.theeverythingai.com',
+    'https://theeverythingai.com',
   ];
-  
+
   const origin = req.headers.get('origin') || '';
-  
+
   // Check exact matches first
   let isAllowed = allowedOrigins.includes(origin);
-  
+
   // Check for lovable.app preview deployments (wildcard pattern)
   if (!isAllowed && origin.match(/^https:\/\/[a-zA-Z0-9-]+--[a-zA-Z0-9-]+\.lovable\.app$/)) {
     isAllowed = true;
   }
-  
+
   return {
     'Access-Control-Allow-Origin': isAllowed ? origin : '',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
