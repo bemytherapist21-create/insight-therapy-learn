@@ -1,22 +1,80 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// Helper to get CORS headers based on origin
+function getCorsHeaders(req: Request): Record<string, string> {
+  const allowedOrigins = [
+    'https://insight-therapy-learn.lovable.app',
+    'http://localhost:5173',
+    'http://localhost:8080',
+  ];
+  
+  const origin = req.headers.get('origin') || '';
+  
+  // Check exact matches first
+  let isAllowed = allowedOrigins.includes(origin);
+  
+  // Check for lovable.app preview deployments (wildcard pattern)
+  if (!isAllowed && origin.match(/^https:\/\/[a-zA-Z0-9-]+--[a-zA-Z0-9-]+\.lovable\.app$/)) {
+    isAllowed = true;
+  }
+  
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : '',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  };
+}
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Verify JWT authentication
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate JWT using Supabase client
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: "Invalid or expired token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { text, voiceId } = await req.json();
     
+    // Input validation - prevent DoS attacks
+    const MAX_TEXT_LENGTH = 5000;
     if (!text || text.trim().length === 0) {
       return new Response(
         JSON.stringify({ error: "Text is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (text.length > MAX_TEXT_LENGTH) {
+      return new Response(
+        JSON.stringify({ error: `Text too long. Maximum ${MAX_TEXT_LENGTH} characters allowed.` }),
+        { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -32,7 +90,7 @@ serve(async (req) => {
     // Use custom cloned voice for therapy
     const selectedVoice = voiceId || "moss_audio_bccfab56-ed6a-11f0-b6f2-dec5318e06e3";
     
-    console.log(`Generating TTS for text: "${text.substring(0, 50)}..." with voice: ${selectedVoice}`);
+    console.log(`[minimax-tts] Generating TTS for user ${claimsData.claims.sub}, text: "${text.substring(0, 50)}..."`);
 
     const response = await fetch("https://api.minimax.io/v1/t2a_v2", {
       method: "POST",
@@ -87,7 +145,7 @@ serve(async (req) => {
       audioBytes[i / 2] = parseInt(hexAudio.substr(i, 2), 16);
     }
 
-    console.log(`Generated ${audioBytes.length} bytes of audio`);
+    console.log(`[minimax-tts] Generated ${audioBytes.length} bytes of audio`);
 
     return new Response(audioBytes, {
       headers: {

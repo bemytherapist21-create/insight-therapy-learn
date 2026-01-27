@@ -1,16 +1,76 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+// Helper to get CORS headers based on origin
+function getCorsHeaders(req: Request): Record<string, string> {
+  const allowedOrigins = [
+    'https://insight-therapy-learn.lovable.app',
+    'http://localhost:5173',
+    'http://localhost:8080',
+  ];
+  
+  const origin = req.headers.get('origin') || '';
+  
+  // Check exact matches first
+  let isAllowed = allowedOrigins.includes(origin);
+  
+  // Check for lovable.app preview deployments (wildcard pattern)
+  if (!isAllowed && origin.match(/^https:\/\/[a-zA-Z0-9-]+--[a-zA-Z0-9-]+\.lovable\.app$/)) {
+    isAllowed = true;
+  }
+  
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : '',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  };
+}
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Verify JWT authentication
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate JWT using Supabase client
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: "Invalid or expired token" }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Input validation - check request size before parsing
+    const contentLength = req.headers.get('content-length');
+    const MAX_REQUEST_SIZE_BYTES = 35 * 1024 * 1024; // 35MB max request size
+    
+    if (contentLength && parseInt(contentLength) > MAX_REQUEST_SIZE_BYTES) {
+      return new Response(
+        JSON.stringify({ error: 'Request too large. Maximum 35MB allowed.' }),
+        { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { audio, mimeType } = await req.json();
     
     if (!audio) {
@@ -20,10 +80,23 @@ serve(async (req) => {
       );
     }
 
+    // Validate audio size (base64 encoded audio)
+    const MAX_AUDIO_SIZE_BYTES = 25 * 1024 * 1024; // 25MB max audio size
+    const estimatedSize = (audio.length * 3) / 4; // Base64 is ~33% larger than binary
+    
+    if (estimatedSize > MAX_AUDIO_SIZE_BYTES) {
+      return new Response(
+        JSON.stringify({ error: 'Audio file too large. Maximum 25MB allowed.' }),
+        { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
+
+    console.log(`[transcribe-audio] Processing audio for user: ${claimsData.claims.sub}`);
 
     // Use Gemini's multimodal capabilities for audio transcription
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -81,7 +154,7 @@ serve(async (req) => {
     const data = await response.json();
     const transcript = data.choices?.[0]?.message?.content?.trim() || '';
 
-    console.log('Transcription result:', transcript);
+    console.log('[transcribe-audio] Transcription completed successfully');
 
     return new Response(
       JSON.stringify({ transcript }),
