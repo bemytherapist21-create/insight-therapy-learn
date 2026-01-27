@@ -17,14 +17,15 @@ import {
   CheckCircle,
   Loader2,
   Sparkles,
-  BookOpen,
   Mic,
   MicOff,
 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { InlineWidget } from "react-calendly";
+import { supabase } from "@/integrations/supabase/safeClient";
+import { useAuth } from "@/hooks/useAuth";
 
 const CALENDLY_URL = "https://calendly.com/bhupeshpandey62/30min";
 
@@ -33,48 +34,82 @@ const InsightFusion = () => {
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      const currentPath = window.location.pathname;
+      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
+    }
+  }, [user, authLoading, navigate]);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
-    const arrayBuffer = await audioBlob.arrayBuffer();
-    const base64Audio = btoa(
-      new Uint8Array(arrayBuffer).reduce(
-        (data, byte) => data + String.fromCharCode(byte),
-        "",
-      ),
+  if (authLoading) {
+    return (
+      <div className="min-h-screen pt-20 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+      </div>
     );
+  }
 
-    const response = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/transcribe-audio`,
+  const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
+    // Convert blob to base64 efficiently using FileReader
+    const base64Audio: string = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        try {
+          const result = reader.result as string;
+          const base64 = result.split(",")[1];
+          resolve(base64);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.onerror = () => reject(new Error("Failed to read audio file"));
+      reader.readAsDataURL(audioBlob);
+    });
+
+    const { data, error } = await supabase.functions.invoke(
+      "transcribe-audio",
       {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        },
-        body: JSON.stringify({
+        body: {
           audio: base64Audio,
           mimeType: audioBlob.type,
-        }),
+        },
       },
     );
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Transcription failed");
+    if (error) {
+      // Bubble up clearer auth-related errors for UI messaging
+      if (
+        typeof error.message === "string" &&
+        (error.message.includes("Authentication required") ||
+          error.message.includes("Invalid or expired token"))
+      ) {
+        throw new Error("AUTH_REQUIRED");
+      }
+      throw new Error(error.message || "Transcription failed");
     }
 
-    const data = await response.json();
-    return data.transcript || "";
+    return (data as { transcript?: string })?.transcript || "";
   };
 
   const handleVoiceInput = async () => {
+    if (!user) {
+      toast.error("Please log in to use voice input.");
+      navigate("/login?redirect=/insight-fusion");
+      return;
+    }
+
     if (isListening) {
       // Stop recording
-      if (mediaRecorderRef.current) {
+      if (
+        mediaRecorderRef.current &&
+        mediaRecorderRef.current.state !== "inactive"
+      ) {
         mediaRecorderRef.current.stop();
         setIsListening(false);
       }
@@ -105,7 +140,7 @@ const InsightFusion = () => {
           type: mediaRecorder.mimeType,
         });
 
-        // Stop microphone stream
+        // Stop microphone stream tracks immediately to release hardware
         if (streamRef.current) {
           streamRef.current.getTracks().forEach((track) => track.stop());
           streamRef.current = null;
@@ -122,7 +157,14 @@ const InsightFusion = () => {
           }
         } catch (error) {
           console.error("Transcription error:", error);
-          toast.error("Failed to transcribe audio. Please try again.");
+          if (error instanceof Error && error.message === "AUTH_REQUIRED") {
+            toast.error(
+              "Your session has expired. Please log in again to use voice input.",
+            );
+            navigate("/login?redirect=/insight-fusion");
+          } else {
+            toast.error("Failed to transcribe audio. Please try again.");
+          }
         } finally {
           setIsProcessing(false);
         }
@@ -133,7 +175,13 @@ const InsightFusion = () => {
       toast.info("Recording... Click again to stop");
     } catch (error) {
       console.error("Microphone error:", error);
-      toast.error("Microphone access denied. Please allow microphone access.");
+      if (error instanceof DOMException && error.name === "NotAllowedError") {
+        toast.error(
+          "Microphone access denied. Please allow microphone permissions.",
+        );
+      } else {
+        toast.error("Could not access microphone.");
+      }
     }
   };
 
@@ -142,6 +190,12 @@ const InsightFusion = () => {
   };
 
   const handleResearch = () => {
+    if (!user) {
+      toast.error("Please log in to generate strategic insights.");
+      navigate("/login?redirect=/insight-fusion");
+      return;
+    }
+
     if (!query.trim()) {
       toast.error("Please enter a research question");
       return;
