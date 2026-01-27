@@ -1,12 +1,14 @@
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Phone, MicOff, Video, Square } from "lucide-react";
+import { Loader2, Phone, MicOff, Video, Square, Shield, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useGeminiLiveVoice, VoicePersona } from "@/hooks/useGeminiLiveVoice";
+import { toast } from "sonner";
+import { useCountryDetection } from "@/hooks/useCountryDetection";
 
 interface VoiceTherapyProps {
   onBack?: () => void;
@@ -15,6 +17,7 @@ interface VoiceTherapyProps {
 export const VoiceTherapyMinimax = ({ onBack }: VoiceTherapyProps) => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { resources } = useCountryDetection();
   
   const {
     isActive,
@@ -25,6 +28,7 @@ export const VoiceTherapyMinimax = ({ onBack }: VoiceTherapyProps) => {
     setSelectedVoice,
     startSession,
     stopSession,
+    safety,
   } = useGeminiLiveVoice();
 
   useEffect(() => {
@@ -33,6 +37,17 @@ export const VoiceTherapyMinimax = ({ onBack }: VoiceTherapyProps) => {
       navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
     }
   }, [user, authLoading, navigate]);
+
+  // Show crisis toast if detected
+  useEffect(() => {
+    if (safety?.crisisDetected) {
+      const crisisLine = resources.find((r) => r.type === "crisis");
+      toast.error("Crisis Detected", {
+        description: `Please call ${crisisLine?.number || "988"} (${crisisLine?.name || "Crisis Lifeline"}) immediately for help.`,
+        duration: 10000,
+      });
+    }
+  }, [safety?.crisisDetected, resources]);
 
   const getStatusText = () => {
     switch (status) {
@@ -54,6 +69,26 @@ export const VoiceTherapyMinimax = ({ onBack }: VoiceTherapyProps) => {
     }
   };
 
+  const getRiskColor = (level?: string) => {
+    if (!level) return "text-green-500";
+    switch (level) {
+      case "clear": return "text-green-500";
+      case "clouded": return "text-yellow-500";
+      case "critical": return "text-red-500";
+      default: return "text-green-500";
+    }
+  };
+
+  const getRiskBgColor = (level?: string) => {
+    if (!level) return "bg-green-500/10 border-green-500/20";
+    switch (level) {
+      case "clear": return "bg-green-500/10 border-green-500/20";
+      case "clouded": return "bg-yellow-500/10 border-yellow-500/20";
+      case "critical": return "bg-red-500/10 border-red-500/20";
+      default: return "bg-green-500/10 border-green-500/20";
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="max-w-4xl mx-auto flex items-center justify-center h-96">
@@ -65,9 +100,36 @@ export const VoiceTherapyMinimax = ({ onBack }: VoiceTherapyProps) => {
   const voiceOptions: VoicePersona[] = ['Kore', 'Puck', 'Zephyr'];
 
   return (
-    <div className="max-w-4xl mx-auto h-[600px]">
+    <div className="max-w-4xl mx-auto">
+      {/* Safety Status Display - like chat */}
+      {safety && (
+        <Card className={`p-4 border mb-4 ${getRiskBgColor(safety.riskLevel)}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Shield className={`w-5 h-5 ${getRiskColor(safety.riskLevel)}`} />
+              <div>
+                <p className="text-sm font-medium">
+                  Well-Being Coefficient: {safety.wbcScore}/100
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {safety.colorCode}
+                </p>
+              </div>
+            </div>
+            {safety.requiresIntervention && (
+              <div className="flex items-center gap-2 text-red-500">
+                <AlertCircle className="w-5 h-5" />
+                <span className="text-sm font-medium">
+                  Intervention Required
+                </span>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
+
       {/* Two Column Grid */}
-      <div className="grid md:grid-cols-2 gap-6 h-full">
+      <div className="grid md:grid-cols-2 gap-6 h-[600px]">
         {/* Left Panel - Voice Controls */}
         <Card className="glass-card overflow-hidden h-full">
           <div className="p-8 flex flex-col items-center justify-between h-full">
