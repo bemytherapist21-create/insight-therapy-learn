@@ -34,33 +34,29 @@ serve(async (req) => {
   }
 
   try {
-    // Check for JWT authentication (optional for Insight Fusion, required for therapy)
+    // Optional JWT authentication for additional context; not required for InsightFusion
     const authHeader = req.headers.get("authorization");
-    let userId = 'anonymous';
-    
-    if (authHeader?.startsWith('Bearer ')) {
-      // Validate JWT using Supabase client
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        Deno.env.get('SUPABASE_ANON_KEY')!,
-        { global: { headers: { Authorization: authHeader } } }
-      );
+    let userId = "anonymous";
 
-      const token = authHeader.replace('Bearer ', '');
-      const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-      
-      if (!claimsError && claimsData?.claims) {
-        userId = claimsData.claims.sub as string;
+    if (authHeader?.startsWith("Bearer ")) {
+      try {
+        const supabase = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_ANON_KEY")!,
+          { global: { headers: { Authorization: authHeader } } },
+        );
+
+        const token = authHeader.replace("Bearer ", "");
+        const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(
+          token,
+        );
+
+        if (!claimsError && claimsData?.claims) {
+          userId = claimsData.claims.sub as string;
+        }
+      } catch (_e: unknown) {
+        console.warn("[transcribe-audio] JWT validation failed, continuing as anonymous");
       }
-    }
-    
-    // Verify that either JWT or apikey is present (apikey is passed by Supabase automatically)
-    const apiKey = req.headers.get('apikey');
-    if (!authHeader && !apiKey) {
-      return new Response(
-        JSON.stringify({ error: "API key required" }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
     }
 
     // Input validation - check request size before parsing
@@ -99,7 +95,7 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    console.log(`[transcribe-audio] Processing audio for user: ${userId}`);
+    console.warn(`[transcribe-audio] Processing audio for user: ${userId}`);
 
     // Use Gemini's multimodal capabilities for audio transcription
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -157,7 +153,7 @@ serve(async (req) => {
     const data = await response.json();
     const transcript = data.choices?.[0]?.message?.content?.trim() || '';
 
-    console.log('[transcribe-audio] Transcription completed successfully');
+    console.warn('[transcribe-audio] Transcription completed successfully');
 
     return new Response(
       JSON.stringify({ transcript }),

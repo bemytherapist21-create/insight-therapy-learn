@@ -20,12 +20,11 @@ import {
   Mic,
   MicOff,
 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { InlineWidget } from "react-calendly";
 import { supabase } from "@/integrations/supabase/safeClient";
-import { useAuth } from "@/hooks/useAuth";
 
 const CALENDLY_URL = "https://calendly.com/bhupeshpandey62/30min";
 
@@ -34,26 +33,10 @@ const InsightFusion = () => {
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      const currentPath = window.location.pathname;
-      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
-    }
-  }, [user, authLoading, navigate]);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen pt-20 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
-      </div>
-    );
-  }
 
   const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
     // Convert blob to base64 efficiently using FileReader
@@ -98,12 +81,6 @@ const InsightFusion = () => {
   };
 
   const handleVoiceInput = async () => {
-    if (!user) {
-      toast.error("Please log in to use voice input.");
-      navigate("/login?redirect=/insight-fusion");
-      return;
-    }
-
     if (isListening) {
       // Stop recording
       if (
@@ -157,14 +134,7 @@ const InsightFusion = () => {
           }
         } catch (error) {
           console.error("Transcription error:", error);
-          if (error instanceof Error && error.message === "AUTH_REQUIRED") {
-            toast.error(
-              "Your session has expired. Please log in again to use voice input.",
-            );
-            navigate("/login?redirect=/insight-fusion");
-          } else {
-            toast.error("Failed to transcribe audio. Please try again.");
-          }
+          toast.error("Failed to transcribe audio. Please try again.");
         } finally {
           setIsProcessing(false);
         }
@@ -190,12 +160,6 @@ const InsightFusion = () => {
   };
 
   const handleResearch = () => {
-    if (!user) {
-      toast.error("Please log in to generate strategic insights.");
-      navigate("/login?redirect=/insight-fusion");
-      return;
-    }
-
     if (!query.trim()) {
       toast.error("Please enter a research question");
       return;

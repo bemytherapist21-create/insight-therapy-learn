@@ -45,36 +45,31 @@ serve(async (req) => {
       throw new Error("PERPLEXITY_API_KEY is not configured in Supabase secrets");
     }
 
-    // Check for JWT authentication (optional - allows anonymous access for Insight Fusion)
+    // Optional JWT authentication for additional context; not required for InsightFusion
     const authHeader = req.headers.get("authorization");
-    let userId = 'anonymous';
-    
-    if (authHeader?.startsWith('Bearer ')) {
-      // Validate JWT using Supabase client
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        Deno.env.get('SUPABASE_ANON_KEY')!,
-        { global: { headers: { Authorization: authHeader } } }
-      );
+    let userId = "anonymous";
 
-      const token = authHeader.replace('Bearer ', '');
-      const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-      
-      if (!claimsError && claimsData?.claims) {
-        userId = claimsData.claims.sub as string;
-      }
-    }
-    
-    // Verify that either JWT or apikey is present
-    const reqApiKey = req.headers.get('apikey');
-    if (!authHeader && !reqApiKey) {
-      return new Response(
-        JSON.stringify({ error: "API key required" }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+    if (authHeader?.startsWith("Bearer ")) {
+      try {
+        const supabase = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_ANON_KEY")!,
+          { global: { headers: { Authorization: authHeader } } },
+        );
+
+        const token = authHeader.replace("Bearer ", "");
+        const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(
+          token,
+        );
+
+        if (!claimsError && claimsData?.claims) {
+          userId = claimsData.claims.sub as string;
         }
-      );
+      } catch (_e: unknown) {
+        console.warn(
+          "[perplexity-research] JWT validation failed, continuing as anonymous",
+        );
+      }
     }
 
     // Parse request body
@@ -102,7 +97,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[perplexity-research] Processing query for user: ${userId}`);
+    console.warn(`[perplexity-research] Processing query for user: ${userId}`);
 
     // Call Perplexity API
     const response = await fetch("https://api.perplexity.ai/chat/completions", {

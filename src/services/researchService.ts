@@ -1,4 +1,5 @@
 import { logger } from "./loggingService";
+import { supabase } from "@/integrations/supabase/safeClient";
 
 export interface ResearchResult {
   content: string;
@@ -12,36 +13,28 @@ class ResearchService {
    */
   async generateInsight(query: string): Promise<ResearchResult | null> {
     try {
-      // Get auth token if user is logged in
-      const { supabase } = await import("@/integrations/supabase/client");
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-      };
-
-      // Add Authorization header if user is authenticated
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/perplexity-research`,
+      const { data, error } = await supabase.functions.invoke(
+        "perplexity-research",
         {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ query }),
+          body: { query },
         }
       );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Research failed");
+      if (error) {
+        // Standardize auth-related errors so the UI can react
+        if (
+          typeof error.message === "string" &&
+          (error.message.includes("Authentication required") ||
+            error.message.includes("Invalid or expired token"))
+        ) {
+          throw new Error("AUTH_REQUIRED");
+        }
+        throw new Error(error.message || "Research failed");
       }
 
-      const data = await response.json();
+      if (!data) {
+        throw new Error("No data returned from research function");
+      }
 
       logger.info("Research insight generated successfully");
       return {
