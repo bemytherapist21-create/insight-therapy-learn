@@ -1,5 +1,4 @@
 import { logger } from "./loggingService";
-import { supabase } from "@/integrations/supabase/safeClient";
 
 export interface ResearchResult {
   content: string;
@@ -13,21 +12,36 @@ class ResearchService {
    */
   async generateInsight(query: string): Promise<ResearchResult | null> {
     try {
-      // Call the secure Supabase Edge Function instead of exposing API key
-      const { data, error } = await supabase.functions.invoke(
-        "perplexity-research",
+      // Get auth token if user is logged in
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      };
+
+      // Add Authorization header if user is authenticated
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/perplexity-research`,
         {
-          body: { query },
+          method: "POST",
+          headers,
+          body: JSON.stringify({ query }),
         }
       );
 
-      if (error) {
-        throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Research failed");
       }
 
-      if (!data) {
-        throw new Error("No data returned from research function");
-      }
+      const data = await response.json();
 
       logger.info("Research insight generated successfully");
       return {

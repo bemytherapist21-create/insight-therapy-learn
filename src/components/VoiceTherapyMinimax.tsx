@@ -1,19 +1,14 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Phone, MicOff, Video, Mic, Square } from "lucide-react";
+import { Loader2, Phone, MicOff, Video, Square, Shield, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useGeminiLiveVoice, VoicePersona } from "@/hooks/useGeminiLiveVoice";
 import { toast } from "sonner";
-
-// Voice Therapy - Minimax Integration with Cloned Voice
-
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-}
+import { useCountryDetection } from "@/hooks/useCountryDetection";
 
 interface VoiceTherapyProps {
   onBack?: () => void;
@@ -22,17 +17,19 @@ interface VoiceTherapyProps {
 export const VoiceTherapyMinimax = ({ onBack }: VoiceTherapyProps) => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const PYTHON_API_URL = import.meta.env.VITE_PYTHON_API_URL || "http://localhost:8000";
-
-  const [isListening, setIsListening] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [riskLevel, setRiskLevel] = useState<string>("GREEN");
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  const { resources } = useCountryDetection();
+  
+  const {
+    isActive,
+    status,
+    messages,
+    error,
+    selectedVoice,
+    setSelectedVoice,
+    startSession,
+    stopSession,
+    safety,
+  } = useGeminiLiveVoice();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -41,197 +38,55 @@ export const VoiceTherapyMinimax = ({ onBack }: VoiceTherapyProps) => {
     }
   }, [user, authLoading, navigate]);
 
-  const startListening = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-      audioChunksRef.current = [];
-      mediaRecorderRef.current = new MediaRecorder(stream, {
-        mimeType: "audio/webm",
+  // Show crisis toast if detected
+  useEffect(() => {
+    if (safety?.crisisDetected) {
+      const crisisLine = resources.find((r) => r.type === "crisis");
+      toast.error("Crisis Detected", {
+        description: `Please call ${crisisLine?.number || "988"} (${crisisLine?.name || "Crisis Lifeline"}) immediately for help.`,
+        duration: 10000,
       });
-
-      mediaRecorderRef.current.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorderRef.current.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, {
-          type: "audio/webm",
-        });
-        await processAudioWithMinimax(audioBlob);
-
-        // Stop all tracks
-        stream.getTracks().forEach((track) => track.stop());
-      };
-
-      mediaRecorderRef.current.start();
-      setIsListening(true);
-      toast.success("Recording... Speak now!");
-
-      // Auto-stop after 10 seconds
-      setTimeout(() => {
-        if (
-          mediaRecorderRef.current &&
-          mediaRecorderRef.current.state === "recording"
-        ) {
-          stopListening();
-        }
-      }, 10000);
-    } catch (error: any) {
-      toast.error(
-        "Microphone access denied. Please allow microphone permissions.",
-      );
-      console.error("Media error:", error);
     }
-  };
-
-  const stopListening = () => {
-    if (
-      mediaRecorderRef.current &&
-      mediaRecorderRef.current.state === "recording"
-    ) {
-      mediaRecorderRef.current.stop();
-      setIsListening(false);
-      toast.info("Processing your message...");
-    }
-  };
-
-  const processAudioWithMinimax = async (audioBlob: Blob) => {
-    setIsProcessing(true);
-
-    try {
-      const formData = new FormData();
-      formData.append("audio", audioBlob, "recording.webm");
-      formData.append("user_id", user?.id || "anonymous");
-      formData.append("session_id", `session_${Date.now()}`);
-
-      const response = await fetch(
-        `${PYTHON_API_URL}/api/voice-therapy-minimax`,
-        {
-          method: "POST",
-          body: formData,
-        },
-      );
-
-      if (!response.ok) {
-        const errorData = await response
-          .json()
-          .catch(() => ({ detail: "Unknown error" }));
-        throw new Error(errorData.detail || `API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      // Add user message (transcript)
-      const userMsg: Message = { role: "user", content: data.transcript };
-      setMessages((prev) => [...prev, userMsg]);
-
-      // Add AI message (response)
-      const assistantMsg: Message = {
-        role: "assistant",
-        content: data.response,
-      };
-      setMessages((prev) => [...prev, assistantMsg]);
-
-      // Update risk level
-      setRiskLevel(data.risk_level || "GREEN");
-
-      // Play audio response with cloned voice
-      if (data.audio_url) {
-        await playAudioResponse(`${PYTHON_API_URL}${data.audio_url}`);
-      }
-
-      // Show safety info if needed
-      if (data.crisis_detected) {
-        toast.error("Crisis detected! Please contact 988 for immediate help.", {
-          duration: 10000,
-        });
-      } else if (data.wbc_score > 70) {
-        toast.warning(
-          `Well-being concern detected (Score: ${data.wbc_score})`,
-          {
-            duration: 5000,
-          },
-        );
-      }
-    } catch (error: any) {
-      const errorMsg = "I apologize, there was an error. Please try again.";
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: errorMsg },
-      ]);
-      toast.error(error.message || "Failed to process audio");
-      console.error("Minimax processing error:", error);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const playAudioResponse = async (audioUrl: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      try {
-        setIsSpeaking(true);
-
-        // Stop any currently playing audio
-        if (currentAudioRef.current) {
-          currentAudioRef.current.pause();
-          currentAudioRef.current = null;
-        }
-
-        const audio = new Audio(audioUrl);
-        currentAudioRef.current = audio;
-
-        audio.onended = () => {
-          setIsSpeaking(false);
-          currentAudioRef.current = null;
-          resolve();
-        };
-
-        audio.onerror = (error) => {
-          setIsSpeaking(false);
-          currentAudioRef.current = null;
-          toast.error("Failed to play audio response");
-          reject(error);
-        };
-
-        audio.play().catch((error) => {
-          setIsSpeaking(false);
-          currentAudioRef.current = null;
-          reject(error);
-        });
-      } catch (error) {
-        setIsSpeaking(false);
-        reject(error);
-      }
-    });
-  };
-
-  const toggleMute = () => {
-    setIsMuted(!isMuted);
-    toast.info(isMuted ? "Microphone unmuted" : "Microphone muted");
-  };
-
-  const getRiskColor = () => {
-    switch (riskLevel) {
-      case "RED":
-        return "bg-red-500";
-      case "ORANGE":
-        return "bg-orange-500";
-      case "YELLOW":
-        return "bg-yellow-500";
-      case "GREEN":
-      default:
-        return "bg-green-500";
-    }
-  };
+  }, [safety?.crisisDetected, resources]);
 
   const getStatusText = () => {
-    if (isProcessing) return "Processing with Minimax AI...";
-    if (isSpeaking) return "AI Speaking (Your Cloned Voice)...";
-    if (isListening) return "Listening...";
-    return "Ready to connect";
+    switch (status) {
+      case 'connecting': return 'Connecting...';
+      case 'listening': return 'Listening...';
+      case 'thinking': return 'Thinking...';
+      case 'speaking': return 'AI Speaking...';
+      default: return 'Ready to connect';
+    }
+  };
+
+  const getStatusColor = () => {
+    switch (status) {
+      case 'listening': return 'bg-green-500';
+      case 'speaking': return 'bg-blue-500';
+      case 'thinking': return 'bg-yellow-500';
+      case 'connecting': return 'bg-orange-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getRiskColor = (level?: string) => {
+    if (!level) return "text-green-500";
+    switch (level) {
+      case "clear": return "text-green-500";
+      case "clouded": return "text-yellow-500";
+      case "critical": return "text-red-500";
+      default: return "text-green-500";
+    }
+  };
+
+  const getRiskBgColor = (level?: string) => {
+    if (!level) return "bg-green-500/10 border-green-500/20";
+    switch (level) {
+      case "clear": return "bg-green-500/10 border-green-500/20";
+      case "clouded": return "bg-yellow-500/10 border-yellow-500/20";
+      case "critical": return "bg-red-500/10 border-red-500/20";
+      default: return "bg-green-500/10 border-green-500/20";
+    }
   };
 
   if (authLoading) {
@@ -242,10 +97,39 @@ export const VoiceTherapyMinimax = ({ onBack }: VoiceTherapyProps) => {
     );
   }
 
+  const voiceOptions: VoicePersona[] = ['Kore', 'Puck', 'Zephyr'];
+
   return (
-    <div className="max$ w-4xl mx-auto h-[600px]">
+    <div className="max-w-4xl mx-auto">
+      {/* Safety Status Display - like chat */}
+      {safety && (
+        <Card className={`p-4 border mb-4 ${getRiskBgColor(safety.riskLevel)}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Shield className={`w-5 h-5 ${getRiskColor(safety.riskLevel)}`} />
+              <div>
+                <p className="text-sm font-medium">
+                  Well-Being Coefficient: {safety.wbcScore}/100
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {safety.colorCode}
+                </p>
+              </div>
+            </div>
+            {safety.requiresIntervention && (
+              <div className="flex items-center gap-2 text-red-500">
+                <AlertCircle className="w-5 h-5" />
+                <span className="text-sm font-medium">
+                  Intervention Required
+                </span>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
+
       {/* Two Column Grid */}
-      <div className="grid md:grid-cols-2 gap-6 h-full">
+      <div className="grid md:grid-cols-2 gap-6 h-[600px]">
         {/* Left Panel - Voice Controls */}
         <Card className="glass-card overflow-hidden h-full">
           <div className="p-8 flex flex-col items-center justify-between h-full">
@@ -255,56 +139,75 @@ export const VoiceTherapyMinimax = ({ onBack }: VoiceTherapyProps) => {
                 AI Voice Therapist
               </h2>
               <div className="flex items-center justify-center gap-2">
-                <Badge
-                  className={`${getRiskColor()} transition-colors duration-500`}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="mr-1"
-                  >
-                    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-                  </svg>
-                  {riskLevel.toLowerCase()}
+                <Badge className={`${getStatusColor()} transition-colors duration-500`}>
+                  <span className={`w-2 h-2 rounded-full bg-white mr-2 ${isActive ? 'animate-pulse' : ''}`} />
+                  {status}
                 </Badge>
-                <Badge variant="outline" className="text-xs">
-                  🎙️ Minimax Cloned Voice
-                </Badge>
+                {!isActive && (
+                  <Badge variant="outline" className="text-xs">
+                    🎙️ Gemini Live
+                  </Badge>
+                )}
               </div>
             </div>
+
+            {/* Voice Selection - Only when not active */}
+            {!isActive && status === 'idle' && (
+              <div className="mb-6">
+                <p className="text-white/60 text-sm mb-2 text-center">Select Voice</p>
+                <div className="flex gap-2">
+                  {voiceOptions.map((voice) => (
+                    <button
+                      key={voice}
+                      onClick={() => setSelectedVoice(voice)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        selectedVoice === voice
+                          ? 'bg-primary text-white'
+                          : 'bg-white/10 text-white/70 hover:bg-white/20'
+                      }`}
+                    >
+                      {voice}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Heartbeat Icon with Ripples */}
             <div className="flex justify-center mb-6 py-8">
               <div className="relative flex items-center justify-center">
                 {/* Ripple rings - only when listening */}
-                {isListening && (
+                {status === 'listening' && (
                   <>
                     <div
                       className="absolute w-48 h-48 rounded-full border-2 border-cyan-500/30 animate-ping"
                       style={{ animationDuration: "2s" }}
-                    ></div>
+                    />
                     <div
                       className="absolute w-40 h-40 rounded-full border-2 border-cyan-500/40 animate-ping"
                       style={{ animationDuration: "1.5s" }}
-                    ></div>
+                    />
                   </>
+                )}
+
+                {/* Speaking glow effect */}
+                {status === 'speaking' && (
+                  <div className="absolute w-40 h-40 rounded-full bg-blue-500/20 animate-pulse" />
                 )}
 
                 {/* Main circle */}
                 <div
-                  className={`w-32 h-32 rounded-full flex items-center justify-center shadow-2xl relative z-10 transition-all duration-500 ${isListening
-                      ? "bg-gradient-to-br from-blue-400 to-cyan-500"
+                  className={`w-32 h-32 rounded-full flex items-center justify-center shadow-2xl relative z-10 transition-all duration-500 ${
+                    isActive
+                      ? status === 'speaking'
+                        ? "bg-gradient-to-br from-blue-400 to-indigo-500"
+                        : "bg-gradient-to-br from-blue-400 to-cyan-500"
                       : "bg-white/5 border-2 border-white/20"
-                    }`}
+                  }`}
                 >
-                  {isListening ? (
+                  {status === 'connecting' ? (
+                    <Loader2 className="w-12 h-12 text-white animate-spin" />
+                  ) : isActive ? (
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="48"
@@ -315,18 +218,23 @@ export const VoiceTherapyMinimax = ({ onBack }: VoiceTherapyProps) => {
                       strokeWidth="2.5"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      className="animate-pulse"
+                      className={status === 'speaking' ? 'animate-pulse' : ''}
                     >
-                      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                     </svg>
-                  ) : isProcessing ? (
-                    <Loader2 className="w-12 h-12 text-white animate-spin" />
                   ) : (
                     <MicOff className="w-12 h-12 text-white/40" />
                   )}
                 </div>
               </div>
             </div>
+
+            {/* Error Display */}
+            {error && (
+              <div className="w-full mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
+                <p className="text-red-400 text-sm text-center">{error}</p>
+              </div>
+            )}
 
             {/* Status and Button */}
             <div className="w-full text-center">
@@ -336,25 +244,34 @@ export const VoiceTherapyMinimax = ({ onBack }: VoiceTherapyProps) => {
                 </p>
               </div>
 
-              {!isListening && !isProcessing ? (
+              {!isActive ? (
                 <Button
-                  onClick={startListening}
-                  disabled={isSpeaking}
+                  onClick={startSession}
+                  disabled={status === 'connecting'}
                   className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:shadow-glow px-8 min-w-[200px]"
                 >
-                  <Phone className="w-5 h-5 mr-2" />
-                  Start Session
+                  {status === 'connecting' ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <Phone className="w-5 h-5 mr-2" />
+                      Start Session
+                    </>
+                  )}
                 </Button>
-              ) : isListening ? (
+              ) : (
                 <Button
-                  onClick={stopListening}
+                  onClick={stopSession}
                   variant="outline"
                   className="w-full max-w-xs bg-red-500/20 border-red-500/50 text-red-400 hover:bg-red-500/30"
                 >
                   <Square className="w-4 h-4 mr-2" />
-                  Stop Recording
+                  End Session
                 </Button>
-              ) : null}
+              )}
             </div>
           </div>
         </Card>
@@ -375,10 +292,12 @@ export const VoiceTherapyMinimax = ({ onBack }: VoiceTherapyProps) => {
                     <img
                       src="https://create-images-results.d-id.com/DefaultPresenters/Noelle_f/image.jpeg"
                       alt="AI Therapist"
-                      className="w-24 h-24 rounded-full mx-auto mb-3 opacity-50 grayscale group-hover:grayscale-0 transition-all duration-500"
+                      className={`w-24 h-24 rounded-full mx-auto mb-3 transition-all duration-500 ${
+                        isActive ? 'opacity-100 grayscale-0' : 'opacity-50 grayscale'
+                      }`}
                     />
                     <p className="text-xs font-medium opacity-70">
-                      Visual presence active
+                      {isActive ? 'Session active' : 'Visual presence ready'}
                     </p>
                   </div>
                 </div>
@@ -397,26 +316,38 @@ export const VoiceTherapyMinimax = ({ onBack }: VoiceTherapyProps) => {
                     {messages.length === 0 ? (
                       <div className="h-full flex items-center justify-center py-8">
                         <p className="text-white/30 text-sm text-center italic">
-                          Transcript will appear here...
+                          {isActive ? 'Say anything, I\'m listening...' : 'Transcript will appear here...'}
                         </p>
                       </div>
                     ) : (
                       messages.map((msg, idx) => (
                         <div
                           key={idx}
-                          className={`p-3 rounded-lg ${msg.role === "user"
+                          className={`p-3 rounded-lg animate-in slide-in-from-bottom-2 duration-300 ${
+                            msg.role === "user"
                               ? "bg-blue-500/20 ml-4"
                               : "bg-green-500/20 mr-4"
-                            }`}
+                          }`}
                         >
                           <div className="text-xs text-white/60 mb-1">
                             {msg.role === "user" ? "🎤 You" : "🔊 AI Therapist"}
                           </div>
                           <div className="text-sm text-white">
-                            {msg.content}
+                            {msg.text}
                           </div>
                         </div>
                       ))
+                    )}
+                    
+                    {/* Live transcription indicator */}
+                    {status === 'speaking' && (
+                      <div className="flex justify-start">
+                        <div className="bg-green-500/10 px-4 py-2 rounded-full flex gap-1.5">
+                          <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                          <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
+                          <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
+                        </div>
+                      </div>
                     )}
                   </div>
                 </ScrollArea>
@@ -429,8 +360,8 @@ export const VoiceTherapyMinimax = ({ onBack }: VoiceTherapyProps) => {
       {/* Guardian Notice */}
       <div className="mt-6 p-4 bg-gradient-to-r from-purple-500/20 to-purple-600/20 rounded-lg border border-purple-500/30">
         <p className="text-sm text-white/80 text-center">
-          🛡️ <strong>Project Guardian Protected</strong> - Powered by Minimax AI
-          with your cloned voice. If you're experiencing a crisis, please
+          🛡️ <strong>Project Guardian Protected</strong> - Powered by Gemini Live
+          for real-time voice therapy. If you're experiencing a crisis, please
           contact the 988 Suicide &amp; Crisis Lifeline.
         </p>
       </div>
