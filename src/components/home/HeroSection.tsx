@@ -19,15 +19,6 @@ export const HeroSection = () => {
 
       <div className="relative container mx-auto px-4 text-center">
         <div className="max-w-4xl mx-auto animate-fade-in">
-          {/* Logo */}
-          <div className="mb-8 flex justify-center">
-            <img
-              src="/logo-main.jpg"
-              alt="The Everything AI Logo"
-              className="h-48 w-auto object-contain"
-            />
-          </div>
-
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 tracking-tight text-white leading-tight">
             <span className="block mb-1">Welcome to</span>
             <span className="block pb-2 leading-normal bg-gradient-to-r from-[#8A2BE2] to-[#FF8C00] bg-clip-text text-transparent">
