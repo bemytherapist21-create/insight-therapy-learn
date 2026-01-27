@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.perplexity-research]
 verify_jwt = false
+
+[functions.gemini-live-token]
+verify_jwt = false
