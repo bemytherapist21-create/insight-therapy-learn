@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 interface Petal {
   x: number;
@@ -28,7 +28,7 @@ export const CherryBlossomEffect = ({ enabled }: CherryBlossomEffectProps) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const resizeCanvas = () => {
@@ -37,7 +37,7 @@ export const CherryBlossomEffect = ({ enabled }: CherryBlossomEffectProps) => {
     };
 
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener("resize", resizeCanvas);
 
     const createPetal = (): Petal => ({
       x: Math.random() * canvas.width,
@@ -59,26 +59,26 @@ export const CherryBlossomEffect = ({ enabled }: CherryBlossomEffectProps) => {
       ctx.translate(petal.x, petal.y);
       ctx.rotate((petal.rotation * Math.PI) / 180);
       ctx.globalAlpha = petal.opacity;
-      
+
       // Create gradient for petal
       const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, petal.size);
-      gradient.addColorStop(0, '#FFB7C5');
-      gradient.addColorStop(0.5, '#FFC0CB');
-      gradient.addColorStop(1, '#FFD1DC');
+      gradient.addColorStop(0, "#FFB7C5");
+      gradient.addColorStop(0.5, "#FFC0CB");
+      gradient.addColorStop(1, "#FFD1DC");
       ctx.fillStyle = gradient;
-      
+
       // Draw petal shape
       ctx.beginPath();
       ctx.ellipse(0, 0, petal.size / 2, petal.size, 0, 0, Math.PI * 2);
       ctx.fill();
-      
+
       // Add subtle center detail
-      ctx.fillStyle = '#FF69B4';
+      ctx.fillStyle = "#FF69B4";
       ctx.globalAlpha = petal.opacity * 0.3;
       ctx.beginPath();
       ctx.arc(0, 0, petal.size / 6, 0, Math.PI * 2);
       ctx.fill();
-      
+
       ctx.restore();
     };
 
@@ -105,7 +105,7 @@ export const CherryBlossomEffect = ({ enabled }: CherryBlossomEffectProps) => {
     animate();
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener("resize", resizeCanvas);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
@@ -118,7 +118,7 @@ export const CherryBlossomEffect = ({ enabled }: CherryBlossomEffectProps) => {
     <canvas
       ref={canvasRef}
       className="fixed inset-0 pointer-events-none z-50"
-      style={{ background: 'transparent' }}
+      style={{ background: "transparent" }}
     />
   );
 };

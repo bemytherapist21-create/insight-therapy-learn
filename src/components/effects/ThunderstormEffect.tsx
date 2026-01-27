@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 
 interface Raindrop {
   x: number;
@@ -24,7 +24,7 @@ export const ThunderstormEffect = ({ enabled }: ThunderstormEffectProps) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const resizeCanvas = () => {
@@ -33,7 +33,7 @@ export const ThunderstormEffect = ({ enabled }: ThunderstormEffectProps) => {
     };
 
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener("resize", resizeCanvas);
 
     const createRaindrop = (): Raindrop => ({
       x: Math.random() * canvas.width,
@@ -48,7 +48,7 @@ export const ThunderstormEffect = ({ enabled }: ThunderstormEffectProps) => {
     // Lightning effect
     const triggerLightning = () => {
       if (!enabled) return;
-      
+
       const randomDelay = Math.random() * 5000 + 3000;
       setTimeout(() => {
         if (!enabled) return;
@@ -69,9 +69,9 @@ export const ThunderstormEffect = ({ enabled }: ThunderstormEffectProps) => {
 
     const animate = () => {
       // Dark overlay for storm
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       raindropsRef.current.forEach((drop) => {
@@ -97,7 +97,7 @@ export const ThunderstormEffect = ({ enabled }: ThunderstormEffectProps) => {
     animate();
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener("resize", resizeCanvas);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
@@ -111,15 +111,16 @@ export const ThunderstormEffect = ({ enabled }: ThunderstormEffectProps) => {
       <canvas
         ref={canvasRef}
         className="fixed inset-0 pointer-events-none z-50"
-        style={{ background: 'transparent' }}
+        style={{ background: "transparent" }}
       />
       {/* Lightning flash overlay */}
       <div
         className={`fixed inset-0 pointer-events-none z-50 transition-opacity duration-75 ${
-          lightning ? 'opacity-100' : 'opacity-0'
+          lightning ? "opacity-100" : "opacity-0"
         }`}
         style={{
-          background: 'radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, 0.8), transparent 70%)',
+          background:
+            "radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, 0.8), transparent 70%)",
         }}
       />
     </>

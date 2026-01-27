@@ -3,163 +3,172 @@
  * Replaces broken OpenAI Realtime API with cd-irvan pipeline
  */
 
-import { useState, useRef } from 'react';
-import { logger } from '@/services/loggingService';
+import { useState, useRef } from "react";
+import { logger } from "@/services/loggingService";
 
 interface VoiceSafetyData {
-    wbc_score: number;
-    risk_level: string;
-    color_code: string;
-    crisis_detected: boolean;
+  wbc_score: number;
+  risk_level: string;
+  color_code: string;
+  crisis_detected: boolean;
 }
 
 interface VoiceMessage {
-    role: 'user' | 'assistant';
-    text: string;
+  role: "user" | "assistant";
+  text: string;
 }
 
 export function useSimpleVoiceTherapy() {
-    const [isRecording, setIsRecording] = useState(false);
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [messages, setMessages] = useState<VoiceMessage[]>([]);
-    const [wbcScore, setWbcScore] = useState(0);
-    const [riskLevel, setRiskLevel] = useState('clear');
-    const [showCrisisModal, setShowCrisisModal] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [messages, setMessages] = useState<VoiceMessage[]>([]);
+  const [wbcScore, setWbcScore] = useState(0);
+  const [riskLevel, setRiskLevel] = useState("clear");
+  const [showCrisisModal, setShowCrisisModal] = useState(false);
 
-    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-    const audioChunksRef = useRef<Blob[]>([]);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
-    const startRecording = async () => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const mediaRecorder = new MediaRecorder(stream);
-            mediaRecorderRef.current = mediaRecorder;
-            audioChunksRef.current = [];
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
 
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    audioChunksRef.current.push(event.data);
-                }
-            };
-
-            mediaRecorder.onstop = async () => {
-                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                await processAudio(audioBlob);
-                stream.getTracks().forEach(track => track.stop());
-            };
-
-            mediaRecorder.start();
-            setIsRecording(true);
-            logger.info('Voice recording started');
-        } catch (error) {
-            logger.error('Failed to start recording', error as Error);
-            throw new Error('Microphone access denied');
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
         }
-    };
+      };
 
-    const stopRecording = () => {
-        if (mediaRecorderRef.current && isRecording) {
-            mediaRecorderRef.current.stop();
-            setIsRecording(false);
-            setIsProcessing(true);
-            logger.info('Voice recording stopped');
-        }
-    };
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: "audio/webm",
+        });
+        await processAudio(audioBlob);
+        stream.getTracks().forEach((track) => track.stop());
+      };
 
-    const processAudio = async (audioBlob: Blob) => {
-        try {
-            // Convert audio to base64
-            const reader = new FileReader();
-            const audioBase64 = await new Promise<string>((resolve) => {
-                reader.onloadend = () => {
-                    const base64 = (reader.result as string).split(',')[1];
-                    resolve(base64);
-                };
-                reader.readAsDataURL(audioBlob);
-            });
+      mediaRecorder.start();
+      setIsRecording(true);
+      logger.info("Voice recording started");
+    } catch (error) {
+      logger.error("Failed to start recording", error as Error);
+      throw new Error("Microphone access denied");
+    }
+  };
 
-            // Call Vercel API
-            const response = await fetch('/api/voice-therapy', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ audio: audioBase64 })
-            });
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      setIsProcessing(true);
+      logger.info("Voice recording stopped");
+    }
+  };
 
-            if (!response.ok) {
-                throw new Error(`API error: ${response.status}`);
-            }
+  const processAudio = async (audioBlob: Blob) => {
+    try {
+      // Convert audio to base64
+      const reader = new FileReader();
+      const audioBase64 = await new Promise<string>((resolve) => {
+        reader.onloadend = () => {
+          const base64 = (reader.result as string).split(",")[1];
+          resolve(base64);
+        };
+        reader.readAsDataURL(audioBlob);
+      });
 
-            const data = await response.json();
+      // Call Vercel API
+      const response = await fetch("/api/voice-therapy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ audio: audioBase64 }),
+      });
 
-            // Add user message
-            setMessages(prev => [...prev, {
-                role: 'user',
-                text: data.transcript
-            }]);
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
 
-            // Update Guardian safety
-            const safety: VoiceSafetyData = data.safety;
-            setWbcScore(safety.wbc_score);
-            setRiskLevel(safety.risk_level);
+      const data = await response.json();
 
-            if (safety.crisis_detected) {
-                setShowCrisisModal(true);
-                logger.warn('Crisis detected in voice therapy', { wbc: safety.wbc_score });
-            }
+      // Add user message
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "user",
+          text: data.transcript,
+        },
+      ]);
 
-            // Add AI response
-            setMessages(prev => [...prev, {
-                role: 'assistant',
-                text: data.response
-            }]);
+      // Update Guardian safety
+      const safety: VoiceSafetyData = data.safety;
+      setWbcScore(safety.wbc_score);
+      setRiskLevel(safety.risk_level);
 
-            // Generate natural audio using MiniMax TTS
-            const ttsResponse = await fetch(
-                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/minimax-tts`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-                        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-                    },
-                    body: JSON.stringify({ text: data.response }),
-                }
-            );
+      if (safety.crisis_detected) {
+        setShowCrisisModal(true);
+        logger.warn("Crisis detected in voice therapy", {
+          wbc: safety.wbc_score,
+        });
+      }
 
-            if (ttsResponse.ok) {
-                const audioBlob2 = await ttsResponse.blob();
-                const audioUrl = URL.createObjectURL(audioBlob2);
-                const audio = new Audio(audioUrl);
-                await audio.play();
-            } else {
-                logger.warn('MiniMax TTS failed, no audio playback');
-            }
+      // Add AI response
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          text: data.response,
+        },
+      ]);
 
-            logger.info('Voice therapy response received', {
-                wbc: safety.wbc_score,
-                risk: safety.risk_level
-            });
+      // Generate natural audio using MiniMax TTS
+      const ttsResponse = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/minimax-tts`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ text: data.response }),
+        },
+      );
 
-        } catch (error) {
-            logger.error('Voice therapy processing failed', error as Error);
-            throw error;
-        } finally {
-            setIsProcessing(false);
-        }
-    };
+      if (ttsResponse.ok) {
+        const audioBlob2 = await ttsResponse.blob();
+        const audioUrl = URL.createObjectURL(audioBlob2);
+        const audio = new Audio(audioUrl);
+        await audio.play();
+      } else {
+        logger.warn("MiniMax TTS failed, no audio playback");
+      }
 
-    const closeCrisisModal = () => setShowCrisisModal(false);
+      logger.info("Voice therapy response received", {
+        wbc: safety.wbc_score,
+        risk: safety.risk_level,
+      });
+    } catch (error) {
+      logger.error("Voice therapy processing failed", error as Error);
+      throw error;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
-    return {
-        isRecording,
-        isProcessing,
-        messages,
-        wbcScore,
-        riskLevel,
-        showCrisisModal,
-        startRecording,
-        stopRecording,
-        closeCrisisModal
-    };
+  const closeCrisisModal = () => setShowCrisisModal(false);
+
+  return {
+    isRecording,
+    isProcessing,
+    messages,
+    wbcScore,
+    riskLevel,
+    showCrisisModal,
+    startRecording,
+    stopRecording,
+    closeCrisisModal,
+  };
 }

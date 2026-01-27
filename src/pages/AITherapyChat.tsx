@@ -1,8 +1,8 @@
-import { Button } from '@/components/ui/button';
-import { TherapyChat } from '@/components/TherapyChat';
-import { ArrowLeft } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { Button } from "@/components/ui/button";
+import { TherapyChat } from "@/components/TherapyChat";
+import { ArrowLeft } from "lucide-react";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const AITherapyChat = () => {
   const navigate = useNavigate();
@@ -16,10 +16,10 @@ const AITherapyChat = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               className="mb-4 text-white hover:text-primary"
-              onClick={() => navigate('/ai-therapy')}
+              onClick={() => navigate("/ai-therapy")}
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Options

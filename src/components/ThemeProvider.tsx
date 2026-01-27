@@ -1,6 +1,5 @@
-
-import { ThemeProvider as NextThemeProvider } from 'next-themes';
-import { ReactNode } from 'react';
+import { ThemeProvider as NextThemeProvider } from "next-themes";
+import { ReactNode } from "react";
 
 interface ThemeProviderProps {
   children: ReactNode;
@@ -8,11 +7,11 @@ interface ThemeProviderProps {
 
 export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   return (
-    <NextThemeProvider 
-      attribute="class" 
-      defaultTheme="dark" 
+    <NextThemeProvider
+      attribute="class"
+      defaultTheme="dark"
       enableSystem={false}
-      themes={['light', 'dark']}
+      themes={["light", "dark"]}
     >
       {children}
     </NextThemeProvider>

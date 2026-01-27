@@ -10,13 +10,13 @@ import { useNavigate } from "react-router-dom";
 import { CrisisResourcesBanner } from "@/components/safety/CrisisResourcesBanner";
 import { useCountryDetection } from "@/hooks/useCountryDetection";
 interface Message {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
 }
 
 interface SafetyStatus {
   wbcScore: number;
-  riskLevel: 'clear' | 'clouded' | 'critical';
+  riskLevel: "clear" | "clouded" | "critical";
   colorCode: string;
   requiresIntervention: boolean;
   crisisDetected: boolean;
@@ -54,43 +54,46 @@ export const TherapyChat = () => {
 
     const userMessage = input.trim();
     setInput("");
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('therapy-chat', {
+      const { data, error } = await supabase.functions.invoke("therapy-chat", {
         body: {
           message: userMessage,
-          conversationId
-        }
+          conversationId,
+        },
       });
 
       if (error) throw error;
 
-      setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: data.message },
+      ]);
       setConversationId(data.conversationId);
       setSafety(data.safety);
 
       // Show crisis alert if detected
       if (data.safety.crisisDetected) {
-        const crisisLine = resources.find(r => r.type === 'crisis');
+        const crisisLine = resources.find((r) => r.type === "crisis");
         toast.error("Crisis Detected", {
-          description: `Please call ${crisisLine?.number || '988'} (${crisisLine?.name || 'Crisis Lifeline'}) immediately for help.${country && country.code !== 'US' ? ` (${country.name})` : ''}`,
+          description: `Please call ${crisisLine?.number || "988"} (${crisisLine?.name || "Crisis Lifeline"}) immediately for help.${country && country.code !== "US" ? ` (${country.name})` : ""}`,
           duration: 10000,
         });
       }
-
     } catch (error: unknown) {
-      console.error('Error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      if (errorMessage.includes('Authentication required')) {
+      console.error("Error:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      if (errorMessage.includes("Authentication required")) {
         toast.error("Please sign in to continue");
         const currentPath = window.location.pathname;
         navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
       } else {
         toast.error("Failed to send message. Please try again.");
       }
-      setMessages(prev => prev.slice(0, -1)); // Remove user message on error
+      setMessages((prev) => prev.slice(0, -1)); // Remove user message on error
     } finally {
       setLoading(false);
     }
@@ -99,20 +102,28 @@ export const TherapyChat = () => {
   const getRiskColor = (level?: string) => {
     if (!level) return "text-green-500";
     switch (level) {
-      case 'clear': return "text-green-500";
-      case 'clouded': return "text-yellow-500";
-      case 'critical': return "text-red-500";
-      default: return "text-green-500";
+      case "clear":
+        return "text-green-500";
+      case "clouded":
+        return "text-yellow-500";
+      case "critical":
+        return "text-red-500";
+      default:
+        return "text-green-500";
     }
   };
 
   const getRiskBgColor = (level?: string) => {
     if (!level) return "bg-green-500/10 border-green-500/20";
     switch (level) {
-      case 'clear': return "bg-green-500/10 border-green-500/20";
-      case 'clouded': return "bg-yellow-500/10 border-yellow-500/20";
-      case 'critical': return "bg-red-500/10 border-red-500/20";
-      default: return "bg-green-500/10 border-green-500/20";
+      case "clear":
+        return "bg-green-500/10 border-green-500/20";
+      case "clouded":
+        return "bg-yellow-500/10 border-yellow-500/20";
+      case "critical":
+        return "bg-red-500/10 border-red-500/20";
+      default:
+        return "bg-green-500/10 border-green-500/20";
     }
   };
 
@@ -136,13 +147,17 @@ export const TherapyChat = () => {
                 <p className="text-sm font-medium">
                   Well-Being Coefficient: {safety.wbcScore}/100
                 </p>
-                <p className="text-xs text-muted-foreground">{safety.colorCode}</p>
+                <p className="text-xs text-muted-foreground">
+                  {safety.colorCode}
+                </p>
               </div>
             </div>
             {safety.requiresIntervention && (
               <div className="flex items-center gap-2 text-red-500">
                 <AlertCircle className="w-5 h-5" />
-                <span className="text-sm font-medium">Intervention Required</span>
+                <span className="text-sm font-medium">
+                  Intervention Required
+                </span>
               </div>
             )}
           </div>
@@ -155,9 +170,15 @@ export const TherapyChat = () => {
           <div className="h-full flex flex-col items-center justify-center text-center space-y-4 text-muted-foreground">
             <Heart className="w-12 h-12 text-primary/50" />
             <div>
-              <p className="font-medium text-foreground">Welcome to Safe Therapy AI</p>
-              <p className="text-sm">I'm here to provide supportive mental health guidance.</p>
-              <p className="text-xs mt-2">Protected by Project Guardian safety framework</p>
+              <p className="font-medium text-foreground">
+                Welcome to Safe Therapy AI
+              </p>
+              <p className="text-sm">
+                I'm here to provide supportive mental health guidance.
+              </p>
+              <p className="text-xs mt-2">
+                Protected by Project Guardian safety framework
+              </p>
             </div>
           </div>
         ) : (
@@ -165,13 +186,14 @@ export const TherapyChat = () => {
             {messages.map((msg, idx) => (
               <div
                 key={idx}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-lg p-3 ${msg.role === 'user'
-                    ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white'
-                    : 'bg-gradient-to-r from-purple-500 to-purple-600 text-white'
-                    }`}
+                  className={`max-w-[80%] rounded-lg p-3 ${
+                    msg.role === "user"
+                      ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white"
+                      : "bg-gradient-to-r from-purple-500 to-purple-600 text-white"
+                  }`}
                 >
                   <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                 </div>
@@ -197,7 +219,7 @@ export const TherapyChat = () => {
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+          onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
           placeholder="Share what's on your mind..."
           disabled={loading}
           className="flex-1"
@@ -208,8 +230,9 @@ export const TherapyChat = () => {
       </div>
 
       <p className="text-xs text-center text-muted-foreground">
-        This AI provides supportive guidance but is not a replacement for professional therapy.
-        Always consult a licensed mental health professional for serious concerns.
+        This AI provides supportive guidance but is not a replacement for
+        professional therapy. Always consult a licensed mental health
+        professional for serious concerns.
       </p>
     </div>
   );

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 interface Confetti {
   x: number;
@@ -19,9 +19,18 @@ interface ConfettiEffectProps {
 }
 
 const CONFETTI_COLORS = [
-  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', 
-  '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F',
-  '#BB8FCE', '#85C1E9', '#F8B500', '#FF69B4'
+  "#FF6B6B",
+  "#4ECDC4",
+  "#45B7D1",
+  "#96CEB4",
+  "#FFEAA7",
+  "#DDA0DD",
+  "#98D8C8",
+  "#F7DC6F",
+  "#BB8FCE",
+  "#85C1E9",
+  "#F8B500",
+  "#FF69B4",
 ];
 
 export const ConfettiEffect = ({ enabled }: ConfettiEffectProps) => {
@@ -35,7 +44,7 @@ export const ConfettiEffect = ({ enabled }: ConfettiEffectProps) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const resizeCanvas = () => {
@@ -44,7 +53,7 @@ export const ConfettiEffect = ({ enabled }: ConfettiEffectProps) => {
     };
 
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener("resize", resizeCanvas);
 
     const createConfetti = (): Confetti => ({
       x: Math.random() * canvas.width,
@@ -55,7 +64,8 @@ export const ConfettiEffect = ({ enabled }: ConfettiEffectProps) => {
       speedX: Math.random() * 2 - 1,
       rotation: Math.random() * 360,
       rotationSpeed: Math.random() * 10 - 5,
-      color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+      color:
+        CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
       wobble: Math.random() * Math.PI * 2,
       wobbleSpeed: Math.random() * 0.1 + 0.05,
     });
@@ -66,14 +76,24 @@ export const ConfettiEffect = ({ enabled }: ConfettiEffectProps) => {
       ctx.save();
       ctx.translate(piece.x, piece.y);
       ctx.rotate((piece.rotation * Math.PI) / 180);
-      
+
       ctx.fillStyle = piece.color;
-      ctx.fillRect(-piece.width / 2, -piece.height / 2, piece.width, piece.height);
-      
+      ctx.fillRect(
+        -piece.width / 2,
+        -piece.height / 2,
+        piece.width,
+        piece.height,
+      );
+
       // Add shine effect
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-      ctx.fillRect(-piece.width / 2, -piece.height / 2, piece.width / 3, piece.height);
-      
+      ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+      ctx.fillRect(
+        -piece.width / 2,
+        -piece.height / 2,
+        piece.width / 3,
+        piece.height,
+      );
+
       ctx.restore();
     };
 
@@ -100,7 +120,7 @@ export const ConfettiEffect = ({ enabled }: ConfettiEffectProps) => {
     animate();
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener("resize", resizeCanvas);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
@@ -113,7 +133,7 @@ export const ConfettiEffect = ({ enabled }: ConfettiEffectProps) => {
     <canvas
       ref={canvasRef}
       className="fixed inset-0 pointer-events-none z-50"
-      style={{ background: 'transparent' }}
+      style={{ background: "transparent" }}
     />
   );
 };

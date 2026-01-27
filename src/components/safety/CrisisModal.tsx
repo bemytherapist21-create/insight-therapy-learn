@@ -1,7 +1,7 @@
-import { motion } from 'framer-motion';
-import { Phone } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useCountryDetection } from '@/hooks/useCountryDetection';
+import { motion } from "framer-motion";
+import { Phone } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useCountryDetection } from "@/hooks/useCountryDetection";
 
 interface CrisisModalProps {
   isOpen: boolean;
@@ -9,12 +9,13 @@ interface CrisisModalProps {
 }
 
 export const CrisisModal = ({ isOpen, onClose }: CrisisModalProps) => {
-  const { resources, country, getPrimaryCrisisNumber, getEmergencyNumber } = useCountryDetection();
+  const { resources, country, getPrimaryCrisisNumber, getEmergencyNumber } =
+    useCountryDetection();
 
   if (!isOpen) return null;
 
-  const crisisLine = resources.find(r => r.type === 'crisis');
-  const textLine = resources.find(r => r.type === 'text');
+  const crisisLine = resources.find((r) => r.type === "crisis");
+  const textLine = resources.find((r) => r.type === "text");
   const emergencyNumber = getEmergencyNumber();
   const crisisNumber = getPrimaryCrisisNumber();
 
@@ -38,9 +39,10 @@ export const CrisisModal = ({ isOpen, onClose }: CrisisModalProps) => {
             We care about you
           </h2>
           <p className="text-slate-600 dark:text-slate-300 mb-2">
-            It sounds like you're going through a very difficult time. Please connect with a human who can help immediately.
+            It sounds like you're going through a very difficult time. Please
+            connect with a human who can help immediately.
           </p>
-          {country && country.code !== 'US' && (
+          {country && country.code !== "US" && (
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
               Resources for {country.name}
             </p>
@@ -48,18 +50,19 @@ export const CrisisModal = ({ isOpen, onClose }: CrisisModalProps) => {
 
           <div className="space-y-3">
             {/* Primary Crisis Line */}
-            <Button 
-              className="w-full h-12 text-lg bg-rose-600 hover:bg-rose-700" 
+            <Button
+              className="w-full h-12 text-lg bg-rose-600 hover:bg-rose-700"
               onClick={() => window.open(`tel:${crisisNumber}`)}
             >
-              Call {crisisLine?.name || 'Crisis Lifeline'} ({crisisLine?.number || '988'})
+              Call {crisisLine?.name || "Crisis Lifeline"} (
+              {crisisLine?.number || "988"})
             </Button>
 
             {/* Text Line if available */}
             {textLine && (
-              <Button 
-                variant="outline" 
-                className="w-full h-12" 
+              <Button
+                variant="outline"
+                className="w-full h-12"
                 onClick={() => {
                   // Extract number from text instruction
                   const numberMatch = textLine.number.match(/\d+/);
@@ -73,17 +76,17 @@ export const CrisisModal = ({ isOpen, onClose }: CrisisModalProps) => {
             )}
 
             {/* Emergency */}
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="w-full h-10 text-rose-600 border-rose-200 hover:bg-rose-50"
               onClick={() => window.open(`tel:${emergencyNumber}`)}
             >
               Emergency: {emergencyNumber}
             </Button>
 
-            <Button 
-              variant="ghost" 
-              className="w-full mt-2 text-slate-400" 
+            <Button
+              variant="ghost"
+              className="w-full mt-2 text-slate-400"
               onClick={onClose}
             >
               I'm safe, return to session

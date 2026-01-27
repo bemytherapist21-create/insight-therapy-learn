@@ -7,7 +7,7 @@ const NotFound = () => {
   useEffect(() => {
     console.error(
       "404 Error: User attempted to access non-existent route:",
-      location.pathname
+      location.pathname,
     );
   }, [location.pathname]);
 
@@ -16,7 +16,10 @@ const NotFound = () => {
       <div className="text-center">
         <h1 className="text-4xl font-bold mb-4 text-gray-900">404</h1>
         <p className="text-xl text-gray-600 mb-4">Oops! Page not found</p>
-        <a href="/" className="text-primary hover:text-primary-glow underline transition-colors">
+        <a
+          href="/"
+          className="text-primary hover:text-primary-glow underline transition-colors"
+        >
           Return to Home
         </a>
       </div>

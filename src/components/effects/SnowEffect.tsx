@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 interface Snowflake {
   x: number;
@@ -30,7 +30,7 @@ const SnowEffect = ({ enabled }: SnowEffectProps) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const resizeCanvas = () => {
@@ -39,10 +39,12 @@ const SnowEffect = ({ enabled }: SnowEffectProps) => {
     };
 
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener("resize", resizeCanvas);
 
     // Initialize snowflakes
-    const snowflakeCount = Math.floor((window.innerWidth * window.innerHeight) / 8000);
+    const snowflakeCount = Math.floor(
+      (window.innerWidth * window.innerHeight) / 8000,
+    );
     snowflakesRef.current = Array.from({ length: snowflakeCount }, () => ({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
@@ -86,7 +88,7 @@ const SnowEffect = ({ enabled }: SnowEffectProps) => {
     animate();
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener("resize", resizeCanvas);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
@@ -99,7 +101,7 @@ const SnowEffect = ({ enabled }: SnowEffectProps) => {
     <canvas
       ref={canvasRef}
       className="fixed inset-0 pointer-events-none z-[100]"
-      style={{ background: 'transparent' }}
+      style={{ background: "transparent" }}
     />
   );
 };

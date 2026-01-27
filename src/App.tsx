@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -29,7 +28,9 @@ const Login = lazy(() => import("./pages/Login"));
 const Terms = lazy(() => import("./pages/Terms"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Auth = lazy(() => import("./pages/Auth"));
-const TherapistRegistration = lazy(() => import("./pages/TherapistRegistration"));
+const TherapistRegistration = lazy(
+  () => import("./pages/TherapistRegistration"),
+);
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -52,11 +53,23 @@ const App = () => {
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/ai-therapy" element={<AITherapy />} />
                   <Route path="/ai-therapy/chat" element={<AITherapyChat />} />
-                  <Route path="/ai-therapy/voice" element={<AITherapyVoice />} />
-                  <Route path="/ai-therapy/voice-live" element={<AITherapyVoiceLive />} />
-                  <Route path="/ai-therapy/voice-simple" element={<SimpleVoiceTherapy />} />
+                  <Route
+                    path="/ai-therapy/voice"
+                    element={<AITherapyVoice />}
+                  />
+                  <Route
+                    path="/ai-therapy/voice-live"
+                    element={<AITherapyVoiceLive />}
+                  />
+                  <Route
+                    path="/ai-therapy/voice-simple"
+                    element={<SimpleVoiceTherapy />}
+                  />
                   <Route path="/insight-fusion" element={<InsightFusion />} />
-                  <Route path="/insight-fusion/Generate/StrategicInsight" element={<StrategicInsight />} />
+                  <Route
+                    path="/insight-fusion/Generate/StrategicInsight"
+                    element={<StrategicInsight />}
+                  />
                   <Route path="/ai-learning" element={<AILearning />} />
                   <Route path="/about" element={<Home />} />
                   <Route path="/services" element={<Home />} />
@@ -65,7 +78,10 @@ const App = () => {
                   <Route path="/login" element={<Login />} />
                   <Route path="/terms" element={<Terms />} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />
-                  <Route path="/therapist-registration" element={<TherapistRegistration />} />
+                  <Route
+                    path="/therapist-registration"
+                    element={<TherapistRegistration />}
+                  />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>

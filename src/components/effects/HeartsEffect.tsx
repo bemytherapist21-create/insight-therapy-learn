@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 interface Heart {
   x: number;
@@ -18,7 +18,14 @@ interface HeartsEffectProps {
   enabled: boolean;
 }
 
-const HEART_COLORS = ['#FF1744', '#E91E63', '#FF4081', '#F50057', '#C51162', '#FF6B9D'];
+const HEART_COLORS = [
+  "#FF1744",
+  "#E91E63",
+  "#FF4081",
+  "#F50057",
+  "#C51162",
+  "#FF6B9D",
+];
 
 export const HeartsEffect = ({ enabled }: HeartsEffectProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -31,7 +38,7 @@ export const HeartsEffect = ({ enabled }: HeartsEffectProps) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const resizeCanvas = () => {
@@ -40,7 +47,7 @@ export const HeartsEffect = ({ enabled }: HeartsEffectProps) => {
     };
 
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener("resize", resizeCanvas);
 
     const createHeart = (): Heart => ({
       x: Math.random() * canvas.width,
@@ -64,29 +71,29 @@ export const HeartsEffect = ({ enabled }: HeartsEffectProps) => {
       ctx.rotate((heart.rotation * Math.PI) / 180);
       ctx.globalAlpha = heart.opacity;
       ctx.fillStyle = heart.color;
-      
+
       const size = heart.size;
-      
+
       ctx.beginPath();
       ctx.moveTo(0, size * 0.3);
-      ctx.bezierCurveTo(
-        -size, -size * 0.3,
-        -size, -size,
-        0, -size * 0.5
-      );
-      ctx.bezierCurveTo(
-        size, -size,
-        size, -size * 0.3,
-        0, size * 0.3
-      );
+      ctx.bezierCurveTo(-size, -size * 0.3, -size, -size, 0, -size * 0.5);
+      ctx.bezierCurveTo(size, -size, size, -size * 0.3, 0, size * 0.3);
       ctx.fill();
-      
+
       // Add shine
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
       ctx.beginPath();
-      ctx.ellipse(-size * 0.3, -size * 0.4, size * 0.15, size * 0.2, -0.5, 0, Math.PI * 2);
+      ctx.ellipse(
+        -size * 0.3,
+        -size * 0.4,
+        size * 0.15,
+        size * 0.2,
+        -0.5,
+        0,
+        Math.PI * 2,
+      );
       ctx.fill();
-      
+
       ctx.restore();
     };
 
@@ -113,7 +120,7 @@ export const HeartsEffect = ({ enabled }: HeartsEffectProps) => {
     animate();
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener("resize", resizeCanvas);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
@@ -126,7 +133,7 @@ export const HeartsEffect = ({ enabled }: HeartsEffectProps) => {
     <canvas
       ref={canvasRef}
       className="fixed inset-0 pointer-events-none z-50"
-      style={{ background: 'transparent' }}
+      style={{ background: "transparent" }}
     />
   );
 };

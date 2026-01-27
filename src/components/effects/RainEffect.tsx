@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 interface Raindrop {
   x: number;
@@ -28,7 +28,7 @@ const RainEffect = ({ enabled }: RainEffectProps) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const resizeCanvas = () => {
@@ -37,10 +37,12 @@ const RainEffect = ({ enabled }: RainEffectProps) => {
     };
 
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener("resize", resizeCanvas);
 
     // Initialize raindrops
-    const raindropCount = Math.floor((window.innerWidth * window.innerHeight) / 6000);
+    const raindropCount = Math.floor(
+      (window.innerWidth * window.innerHeight) / 6000,
+    );
     raindropsRef.current = Array.from({ length: raindropCount }, () => ({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
@@ -72,7 +74,7 @@ const RainEffect = ({ enabled }: RainEffectProps) => {
         ctx.lineTo(drop.x + 1, drop.y + drop.length);
         ctx.strokeStyle = `rgba(174, 194, 224, ${drop.opacity})`;
         ctx.lineWidth = 1;
-        ctx.lineCap = 'round';
+        ctx.lineCap = "round";
         ctx.stroke();
       });
 
@@ -82,7 +84,7 @@ const RainEffect = ({ enabled }: RainEffectProps) => {
     animate();
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener("resize", resizeCanvas);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
@@ -95,7 +97,7 @@ const RainEffect = ({ enabled }: RainEffectProps) => {
     <canvas
       ref={canvasRef}
       className="fixed inset-0 pointer-events-none z-[100]"
-      style={{ background: 'transparent' }}
+      style={{ background: "transparent" }}
     />
   );
 };

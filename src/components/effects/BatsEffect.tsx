@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 interface Bat {
   x: number;
@@ -25,7 +25,7 @@ export const BatsEffect = ({ enabled }: BatsEffectProps) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const resizeCanvas = () => {
@@ -34,7 +34,7 @@ export const BatsEffect = ({ enabled }: BatsEffectProps) => {
     };
 
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener("resize", resizeCanvas);
 
     const createBat = (): Bat => ({
       x: Math.random() * canvas.width,
@@ -51,67 +51,87 @@ export const BatsEffect = ({ enabled }: BatsEffectProps) => {
     const drawBat = (bat: Bat) => {
       ctx.save();
       ctx.translate(bat.x, bat.y);
-      
+
       const wingFlap = Math.sin(bat.wingPhase) * 0.5;
-      
-      ctx.fillStyle = '#1a1a2e';
-      
+
+      ctx.fillStyle = "#1a1a2e";
+
       // Body
       ctx.beginPath();
       ctx.ellipse(0, 0, bat.size * 0.3, bat.size * 0.4, 0, 0, Math.PI * 2);
       ctx.fill();
-      
+
       // Head
       ctx.beginPath();
       ctx.arc(0, -bat.size * 0.35, bat.size * 0.2, 0, Math.PI * 2);
       ctx.fill();
-      
+
       // Ears
       ctx.beginPath();
       ctx.moveTo(-bat.size * 0.15, -bat.size * 0.5);
       ctx.lineTo(-bat.size * 0.1, -bat.size * 0.7);
       ctx.lineTo(-bat.size * 0.05, -bat.size * 0.5);
       ctx.fill();
-      
+
       ctx.beginPath();
       ctx.moveTo(bat.size * 0.15, -bat.size * 0.5);
       ctx.lineTo(bat.size * 0.1, -bat.size * 0.7);
       ctx.lineTo(bat.size * 0.05, -bat.size * 0.5);
       ctx.fill();
-      
+
       // Left wing
       ctx.beginPath();
       ctx.moveTo(-bat.size * 0.2, 0);
       ctx.quadraticCurveTo(
-        -bat.size * 0.8, -bat.size * (0.3 + wingFlap),
-        -bat.size, bat.size * (0.2 - wingFlap * 0.5)
+        -bat.size * 0.8,
+        -bat.size * (0.3 + wingFlap),
+        -bat.size,
+        bat.size * (0.2 - wingFlap * 0.5),
       );
       ctx.quadraticCurveTo(
-        -bat.size * 0.6, bat.size * 0.3,
-        -bat.size * 0.2, bat.size * 0.2
+        -bat.size * 0.6,
+        bat.size * 0.3,
+        -bat.size * 0.2,
+        bat.size * 0.2,
       );
       ctx.fill();
-      
+
       // Right wing
       ctx.beginPath();
       ctx.moveTo(bat.size * 0.2, 0);
       ctx.quadraticCurveTo(
-        bat.size * 0.8, -bat.size * (0.3 + wingFlap),
-        bat.size, bat.size * (0.2 - wingFlap * 0.5)
+        bat.size * 0.8,
+        -bat.size * (0.3 + wingFlap),
+        bat.size,
+        bat.size * (0.2 - wingFlap * 0.5),
       );
       ctx.quadraticCurveTo(
-        bat.size * 0.6, bat.size * 0.3,
-        bat.size * 0.2, bat.size * 0.2
+        bat.size * 0.6,
+        bat.size * 0.3,
+        bat.size * 0.2,
+        bat.size * 0.2,
       );
       ctx.fill();
-      
+
       // Eyes
-      ctx.fillStyle = '#ff4444';
+      ctx.fillStyle = "#ff4444";
       ctx.beginPath();
-      ctx.arc(-bat.size * 0.08, -bat.size * 0.35, bat.size * 0.05, 0, Math.PI * 2);
-      ctx.arc(bat.size * 0.08, -bat.size * 0.35, bat.size * 0.05, 0, Math.PI * 2);
+      ctx.arc(
+        -bat.size * 0.08,
+        -bat.size * 0.35,
+        bat.size * 0.05,
+        0,
+        Math.PI * 2,
+      );
+      ctx.arc(
+        bat.size * 0.08,
+        -bat.size * 0.35,
+        bat.size * 0.05,
+        0,
+        Math.PI * 2,
+      );
       ctx.fill();
-      
+
       ctx.restore();
     };
 
@@ -139,7 +159,7 @@ export const BatsEffect = ({ enabled }: BatsEffectProps) => {
     animate();
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener("resize", resizeCanvas);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
@@ -152,7 +172,7 @@ export const BatsEffect = ({ enabled }: BatsEffectProps) => {
     <canvas
       ref={canvasRef}
       className="fixed inset-0 pointer-events-none z-50"
-      style={{ background: 'transparent' }}
+      style={{ background: "transparent" }}
     />
   );
 };

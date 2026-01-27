@@ -10,36 +10,46 @@ class AmbientSoundService {
   private isPlaying: Map<string, boolean> = new Map();
 
   private getAudioContext(): AudioContext {
-    if (!this.audioContext || this.audioContext.state === 'closed') {
+    if (!this.audioContext || this.audioContext.state === "closed") {
       this.audioContext = new AudioContext();
     }
     return this.audioContext;
   }
 
-  private createNoiseBuffer(duration: number, type: 'white' | 'pink' | 'brown' = 'white'): AudioBuffer {
+  private createNoiseBuffer(
+    duration: number,
+    type: "white" | "pink" | "brown" = "white",
+  ): AudioBuffer {
     const ctx = this.getAudioContext();
     const bufferSize = ctx.sampleRate * duration;
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = buffer.getChannelData(0);
 
-    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+    let b0 = 0,
+      b1 = 0,
+      b2 = 0,
+      b3 = 0,
+      b4 = 0,
+      b5 = 0,
+      b6 = 0;
 
     for (let i = 0; i < bufferSize; i++) {
       const white = Math.random() * 2 - 1;
-      
-      if (type === 'white') {
+
+      if (type === "white") {
         data[i] = white * 0.5;
-      } else if (type === 'pink') {
+      } else if (type === "pink") {
         b0 = 0.99886 * b0 + white * 0.0555179;
         b1 = 0.99332 * b1 + white * 0.0750759;
-        b2 = 0.96900 * b2 + white * 0.1538520;
-        b3 = 0.86650 * b3 + white * 0.3104856;
-        b4 = 0.55000 * b4 + white * 0.5329522;
-        b5 = -0.7616 * b5 - white * 0.0168980;
+        b2 = 0.969 * b2 + white * 0.153852;
+        b3 = 0.8665 * b3 + white * 0.3104856;
+        b4 = 0.55 * b4 + white * 0.5329522;
+        b5 = -0.7616 * b5 - white * 0.016898;
         data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
         b6 = white * 0.115926;
-      } else { // brown
-        data[i] = (b0 = (b0 + (0.02 * white)) / 1.02) * 3.5;
+      } else {
+        // brown
+        data[i] = (b0 = (b0 + 0.02 * white) / 1.02) * 3.5;
       }
     }
 
@@ -48,26 +58,26 @@ class AmbientSoundService {
 
   // Rain sound - filtered noise with modulation
   startRain(): void {
-    if (this.isPlaying.get('rain')) return;
-    
+    if (this.isPlaying.get("rain")) return;
+
     const ctx = this.getAudioContext();
     const nodes: AudioNode[] = [];
 
     // Create noise source
-    const noiseBuffer = this.createNoiseBuffer(2, 'pink');
+    const noiseBuffer = this.createNoiseBuffer(2, "pink");
     const noise = ctx.createBufferSource();
     noise.buffer = noiseBuffer;
     noise.loop = true;
 
     // Bandpass filter for rain-like sound
     const filter = ctx.createBiquadFilter();
-    filter.type = 'bandpass';
+    filter.type = "bandpass";
     filter.frequency.value = 3000;
     filter.Q.value = 0.5;
 
     // High shelf for brightness
     const highShelf = ctx.createBiquadFilter();
-    highShelf.type = 'highshelf';
+    highShelf.type = "highshelf";
     highShelf.frequency.value = 4000;
     highShelf.gain.value = 3;
 
@@ -84,9 +94,9 @@ class AmbientSoundService {
     noise.start();
 
     nodes.push(noise, filter, highShelf, gainNode);
-    this.activeNodes.set('rain', nodes);
-    this.gainNodes.set('rain', gainNode);
-    this.isPlaying.set('rain', true);
+    this.activeNodes.set("rain", nodes);
+    this.gainNodes.set("rain", gainNode);
+    this.isPlaying.set("rain", true);
   }
 
   // Thunder sound - low frequency rumble with crack
@@ -95,7 +105,7 @@ class AmbientSoundService {
 
     // Thunder crack
     const crackOsc = ctx.createOscillator();
-    crackOsc.type = 'sawtooth';
+    crackOsc.type = "sawtooth";
     crackOsc.frequency.value = 100;
 
     const crackGain = ctx.createGain();
@@ -103,12 +113,12 @@ class AmbientSoundService {
     crackGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
 
     // Rumble
-    const rumbleBuffer = this.createNoiseBuffer(3, 'brown');
+    const rumbleBuffer = this.createNoiseBuffer(3, "brown");
     const rumble = ctx.createBufferSource();
     rumble.buffer = rumbleBuffer;
 
     const lowpass = ctx.createBiquadFilter();
-    lowpass.type = 'lowpass';
+    lowpass.type = "lowpass";
     lowpass.frequency.value = 150;
 
     const rumbleGain = ctx.createGain();
@@ -117,7 +127,7 @@ class AmbientSoundService {
 
     crackOsc.connect(crackGain);
     crackGain.connect(ctx.destination);
-    
+
     rumble.connect(lowpass);
     lowpass.connect(rumbleGain);
     rumbleGain.connect(ctx.destination);
@@ -130,19 +140,19 @@ class AmbientSoundService {
 
   // Wind sound - modulated filtered noise
   startWind(): void {
-    if (this.isPlaying.get('wind')) return;
+    if (this.isPlaying.get("wind")) return;
 
     const ctx = this.getAudioContext();
     const nodes: AudioNode[] = [];
 
-    const noiseBuffer = this.createNoiseBuffer(4, 'brown');
+    const noiseBuffer = this.createNoiseBuffer(4, "brown");
     const noise = ctx.createBufferSource();
     noise.buffer = noiseBuffer;
     noise.loop = true;
 
     // Bandpass for wind howl
     const filter = ctx.createBiquadFilter();
-    filter.type = 'bandpass';
+    filter.type = "bandpass";
     filter.frequency.value = 400;
     filter.Q.value = 2;
 
@@ -165,14 +175,14 @@ class AmbientSoundService {
     lfo.start();
 
     nodes.push(noise, filter, lfo, lfoGain, gainNode);
-    this.activeNodes.set('wind', nodes);
-    this.gainNodes.set('wind', gainNode);
-    this.isPlaying.set('wind', true);
+    this.activeNodes.set("wind", nodes);
+    this.gainNodes.set("wind", gainNode);
+    this.isPlaying.set("wind", true);
   }
 
   // Night crickets/ambient
   startNightAmbient(): void {
-    if (this.isPlaying.get('night')) return;
+    if (this.isPlaying.get("night")) return;
 
     const ctx = this.getAudioContext();
     const nodes: AudioNode[] = [];
@@ -183,7 +193,7 @@ class AmbientSoundService {
 
     const createChirp = (baseFreq: number, delay: number) => {
       const osc = ctx.createOscillator();
-      osc.type = 'sine';
+      osc.type = "sine";
       osc.frequency.value = baseFreq;
 
       const chirpGain = ctx.createGain();
@@ -215,29 +225,33 @@ class AmbientSoundService {
     masterGain.connect(ctx.destination);
 
     nodes.push(chirp1.osc, chirp2.osc, chirp3.osc, masterGain);
-    this.activeNodes.set('night', nodes);
-    this.gainNodes.set('night', masterGain);
-    this.isPlaying.set('night', true);
+    this.activeNodes.set("night", nodes);
+    this.gainNodes.set("night", masterGain);
+    this.isPlaying.set("night", true);
 
     // Store intervals for cleanup
-    (this.activeNodes.get('night') as any).intervals = [chirp1.interval, chirp2.interval, chirp3.interval];
+    (this.activeNodes.get("night") as any).intervals = [
+      chirp1.interval,
+      chirp2.interval,
+      chirp3.interval,
+    ];
   }
 
   // Fire crackling
   startFireCrackling(): void {
-    if (this.isPlaying.get('fire')) return;
+    if (this.isPlaying.get("fire")) return;
 
     const ctx = this.getAudioContext();
     const nodes: AudioNode[] = [];
 
-    const noiseBuffer = this.createNoiseBuffer(1, 'white');
+    const noiseBuffer = this.createNoiseBuffer(1, "white");
     const noise = ctx.createBufferSource();
     noise.buffer = noiseBuffer;
     noise.loop = true;
 
     // Bandpass for crackling
     const filter = ctx.createBiquadFilter();
-    filter.type = 'bandpass';
+    filter.type = "bandpass";
     filter.frequency.value = 1000;
     filter.Q.value = 1;
 
@@ -260,14 +274,14 @@ class AmbientSoundService {
     lfo.start();
 
     nodes.push(noise, filter, lfo, lfoGain, gainNode);
-    this.activeNodes.set('fire', nodes);
-    this.gainNodes.set('fire', gainNode);
-    this.isPlaying.set('fire', true);
+    this.activeNodes.set("fire", nodes);
+    this.gainNodes.set("fire", gainNode);
+    this.isPlaying.set("fire", true);
   }
 
   // Sparkle/twinkle sound for stars
   startSparkle(): void {
-    if (this.isPlaying.get('sparkle')) return;
+    if (this.isPlaying.get("sparkle")) return;
 
     const ctx = this.getAudioContext();
     const masterGain = ctx.createGain();
@@ -276,7 +290,7 @@ class AmbientSoundService {
 
     const playTwinkle = () => {
       const osc = ctx.createOscillator();
-      osc.type = 'sine';
+      osc.type = "sine";
       osc.frequency.value = 2000 + Math.random() * 3000;
 
       const gain = ctx.createGain();
@@ -291,15 +305,15 @@ class AmbientSoundService {
 
     const interval = setInterval(playTwinkle, 500 + Math.random() * 1000);
 
-    this.activeNodes.set('sparkle', [masterGain]);
-    this.gainNodes.set('sparkle', masterGain);
-    this.isPlaying.set('sparkle', true);
-    (this.activeNodes.get('sparkle') as any).interval = interval;
+    this.activeNodes.set("sparkle", [masterGain]);
+    this.gainNodes.set("sparkle", masterGain);
+    this.isPlaying.set("sparkle", true);
+    (this.activeNodes.get("sparkle") as any).interval = interval;
   }
 
   // Heartbeat sound
   startHeartbeat(): void {
-    if (this.isPlaying.get('heartbeat')) return;
+    if (this.isPlaying.get("heartbeat")) return;
 
     const ctx = this.getAudioContext();
     const masterGain = ctx.createGain();
@@ -309,7 +323,7 @@ class AmbientSoundService {
     const playBeat = () => {
       // First beat (lub)
       const osc1 = ctx.createOscillator();
-      osc1.type = 'sine';
+      osc1.type = "sine";
       osc1.frequency.value = 60;
       const gain1 = ctx.createGain();
       gain1.gain.setValueAtTime(0.5, ctx.currentTime);
@@ -322,7 +336,7 @@ class AmbientSoundService {
       // Second beat (dub)
       setTimeout(() => {
         const osc2 = ctx.createOscillator();
-        osc2.type = 'sine';
+        osc2.type = "sine";
         osc2.frequency.value = 50;
         const gain2 = ctx.createGain();
         gain2.gain.setValueAtTime(0.3, ctx.currentTime);
@@ -337,15 +351,15 @@ class AmbientSoundService {
     const interval = setInterval(playBeat, 800);
     playBeat();
 
-    this.activeNodes.set('heartbeat', [masterGain]);
-    this.gainNodes.set('heartbeat', masterGain);
-    this.isPlaying.set('heartbeat', true);
-    (this.activeNodes.get('heartbeat') as any).interval = interval;
+    this.activeNodes.set("heartbeat", [masterGain]);
+    this.gainNodes.set("heartbeat", masterGain);
+    this.isPlaying.set("heartbeat", true);
+    (this.activeNodes.get("heartbeat") as any).interval = interval;
   }
 
   // Party/celebration sounds
   startParty(): void {
-    if (this.isPlaying.get('party')) return;
+    if (this.isPlaying.get("party")) return;
 
     const ctx = this.getAudioContext();
     const masterGain = ctx.createGain();
@@ -355,7 +369,7 @@ class AmbientSoundService {
     const playChime = () => {
       const freq = [523, 659, 784, 1047][Math.floor(Math.random() * 4)];
       const osc = ctx.createOscillator();
-      osc.type = 'triangle';
+      osc.type = "triangle";
       osc.frequency.value = freq;
 
       const gain = ctx.createGain();
@@ -370,26 +384,26 @@ class AmbientSoundService {
 
     const interval = setInterval(playChime, 300 + Math.random() * 500);
 
-    this.activeNodes.set('party', [masterGain]);
-    this.gainNodes.set('party', masterGain);
-    this.isPlaying.set('party', true);
-    (this.activeNodes.get('party') as any).interval = interval;
+    this.activeNodes.set("party", [masterGain]);
+    this.gainNodes.set("party", masterGain);
+    this.isPlaying.set("party", true);
+    (this.activeNodes.get("party") as any).interval = interval;
   }
 
   // Spooky ambient for Halloween
   startSpooky(): void {
-    if (this.isPlaying.get('spooky')) return;
+    if (this.isPlaying.get("spooky")) return;
 
     const ctx = this.getAudioContext();
     const nodes: AudioNode[] = [];
 
     // Low drone
     const drone = ctx.createOscillator();
-    drone.type = 'sawtooth';
+    drone.type = "sawtooth";
     drone.frequency.value = 55;
 
     const droneFilter = ctx.createBiquadFilter();
-    droneFilter.type = 'lowpass';
+    droneFilter.type = "lowpass";
     droneFilter.frequency.value = 200;
 
     // LFO for eerie modulation
@@ -411,9 +425,9 @@ class AmbientSoundService {
     lfo.start();
 
     nodes.push(drone, droneFilter, lfo, lfoGain, gainNode);
-    this.activeNodes.set('spooky', nodes);
-    this.gainNodes.set('spooky', gainNode);
-    this.isPlaying.set('spooky', true);
+    this.activeNodes.set("spooky", nodes);
+    this.gainNodes.set("spooky", gainNode);
+    this.isPlaying.set("spooky", true);
   }
 
   stop(effectId: string): void {
@@ -422,11 +436,15 @@ class AmbientSoundService {
       // Clear any intervals
       const intervalsObj = nodes as any;
       if (intervalsObj.interval) clearInterval(intervalsObj.interval);
-      if (intervalsObj.intervals) intervalsObj.intervals.forEach((i: number) => clearInterval(i));
+      if (intervalsObj.intervals)
+        intervalsObj.intervals.forEach((i: number) => clearInterval(i));
 
-      nodes.forEach(node => {
+      nodes.forEach((node) => {
         try {
-          if (node instanceof AudioBufferSourceNode || node instanceof OscillatorNode) {
+          if (
+            node instanceof AudioBufferSourceNode ||
+            node instanceof OscillatorNode
+          ) {
             node.stop();
           }
           node.disconnect();
@@ -441,7 +459,16 @@ class AmbientSoundService {
   }
 
   stopAll(): void {
-    ['rain', 'wind', 'night', 'fire', 'sparkle', 'heartbeat', 'party', 'spooky'].forEach(id => {
+    [
+      "rain",
+      "wind",
+      "night",
+      "fire",
+      "sparkle",
+      "heartbeat",
+      "party",
+      "spooky",
+    ].forEach((id) => {
       this.stop(id);
     });
   }

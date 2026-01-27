@@ -1,8 +1,8 @@
-import { Button } from '@/components/ui/button';
-import { VoiceTherapyMinimax } from '@/components/VoiceTherapyMinimax';
-import { ArrowLeft } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { Button } from "@/components/ui/button";
+import { VoiceTherapyMinimax } from "@/components/VoiceTherapyMinimax";
+import { ArrowLeft } from "lucide-react";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const AITherapyVoice = () => {
   const navigate = useNavigate();
@@ -19,12 +19,12 @@ const AITherapyVoice = () => {
             <Button
               variant="ghost"
               className="mb-4 text-white hover:text-primary"
-              onClick={() => navigate('/ai-therapy')}
+              onClick={() => navigate("/ai-therapy")}
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Options
             </Button>
-            <VoiceTherapyMinimax onBack={() => navigate('/ai-therapy')} />
+            <VoiceTherapyMinimax onBack={() => navigate("/ai-therapy")} />
           </motion.div>
         </div>
       </section>

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 interface Firefly {
   x: number;
@@ -26,7 +26,7 @@ export const FirefliesEffect = ({ enabled }: FirefliesEffectProps) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const resizeCanvas = () => {
@@ -35,7 +35,7 @@ export const FirefliesEffect = ({ enabled }: FirefliesEffectProps) => {
     };
 
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener("resize", resizeCanvas);
 
     const createFirefly = (): Firefly => ({
       x: Math.random() * canvas.width,
@@ -51,32 +51,36 @@ export const FirefliesEffect = ({ enabled }: FirefliesEffectProps) => {
     firefliesRef.current = Array.from({ length: 25 }, createFirefly);
 
     const drawFirefly = (firefly: Firefly) => {
-      const glow = (Math.sin(firefly.glowPhase) + 1) / 2 * firefly.maxGlow;
-      
+      const glow = ((Math.sin(firefly.glowPhase) + 1) / 2) * firefly.maxGlow;
+
       if (glow < 0.1) return; // Don't draw when very dim
-      
+
       ctx.save();
-      
+
       // Outer glow
       const gradient = ctx.createRadialGradient(
-        firefly.x, firefly.y, 0,
-        firefly.x, firefly.y, firefly.size * 8
+        firefly.x,
+        firefly.y,
+        0,
+        firefly.x,
+        firefly.y,
+        firefly.size * 8,
       );
       gradient.addColorStop(0, `rgba(255, 255, 100, ${glow})`);
       gradient.addColorStop(0.3, `rgba(255, 230, 50, ${glow * 0.5})`);
-      gradient.addColorStop(1, 'rgba(255, 255, 100, 0)');
-      
+      gradient.addColorStop(1, "rgba(255, 255, 100, 0)");
+
       ctx.fillStyle = gradient;
       ctx.beginPath();
       ctx.arc(firefly.x, firefly.y, firefly.size * 8, 0, Math.PI * 2);
       ctx.fill();
-      
+
       // Inner bright core
       ctx.fillStyle = `rgba(255, 255, 200, ${glow})`;
       ctx.beginPath();
       ctx.arc(firefly.x, firefly.y, firefly.size, 0, Math.PI * 2);
       ctx.fill();
-      
+
       ctx.restore();
     };
 
@@ -85,13 +89,13 @@ export const FirefliesEffect = ({ enabled }: FirefliesEffectProps) => {
 
       firefliesRef.current.forEach((firefly) => {
         firefly.glowPhase += firefly.glowSpeed;
-        
+
         // Random direction changes
         if (Math.random() < 0.02) {
           firefly.speedX = Math.random() * 1 - 0.5;
           firefly.speedY = Math.random() * 1 - 0.5;
         }
-        
+
         firefly.x += firefly.speedX;
         firefly.y += firefly.speedY;
 
@@ -110,7 +114,7 @@ export const FirefliesEffect = ({ enabled }: FirefliesEffectProps) => {
     animate();
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener("resize", resizeCanvas);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
@@ -123,7 +127,7 @@ export const FirefliesEffect = ({ enabled }: FirefliesEffectProps) => {
     <canvas
       ref={canvasRef}
       className="fixed inset-0 pointer-events-none z-50"
-      style={{ background: 'transparent' }}
+      style={{ background: "transparent" }}
     />
   );
 };

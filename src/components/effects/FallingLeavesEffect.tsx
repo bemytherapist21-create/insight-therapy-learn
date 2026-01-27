@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 interface Leaf {
   x: number;
@@ -16,7 +16,14 @@ interface FallingLeavesEffectProps {
   enabled: boolean;
 }
 
-const LEAF_COLORS = ['#D2691E', '#8B4513', '#CD853F', '#DEB887', '#B8860B', '#DAA520'];
+const LEAF_COLORS = [
+  "#D2691E",
+  "#8B4513",
+  "#CD853F",
+  "#DEB887",
+  "#B8860B",
+  "#DAA520",
+];
 
 export const FallingLeavesEffect = ({ enabled }: FallingLeavesEffectProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -29,7 +36,7 @@ export const FallingLeavesEffect = ({ enabled }: FallingLeavesEffectProps) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const resizeCanvas = () => {
@@ -38,7 +45,7 @@ export const FallingLeavesEffect = ({ enabled }: FallingLeavesEffectProps) => {
     };
 
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener("resize", resizeCanvas);
 
     const createLeaf = (): Leaf => ({
       x: Math.random() * canvas.width,
@@ -60,30 +67,36 @@ export const FallingLeavesEffect = ({ enabled }: FallingLeavesEffectProps) => {
       ctx.rotate((leaf.rotation * Math.PI) / 180);
       ctx.globalAlpha = leaf.opacity;
       ctx.fillStyle = leaf.color;
-      
+
       // Draw a simple leaf shape
       ctx.beginPath();
       ctx.moveTo(0, -leaf.size / 2);
       ctx.bezierCurveTo(
-        leaf.size / 2, -leaf.size / 4,
-        leaf.size / 2, leaf.size / 4,
-        0, leaf.size / 2
+        leaf.size / 2,
+        -leaf.size / 4,
+        leaf.size / 2,
+        leaf.size / 4,
+        0,
+        leaf.size / 2,
       );
       ctx.bezierCurveTo(
-        -leaf.size / 2, leaf.size / 4,
-        -leaf.size / 2, -leaf.size / 4,
-        0, -leaf.size / 2
+        -leaf.size / 2,
+        leaf.size / 4,
+        -leaf.size / 2,
+        -leaf.size / 4,
+        0,
+        -leaf.size / 2,
       );
       ctx.fill();
-      
+
       // Draw stem
-      ctx.strokeStyle = '#5D4037';
+      ctx.strokeStyle = "#5D4037";
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(0, -leaf.size / 2);
       ctx.lineTo(0, leaf.size / 2);
       ctx.stroke();
-      
+
       ctx.restore();
     };
 
@@ -109,7 +122,7 @@ export const FallingLeavesEffect = ({ enabled }: FallingLeavesEffectProps) => {
     animate();
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener("resize", resizeCanvas);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
@@ -122,7 +135,7 @@ export const FallingLeavesEffect = ({ enabled }: FallingLeavesEffectProps) => {
     <canvas
       ref={canvasRef}
       className="fixed inset-0 pointer-events-none z-50"
-      style={{ background: 'transparent' }}
+      style={{ background: "transparent" }}
     />
   );
 };

@@ -1,5 +1,11 @@
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Calendar,
   BarChart3,
@@ -13,21 +19,21 @@ import {
   Sparkles,
   BookOpen,
   Mic,
-  MicOff
-} from 'lucide-react';
-import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+  MicOff,
+} from "lucide-react";
+import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { InlineWidget } from "react-calendly";
 
 const CALENDLY_URL = "https://calendly.com/bhupeshpandey62/30min";
 
 const InsightFusion = () => {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
-  
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
@@ -35,28 +41,34 @@ const InsightFusion = () => {
   const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
     const arrayBuffer = await audioBlob.arrayBuffer();
     const base64Audio = btoa(
-      new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+      new Uint8Array(arrayBuffer).reduce(
+        (data, byte) => data + String.fromCharCode(byte),
+        "",
+      ),
     );
 
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/transcribe-audio`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/transcribe-audio`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({
+          audio: base64Audio,
+          mimeType: audioBlob.type,
+        }),
       },
-      body: JSON.stringify({
-        audio: base64Audio,
-        mimeType: audioBlob.type
-      })
-    });
+    );
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || 'Transcription failed');
+      throw new Error(errorData.error || "Transcription failed");
     }
 
     const data = await response.json();
-    return data.transcript || '';
+    return data.transcript || "";
   };
 
   const handleVoiceInput = async () => {
@@ -72,11 +84,13 @@ const InsightFusion = () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
-      
+
       const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4'
+        mimeType: MediaRecorder.isTypeSupported("audio/webm")
+          ? "audio/webm"
+          : "audio/mp4",
       });
-      
+
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -87,11 +101,13 @@ const InsightFusion = () => {
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType });
-        
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: mediaRecorder.mimeType,
+        });
+
         // Stop microphone stream
         if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => track.stop());
+          streamRef.current.getTracks().forEach((track) => track.stop());
           streamRef.current = null;
         }
 
@@ -100,13 +116,13 @@ const InsightFusion = () => {
           const transcript = await transcribeAudio(audioBlob);
           if (transcript.trim()) {
             setQuery(transcript);
-            toast.success('Voice input captured!');
+            toast.success("Voice input captured!");
           } else {
-            toast.info('No speech detected. Please try again.');
+            toast.info("No speech detected. Please try again.");
           }
         } catch (error) {
-          console.error('Transcription error:', error);
-          toast.error('Failed to transcribe audio. Please try again.');
+          console.error("Transcription error:", error);
+          toast.error("Failed to transcribe audio. Please try again.");
         } finally {
           setIsProcessing(false);
         }
@@ -114,72 +130,95 @@ const InsightFusion = () => {
 
       mediaRecorder.start();
       setIsListening(true);
-      toast.info('Recording... Click again to stop');
+      toast.info("Recording... Click again to stop");
     } catch (error) {
-      console.error('Microphone error:', error);
-      toast.error('Microphone access denied. Please allow microphone access.');
+      console.error("Microphone error:", error);
+      toast.error("Microphone access denied. Please allow microphone access.");
     }
   };
 
   const handleBooking = () => {
-    window.open(CALENDLY_URL, '_blank');
+    window.open(CALENDLY_URL, "_blank");
   };
 
   const handleResearch = () => {
     if (!query.trim()) {
-      toast.error('Please enter a research question');
+      toast.error("Please enter a research question");
       return;
     }
 
     // Navigate to dedicated research page
-    navigate(`/insight-fusion/Generate/StrategicInsight?q=${encodeURIComponent(query)}`);
+    navigate(
+      `/insight-fusion/Generate/StrategicInsight?q=${encodeURIComponent(query)}`,
+    );
   };
 
   const services = [
     {
-      title: 'Business Strategy Sessions',
-      description: 'Comprehensive analysis of your business model with AI-driven insights',
-      duration: '60 minutes',
-      price: '$299',
-      features: ['Market Analysis', 'Competitor Research', 'Growth Strategy', 'ROI Optimization']
+      title: "Business Strategy Sessions",
+      description:
+        "Comprehensive analysis of your business model with AI-driven insights",
+      duration: "60 minutes",
+      price: "$299",
+      features: [
+        "Market Analysis",
+        "Competitor Research",
+        "Growth Strategy",
+        "ROI Optimization",
+      ],
     },
     {
-      title: 'Data Analytics Consultation',
-      description: 'Deep dive into your business data to uncover hidden patterns and opportunities',
-      duration: '90 minutes',
-      price: '$399',
-      features: ['Data Visualization', 'KPI Development', 'Predictive Modeling', 'Action Plan']
+      title: "Data Analytics Consultation",
+      description:
+        "Deep dive into your business data to uncover hidden patterns and opportunities",
+      duration: "90 minutes",
+      price: "$399",
+      features: [
+        "Data Visualization",
+        "KPI Development",
+        "Predictive Modeling",
+        "Action Plan",
+      ],
     },
     {
-      title: 'AI Implementation Strategy',
-      description: 'Roadmap for integrating AI solutions into your business operations',
-      duration: '75 minutes',
-      price: '$349',
-      features: ['AI Assessment', 'Technology Stack', 'Implementation Timeline', 'Cost Analysis']
-    }
+      title: "AI Implementation Strategy",
+      description:
+        "Roadmap for integrating AI solutions into your business operations",
+      duration: "75 minutes",
+      price: "$349",
+      features: [
+        "AI Assessment",
+        "Technology Stack",
+        "Implementation Timeline",
+        "Cost Analysis",
+      ],
+    },
   ];
 
   const benefits = [
     {
       icon: Target,
-      title: 'Precision Insights',
-      description: 'AI-powered analysis delivers laser-focused business intelligence'
+      title: "Precision Insights",
+      description:
+        "AI-powered analysis delivers laser-focused business intelligence",
     },
     {
       icon: TrendingUp,
-      title: 'Growth Acceleration',
-      description: 'Identify opportunities to scale your business faster than ever'
+      title: "Growth Acceleration",
+      description:
+        "Identify opportunities to scale your business faster than ever",
     },
     {
       icon: Lightbulb,
-      title: 'Innovation Strategy',
-      description: 'Stay ahead of the curve with cutting-edge strategic recommendations'
+      title: "Innovation Strategy",
+      description:
+        "Stay ahead of the curve with cutting-edge strategic recommendations",
     },
     {
       icon: Users,
-      title: 'Expert Guidance',
-      description: 'Connect with seasoned strategists and AI specialists'
-    }
+      title: "Expert Guidance",
+      description: "Connect with seasoned strategists and AI specialists",
+    },
   ];
 
   return (
@@ -192,14 +231,17 @@ const InsightFusion = () => {
               InsightFusion
             </h1>
             <p className="text-xl text-white/80 max-w-3xl mx-auto mb-8">
-              Transform your business with AI-driven analytics and strategic insights.
+              Transform your business with AI-driven analytics and strategic
+              insights.
             </p>
 
             {/* Live Research Demo */}
             <div className="glass-card max-w-2xl mx-auto p-6 mb-12 border border-purple-500/30">
               <div className="flex items-center justify-center gap-2 mb-4 text-purple-300">
                 <Sparkles className="w-5 h-5" />
-                <span className="font-semibold tracking-wider uppercase text-sm">Live Demo: Instant Market Research</span>
+                <span className="font-semibold tracking-wider uppercase text-sm">
+                  Live Demo: Instant Market Research
+                </span>
               </div>
 
               <div className="flex flex-col gap-4">
@@ -213,10 +255,22 @@ const InsightFusion = () => {
                   <Button
                     onClick={handleVoiceInput}
                     disabled={isProcessing}
-                    className={`absolute right-2 top-2 p-2 h-10 w-10 rounded-full ${isListening ? 'bg-red-500 hover:bg-red-600 animate-pulse' : isProcessing ? 'bg-gray-500' : 'bg-purple-500 hover:bg-purple-600'}`}
-                    title={isListening ? "Stop Recording" : isProcessing ? "Processing..." : "Voice Input"}
+                    className={`absolute right-2 top-2 p-2 h-10 w-10 rounded-full ${isListening ? "bg-red-500 hover:bg-red-600 animate-pulse" : isProcessing ? "bg-gray-500" : "bg-purple-500 hover:bg-purple-600"}`}
+                    title={
+                      isListening
+                        ? "Stop Recording"
+                        : isProcessing
+                          ? "Processing..."
+                          : "Voice Input"
+                    }
                   >
-                    {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                    {isProcessing ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : isListening ? (
+                      <MicOff className="w-5 h-5" />
+                    ) : (
+                      <Mic className="w-5 h-5" />
+                    )}
                   </Button>
                 </div>
                 <Button
@@ -236,8 +290,12 @@ const InsightFusion = () => {
                 <BarChart3 className="w-8 h-8 text-primary" />
                 <Calendar className="w-8 h-8 text-secondary" />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-2">Need Deeper Analysis?</h3>
-              <p className="text-white/70 mb-4">Book a rigorous 1-on-1 strategy session</p>
+              <h3 className="text-2xl font-bold text-white mb-2">
+                Need Deeper Analysis?
+              </h3>
+              <p className="text-white/70 mb-4">
+                Book a rigorous 1-on-1 strategy session
+              </p>
 
               <Button
                 size="lg"
@@ -253,13 +311,18 @@ const InsightFusion = () => {
           {/* Benefits Section */}
           <div className="grid md:grid-cols-4 gap-6 mb-20">
             {benefits.map((benefit, index) => (
-              <Card key={benefit.title} className="glass-card text-center hover-lift animate-scale-in"
-                style={{ animationDelay: `${index * 0.1}s` }}>
+              <Card
+                key={benefit.title}
+                className="glass-card text-center hover-lift animate-scale-in"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
                 <CardContent className="pt-6">
                   <div className="w-16 h-16 mx-auto mb-4 bg-gradient-primary rounded-2xl flex items-center justify-center">
                     <benefit.icon className="w-8 h-8 text-primary-foreground" />
                   </div>
-                  <h3 className="text-lg font-bold text-white mb-2">{benefit.title}</h3>
+                  <h3 className="text-lg font-bold text-white mb-2">
+                    {benefit.title}
+                  </h3>
                   <p className="text-white/70 text-sm">{benefit.description}</p>
                 </CardContent>
               </Card>
@@ -269,15 +332,20 @@ const InsightFusion = () => {
           {/* Services Grid */}
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {services.map((service, index) => (
-              <Card key={service.title} className="glass-card hover-lift animate-scale-in group"
-                style={{ animationDelay: `${index * 0.1}s` }}>
+              <Card
+                key={service.title}
+                className="glass-card hover-lift animate-scale-in group"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
                 <CardHeader>
                   <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center gap-2">
                       <Clock className="w-5 h-5 text-primary" />
                       <span className="text-white/70">{service.duration}</span>
                     </div>
-                    <div className="text-2xl font-bold text-secondary">{service.price}</div>
+                    <div className="text-2xl font-bold text-secondary">
+                      {service.price}
+                    </div>
                   </div>
                   <CardTitle className="text-2xl text-white group-hover:text-primary transition-colors">
                     {service.title}
@@ -289,9 +357,14 @@ const InsightFusion = () => {
                   </CardDescription>
 
                   <div className="space-y-3">
-                    <h4 className="font-semibold text-white">What's Included:</h4>
+                    <h4 className="font-semibold text-white">
+                      What's Included:
+                    </h4>
                     {service.features.map((feature, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-white/80">
+                      <div
+                        key={idx}
+                        className="flex items-center gap-2 text-white/80"
+                      >
                         <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
                         <span className="text-sm">{feature}</span>
                       </div>
@@ -324,13 +397,13 @@ const InsightFusion = () => {
                 <div className="h-[750px] w-full rounded-xl overflow-hidden border border-white/10 bg-black/40 backdrop-blur-sm">
                   <InlineWidget
                     url={CALENDLY_URL}
-                    styles={{ height: '100%', width: '100%' }}
+                    styles={{ height: "100%", width: "100%" }}
                     pageSettings={{
-                      backgroundColor: '1a1a1a',
+                      backgroundColor: "1a1a1a",
                       hideEventTypeDetails: true,
                       hideLandingPageDetails: true,
-                      primaryColor: '3b82f6',
-                      textColor: 'ffffff'
+                      primaryColor: "3b82f6",
+                      textColor: "ffffff",
                     }}
                   />
                 </div>

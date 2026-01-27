@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 interface Star {
   x: number;
@@ -24,7 +24,7 @@ export const StarfieldEffect = ({ enabled }: StarfieldEffectProps) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const resizeCanvas = () => {
@@ -33,7 +33,7 @@ export const StarfieldEffect = ({ enabled }: StarfieldEffectProps) => {
     };
 
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener("resize", resizeCanvas);
 
     const createStar = (): Star => ({
       x: Math.random() * canvas.width,
@@ -49,47 +49,51 @@ export const StarfieldEffect = ({ enabled }: StarfieldEffectProps) => {
     const drawStar = (star: Star) => {
       const twinkle = (Math.sin(star.twinklePhase) + 1) / 2;
       const alpha = star.brightness * (0.3 + twinkle * 0.7);
-      
+
       ctx.save();
-      
+
       // Outer glow
       const gradient = ctx.createRadialGradient(
-        star.x, star.y, 0,
-        star.x, star.y, star.size * 4
+        star.x,
+        star.y,
+        0,
+        star.x,
+        star.y,
+        star.size * 4,
       );
       gradient.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
       gradient.addColorStop(0.5, `rgba(200, 220, 255, ${alpha * 0.3})`);
-      gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      
+      gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+
       ctx.fillStyle = gradient;
       ctx.beginPath();
       ctx.arc(star.x, star.y, star.size * 4, 0, Math.PI * 2);
       ctx.fill();
-      
+
       // Star core
       ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
       ctx.beginPath();
       ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
       ctx.fill();
-      
+
       // Star points (for brighter stars)
       if (star.size > 1.5 && twinkle > 0.5) {
         ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.5})`;
         ctx.lineWidth = 0.5;
-        
+
         // Horizontal line
         ctx.beginPath();
         ctx.moveTo(star.x - star.size * 3, star.y);
         ctx.lineTo(star.x + star.size * 3, star.y);
         ctx.stroke();
-        
+
         // Vertical line
         ctx.beginPath();
         ctx.moveTo(star.x, star.y - star.size * 3);
         ctx.lineTo(star.x, star.y + star.size * 3);
         ctx.stroke();
       }
-      
+
       ctx.restore();
     };
 
@@ -107,7 +111,7 @@ export const StarfieldEffect = ({ enabled }: StarfieldEffectProps) => {
     animate();
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener("resize", resizeCanvas);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
@@ -120,7 +124,7 @@ export const StarfieldEffect = ({ enabled }: StarfieldEffectProps) => {
     <canvas
       ref={canvasRef}
       className="fixed inset-0 pointer-events-none z-50"
-      style={{ background: 'transparent' }}
+      style={{ background: "transparent" }}
     />
   );
 };

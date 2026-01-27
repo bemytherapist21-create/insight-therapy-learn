@@ -34,7 +34,7 @@ class MemoryStorage implements Storage {
 
 function isLocalStorageAvailable(): boolean {
   try {
-    const testKey = '__storage_test__';
+    const testKey = "__storage_test__";
     localStorage.setItem(testKey, testKey);
     localStorage.removeItem(testKey);
     return true;
