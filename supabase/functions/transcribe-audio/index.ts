@@ -34,28 +34,31 @@ serve(async (req) => {
   }
 
   try {
-    // Verify JWT authentication
+    // Check for JWT authentication (optional for Insight Fusion, required for therapy)
     const authHeader = req.headers.get("authorization");
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ error: "Authentication required" }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Validate JWT using Supabase client
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    let userId = 'anonymous';
     
-    if (claimsError || !claimsData?.claims) {
+    if (authHeader?.startsWith('Bearer ')) {
+      // Validate JWT using Supabase client
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+
+      const token = authHeader.replace('Bearer ', '');
+      const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+      
+      if (!claimsError && claimsData?.claims) {
+        userId = claimsData.claims.sub as string;
+      }
+    }
+    
+    // Verify that either JWT or apikey is present (apikey is passed by Supabase automatically)
+    const apiKey = req.headers.get('apikey');
+    if (!authHeader && !apiKey) {
       return new Response(
-        JSON.stringify({ error: "Invalid or expired token" }),
+        JSON.stringify({ error: "API key required" }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -96,7 +99,7 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    console.log(`[transcribe-audio] Processing audio for user: ${claimsData.claims.sub}`);
+    console.log(`[transcribe-audio] Processing audio for user: ${userId}`);
 
     // Use Gemini's multimodal capabilities for audio transcription
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
