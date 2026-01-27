@@ -19,10 +19,15 @@ load_dotenv()
 
 app = FastAPI(title="Voice Therapy API", version="1.0.0")
 
-# CORS middleware for React frontend
+# CORS middleware for React frontend - Secure configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Update with your frontend URL in production
+    allow_origins=[
+        "http://localhost:8080",  # Local Vite dev server
+        "http://localhost:5173",  # Alternative Vite port
+        "https://insight-therapy-learn.lovable.app",  # Production
+        "https://*.lovable.app",  # Preview deployments
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

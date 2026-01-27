@@ -36,6 +36,18 @@ serve(async (req) => {
             );
         }
 
+        // Input validation - prevent DoS attacks
+        const MAX_QUERY_LENGTH = 5000;
+        if (query.length > MAX_QUERY_LENGTH) {
+            return new Response(
+                JSON.stringify({ error: `Query too long. Maximum ${MAX_QUERY_LENGTH} characters allowed.` }),
+                {
+                    status: 413,
+                    headers: { ...corsHeaders, "Content-Type": "application/json" },
+                }
+            );
+        }
+
         // Call Perplexity API
         const response = await fetch("https://api.perplexity.ai/chat/completions", {
             method: "POST",
