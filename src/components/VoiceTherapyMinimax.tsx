@@ -22,6 +22,7 @@ interface VoiceTherapyProps {
 export const VoiceTherapyMinimax = ({ onBack }: VoiceTherapyProps) => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const PYTHON_API_URL = import.meta.env.VITE_PYTHON_API_URL || "http://localhost:8000";
 
   const [isListening, setIsListening] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -107,7 +108,7 @@ export const VoiceTherapyMinimax = ({ onBack }: VoiceTherapyProps) => {
       formData.append("session_id", `session_${Date.now()}`);
 
       const response = await fetch(
-        "http://localhost:8000/api/voice-therapy-minimax",
+        `${PYTHON_API_URL}/api/voice-therapy-minimax`,
         {
           method: "POST",
           body: formData,
@@ -139,7 +140,7 @@ export const VoiceTherapyMinimax = ({ onBack }: VoiceTherapyProps) => {
 
       // Play audio response with cloned voice
       if (data.audio_url) {
-        await playAudioResponse(`http://localhost:8000${data.audio_url}`);
+        await playAudioResponse(`${PYTHON_API_URL}${data.audio_url}`);
       }
 
       // Show safety info if needed
@@ -298,11 +299,10 @@ export const VoiceTherapyMinimax = ({ onBack }: VoiceTherapyProps) => {
 
                 {/* Main circle */}
                 <div
-                  className={`w-32 h-32 rounded-full flex items-center justify-center shadow-2xl relative z-10 transition-all duration-500 ${
-                    isListening
+                  className={`w-32 h-32 rounded-full flex items-center justify-center shadow-2xl relative z-10 transition-all duration-500 ${isListening
                       ? "bg-gradient-to-br from-blue-400 to-cyan-500"
                       : "bg-white/5 border-2 border-white/20"
-                  }`}
+                    }`}
                 >
                   {isListening ? (
                     <svg
@@ -404,11 +404,10 @@ export const VoiceTherapyMinimax = ({ onBack }: VoiceTherapyProps) => {
                       messages.map((msg, idx) => (
                         <div
                           key={idx}
-                          className={`p-3 rounded-lg ${
-                            msg.role === "user"
+                          className={`p-3 rounded-lg ${msg.role === "user"
                               ? "bg-blue-500/20 ml-4"
                               : "bg-green-500/20 mr-4"
-                          }`}
+                            }`}
                         >
                           <div className="text-xs text-white/60 mb-1">
                             {msg.role === "user" ? "🎤 You" : "🔊 AI Therapist"}
