@@ -25,6 +25,8 @@ const StrategicInsight = lazy(() => import("./pages/StrategicInsight"));
 const AILearning = lazy(() => import("./pages/AILearning"));
 const Register = lazy(() => import("./pages/Register"));
 const Login = lazy(() => import("./pages/Login"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Terms = lazy(() => import("./pages/Terms"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -76,6 +78,8 @@ const App = () => {
                   <Route path="/contact" element={<Home />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/login" element={<Login />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/terms" element={<Terms />} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />
                   <Route

@@ -74,6 +74,8 @@ export const ROUTES = {
   AUTH: "/auth",
   LOGIN: "/login",
   REGISTER: "/register",
+  FORGOT_PASSWORD: "/forgot-password",
+  RESET_PASSWORD: "/reset-password",
   TERMS: "/terms",
   PRIVACY: "/privacy",
   AI_THERAPY: "/ai-therapy",
@@ -102,4 +104,8 @@ export const SUCCESS_MESSAGES = {
   MESSAGE_SENT: "Thank you! We'll get back to you soon.",
   THERAPIST_REGISTRATION_SENT:
     "Thank you for your interest! We'll review your application and get back to you soon.",
+  PASSWORD_RESET_EMAIL_SENT:
+    "Password reset link sent! Please check your email.",
+  PASSWORD_RESET_SUCCESS:
+    "Password updated successfully! You can now log in with your new password.",
 } as const;
