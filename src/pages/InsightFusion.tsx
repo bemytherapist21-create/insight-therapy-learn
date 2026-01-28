@@ -55,20 +55,41 @@ const InsightFusion = () => {
       reader.readAsDataURL(audioBlob);
     });
 
-    // Use supabase.functions.invoke which automatically uses correct Lovable Cloud credentials
-    const { data, error } = await supabase.functions.invoke("transcribe-audio", {
-      body: { audio: base64Audio, mimeType: audioBlob.type },
-    });
+    // Get auth session for token
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData?.session?.access_token;
 
-    if (error) {
-      if (error.message?.includes("Authentication required") ||
-          error.message?.includes("Invalid or expired token")) {
-        throw new Error("AUTH_REQUIRED");
-      }
-      throw new Error(error.message || "Transcription failed");
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    };
+
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
     }
 
-    return (data as { transcript?: string })?.transcript || "";
+    const response = await fetch("/api/transcribe-audio", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        audio: base64Audio,
+        mimeType: audioBlob.type,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.error || `Transcription failed: ${response.status}`;
+
+      if (errorMessage.includes("Authentication required") ||
+        errorMessage.includes("Invalid or expired token")) {
+        throw new Error("AUTH_REQUIRED");
+      }
+      throw new Error(errorMessage);
+    }
+
+    const data = await response.json();
+    return data.transcript || "";
   };
 
   const handleVoiceInput = async () => {

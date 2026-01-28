@@ -13,23 +13,37 @@ class ResearchService {
    */
   async generateInsight(query: string): Promise<ResearchResult | null> {
     try {
-      // Use supabase.functions.invoke which automatically uses correct Lovable Cloud credentials
-      const { data, error } = await supabase.functions.invoke(
-        "perplexity-research",
-        { body: { query } }
-      );
+      // Get auth session for token
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
 
-      if (error) {
-        if (error.message?.includes("Authentication required") ||
-            error.message?.includes("Invalid or expired token")) {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      };
+
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const response = await fetch("/api/perplexity-research", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ query }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || `Research failed: ${response.status}`;
+
+        if (errorMessage.includes("Authentication required") ||
+          errorMessage.includes("Invalid or expired token")) {
           throw new Error("AUTH_REQUIRED");
         }
-        throw new Error(error.message || "Research failed");
+        throw new Error(errorMessage);
       }
 
-      if (!data) {
-        throw new Error("No data returned from research function");
-      }
+      const data = await response.json();
 
       logger.info("Research insight generated successfully");
       return {
