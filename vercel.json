@@ -1,14 +1,6 @@
 {
     "rewrites": [
         {
-            "source": "/api/transcribe-audio",
-            "destination": "https://sudlkozsotxdzvjpxubu.supabase.co/functions/v1/transcribe-audio"
-        },
-        {
-            "source": "/api/perplexity-research",
-            "destination": "https://sudlkozsotxdzvjpxubu.supabase.co/functions/v1/perplexity-research"
-        },
-        {
             "source": "/(.*)",
             "destination": "/index.html"
         }

@@ -13,40 +13,15 @@ class ResearchService {
    */
   async generateInsight(query: string): Promise<ResearchResult | null> {
     try {
-      // Get session for auth header
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-      };
-
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-
-      const response = await fetch("/api/perplexity-research", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ query }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Research failed: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const error = null;
+      // Use supabase.functions.invoke which automatically uses correct Lovable Cloud credentials
+      const { data, error } = await supabase.functions.invoke(
+        "perplexity-research",
+        { body: { query } }
+      );
 
       if (error) {
-        // Standardize auth-related errors so the UI can react
-        if (
-          typeof error.message === "string" &&
-          (error.message.includes("Authentication required") ||
-            error.message.includes("Invalid or expired token"))
-        ) {
+        if (error.message?.includes("Authentication required") ||
+            error.message?.includes("Invalid or expired token")) {
           throw new Error("AUTH_REQUIRED");
         }
         throw new Error(error.message || "Research failed");
