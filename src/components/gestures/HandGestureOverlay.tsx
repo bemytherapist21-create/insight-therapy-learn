@@ -123,7 +123,7 @@ export const HandGestureOverlay = ({
 
   // Handle gestures
   useEffect(() => {
-    if (!gesture) return;
+    if (!gesture || !handPosition) return;
 
     const handleGesture = (gestureEvent: GestureEvent) => {
       switch (gestureEvent.type) {
@@ -146,10 +146,10 @@ export const HandGestureOverlay = ({
           }
           break;
         case "pinch":
-          if (gestureEvent.x !== undefined && gestureEvent.y !== undefined) {
-            // x is already flipped in the hook, just scale to screen
-            const x = gestureEvent.x * window.innerWidth;
-            const y = gestureEvent.y * window.innerHeight;
+          if (handPosition) {
+            // Use handPosition directly - it's already in screen coordinates
+            const x = handPosition.x;
+            const y = handPosition.y;
 
             // Show ripple effect
             showClickRipple(x, y);
@@ -158,47 +158,62 @@ export const HandGestureOverlay = ({
             if (element && element instanceof HTMLElement) {
               const clickable = findClickableElement(element);
               if (clickable) {
-                // Dispatch proper mouse events for better compatibility
-                const mouseEvent = new MouseEvent("click", {
+                // Simulate full mouse event sequence for proper click handling
+                const eventOptions = {
                   bubbles: true,
                   cancelable: true,
                   view: window,
                   clientX: x,
                   clientY: y,
-                });
-                clickable.dispatchEvent(mouseEvent);
+                  button: 0,
+                  buttons: 1,
+                };
+                
+                // Focus the element first (important for buttons)
+                if (typeof clickable.focus === 'function') {
+                  clickable.focus();
+                }
+                
+                // Dispatch mousedown, mouseup, then click for proper handling
+                clickable.dispatchEvent(new MouseEvent("mousedown", eventOptions));
+                clickable.dispatchEvent(new MouseEvent("mouseup", eventOptions));
+                clickable.dispatchEvent(new MouseEvent("click", eventOptions));
+                
+                // Also trigger pointerdown/pointerup for React components
+                clickable.dispatchEvent(new PointerEvent("pointerdown", { ...eventOptions, pointerId: 1, pointerType: "mouse" }));
+                clickable.dispatchEvent(new PointerEvent("pointerup", { ...eventOptions, pointerId: 1, pointerType: "mouse" }));
               }
             }
           }
           break;
         case "double-pinch":
-          if (gestureEvent.x !== undefined && gestureEvent.y !== undefined) {
-            // x is already flipped in the hook, just scale to screen
-            const x = gestureEvent.x * window.innerWidth;
-            const y = gestureEvent.y * window.innerHeight;
+          if (handPosition) {
+            const x = handPosition.x;
+            const y = handPosition.y;
             showClickRipple(x, y);
 
             const element = document.elementFromPoint(x, y);
             if (element && element instanceof HTMLElement) {
               const clickable = findClickableElement(element);
               if (clickable) {
-                const event = new MouseEvent("dblclick", {
+                if (typeof clickable.focus === 'function') {
+                  clickable.focus();
+                }
+                clickable.dispatchEvent(new MouseEvent("dblclick", {
                   bubbles: true,
                   cancelable: true,
                   view: window,
                   clientX: x,
                   clientY: y,
-                });
-                clickable.dispatchEvent(event);
+                }));
               }
             }
           }
           break;
         case "point":
-          if (gestureEvent.x !== undefined && gestureEvent.y !== undefined) {
-            // x is already flipped in the hook, just scale to screen
-            const x = gestureEvent.x * window.innerWidth;
-            const y = gestureEvent.y * window.innerHeight;
+          if (handPosition) {
+            const x = handPosition.x;
+            const y = handPosition.y;
             const element = document.elementFromPoint(x, y);
             if (element && element instanceof HTMLElement) {
               const clickable = findClickableElement(element);
@@ -217,7 +232,7 @@ export const HandGestureOverlay = ({
     };
 
     handleGesture(gesture);
-  }, [gesture]);
+  }, [gesture, handPosition]);
 
   if (!enabled) return null;
 
