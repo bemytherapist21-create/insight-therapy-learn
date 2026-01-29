@@ -101,15 +101,14 @@ export const useHandGestures = (enabled: boolean) => {
     y: number;
   } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isScrollMode, setIsScrollMode] = useState(false); // Toggle scroll mode with double-pinch
 
   const prevPositionRef = useRef<{ x: number; y: number } | null>(null);
   const lastGestureTimeRef = useRef<number>(0);
   const lastPinchTimeRef = useRef<number>(0);
 
-  // New refs for drag tracking
-  const pinchStartTimeRef = useRef<number | null>(null);
-  const isDraggingRef = useRef(false);
-  const dragStartYRef = useRef<number>(0);
+  // Refs for scroll mode tracking
+  const scrollStartYRef = useRef<number>(0);
 
   const calculateDistance = (
     point1: HandLandmark,
@@ -182,10 +181,8 @@ export const useHandGestures = (enabled: boolean) => {
     ) {
       prevPositionRef.current = null;
       setHandPosition(null);
-      // Reset drag state when hand lost
-      pinchStartTimeRef.current = null;
-      isDraggingRef.current = false;
-      setIsDragging(false);
+      // Exit scroll mode when hand is lost
+      setIsScrollMode(false);
       return;
     }
 
@@ -199,67 +196,51 @@ export const useHandGestures = (enabled: boolean) => {
     setHandPosition({ x: cursorX, y: cursorY });
 
     const palmCenter = landmarks[9];
-    const isPinching = detectPinch(landmarks);
+    // Detect pinch
+    if (detectPinch(landmarks)) {
+      const timeSinceLastPinch = now - lastPinchTimeRef.current;
+      const isDoublePinch = timeSinceLastPinch < 500;
 
-    // Handle pinch with drag detection
-    if (isPinching) {
-      if (!pinchStartTimeRef.current) {
-        // Pinch just started
-        pinchStartTimeRef.current = now;
-        dragStartYRef.current = landmarks[8].y;
+      const x = 1 - landmarks[8].x;
+      const y = landmarks[8].y;
+
+      if (now - lastGestureTimeRef.current >= 300) {
+        if (isDoublePinch) {
+          // Double pinch toggles scroll mode
+          setIsScrollMode(!isScrollMode);
+          scrollStartYRef.current = y;
+          setGesture({
+            type: "double-pinch",
+            x,
+            y,
+            confidence: 0.9,
+          });
+        } else {
+          // Single pinch = click
+          setGesture({
+            type: "pinch",
+            x,
+            y,
+            confidence: 0.9,
+          });
+        }
+        lastGestureTimeRef.current = now;
       }
 
-      const holdDuration = now - pinchStartTimeRef.current;
+      lastPinchTimeRef.current = now;
+      return;
+    }
 
-      // Enter drag mode after 100ms of holding pinch
-      if (holdDuration > 100) {
-        if (!isDraggingRef.current) {
-          isDraggingRef.current = true;
-          setIsDragging(true);
-        }
+    // If in scroll mode, track hand movement for scrolling
+    if (isScrollMode && handPosition) {
+      const currentY = landmarks[8].y;
+      const deltaY = (currentY - scrollStartYRef.current) * window.innerHeight;
 
-        // Calculate scroll delta based on hand movement
-        const deltaY = (landmarks[8].y - dragStartYRef.current) * window.innerHeight;
-
-        // Only emit drag gesture if there's significant movement
-        if (Math.abs(deltaY) > 2) {
-          setGesture({ type: "drag", y: deltaY, confidence: 0.9 });
-          dragStartYRef.current = landmarks[8].y; // Reset for next frame
-        }
-        return;
+      if (Math.abs(deltaY) > 3) {
+        setGesture({ type: "drag", y: deltaY, confidence: 0.9 });
+        scrollStartYRef.current = currentY;
       }
-    } else {
-      // Pinch released
-      if (pinchStartTimeRef.current !== null) {
-        const holdDuration = now - pinchStartTimeRef.current;
-
-        // If it was a quick pinch (not a drag), treat as click
-        if (!isDraggingRef.current && holdDuration < 100) {
-          // Check for double-pinch
-          const timeSinceLastPinch = now - lastPinchTimeRef.current;
-          const isDoublePinch = timeSinceLastPinch < 500;
-
-          const x = 1 - landmarks[8].x;
-          const y = landmarks[8].y;
-
-          if (now - lastGestureTimeRef.current >= 300) {
-            setGesture({
-              type: isDoublePinch ? "double-pinch" : "pinch",
-              x,
-              y,
-              confidence: 0.9,
-            });
-            lastGestureTimeRef.current = now;
-          }
-
-          lastPinchTimeRef.current = now;
-        }
-      }
-
-      // Reset drag state
-      pinchStartTimeRef.current = null;
-      isDraggingRef.current = false;
-      setIsDragging(false);
+      return;
     }
 
     if (now - lastGestureTimeRef.current < 300) {
