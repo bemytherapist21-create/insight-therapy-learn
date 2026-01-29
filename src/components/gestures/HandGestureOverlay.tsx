@@ -205,6 +205,7 @@ export const HandGestureOverlay = ({
           }
           break;
         case "point":
+          // IMPORTANT: Point gesture ONLY highlights - NEVER clicks, focuses, or dispatches events
           if (handPosition) {
             const x = handPosition.x;
             const y = handPosition.y;
@@ -212,6 +213,7 @@ export const HandGestureOverlay = ({
             if (element && element instanceof HTMLElement) {
               const clickable = findClickableElement(element);
               if (clickable) {
+                // Only visual feedback - purple outline
                 clickable.style.outline = "2px solid #8b5cf6";
                 clickable.style.outlineOffset = "2px";
                 setTimeout(() => {
@@ -247,20 +249,20 @@ export const HandGestureOverlay = ({
         {/* Outer ring */}
         <div
           className={`absolute inset-0 w-12 h-12 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-all duration-150 ${isDragging
-              ? "border-blue-400 bg-blue-400/30 scale-90"
-              : isPinching
-                ? "border-green-400 bg-green-400/30 scale-75"
-                : "border-purple-400 bg-purple-400/20"
+            ? "border-blue-400 bg-blue-400/30 scale-90"
+            : isPinching
+              ? "border-green-400 bg-green-400/30 scale-75"
+              : "border-purple-400 bg-purple-400/20"
             }`}
         />
 
         {/* Inner dot */}
         <div
           className={`absolute w-3 h-3 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-150 ${isDragging
-              ? "bg-blue-400 scale-125"
-              : isPinching
-                ? "bg-green-400 scale-150"
-                : "bg-purple-500"
+            ? "bg-blue-400 scale-125"
+            : isPinching
+              ? "bg-green-400 scale-150"
+              : "bg-purple-500"
             }`}
         />
 
@@ -270,8 +272,8 @@ export const HandGestureOverlay = ({
         ) : (
           <MousePointer2
             className={`absolute w-5 h-5 translate-x-1 translate-y-1 transition-all duration-150 ${isPinching
-                ? "text-green-300 scale-90"
-                : "text-white drop-shadow-lg"
+              ? "text-green-300 scale-90"
+              : "text-white drop-shadow-lg"
               }`}
           />
         )}
@@ -354,8 +356,8 @@ export const HandGestureOverlay = ({
         {gesture && (
           <div
             className={`backdrop-blur-sm border rounded-lg px-3 py-1 text-xs text-white animate-fade-in ${isDragging
-                ? "bg-blue-500/20 border-blue-500/50"
-                : "bg-purple-500/20 border-purple-500/50"
+              ? "bg-blue-500/20 border-blue-500/50"
+              : "bg-purple-500/20 border-purple-500/50"
               }`}
           >
             {isDragging ? "SCROLLING" : gesture.type.replace("-", " ").toUpperCase()}
