@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useHandGestures, GestureEvent } from "@/hooks/useHandGestures";
-import { Hand, X, MousePointer2 } from "lucide-react";
+import { Hand, X, MousePointer2, GripVertical, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface HandGestureOverlayProps {
@@ -9,13 +9,108 @@ interface HandGestureOverlayProps {
   onToggle: () => void;
 }
 
+// Helper to find the best clickable element
+const findClickableElement = (element: HTMLElement): HTMLElement | null => {
+  const tagName = element.tagName.toLowerCase();
+
+  // Direct clickable elements
+  const isClickable = [
+    "button",
+    "a",
+    "input",
+    "select",
+    "textarea",
+    "label",
+    "summary",
+  ].includes(tagName);
+
+  // Event handlers
+  const hasClickHandler =
+    element.onclick !== null ||
+    element.getAttribute("onclick") !== null ||
+    element.hasAttribute("onmousedown") ||
+    element.hasAttribute("onpointerdown");
+
+  // ARIA roles
+  const hasRole = [
+    "button",
+    "link",
+    "menuitem",
+    "menuitemcheckbox",
+    "menuitemradio",
+    "tab",
+    "checkbox",
+    "radio",
+    "switch",
+    "option",
+    "treeitem",
+  ].includes(element.getAttribute("role") || "");
+
+  // Interactive styling
+  const computedStyle = window.getComputedStyle(element);
+  const hasCursorPointer = computedStyle.cursor === "pointer";
+
+  // Data attributes (including Radix UI patterns)
+  const hasDataAction =
+    element.hasAttribute("data-action") ||
+    element.hasAttribute("data-testid") ||
+    element.hasAttribute("data-state") ||
+    element.hasAttribute("data-radix-collection-item");
+
+  // Focusable elements
+  const isFocusable =
+    element.hasAttribute("tabindex") &&
+    element.getAttribute("tabindex") !== "-1";
+
+  if (
+    isClickable ||
+    hasClickHandler ||
+    hasRole ||
+    hasCursorPointer ||
+    hasDataAction ||
+    isFocusable
+  ) {
+    return element;
+  }
+
+  // Expanded parent search
+  const clickableParent = element.closest(
+    'button, a, [role="button"], [role="menuitem"], [role="link"], [role="tab"], ' +
+      '[onclick], [onmousedown], label, [tabindex]:not([tabindex="-1"]), ' +
+      "[data-action], [data-state], summary",
+  ) as HTMLElement | null;
+
+  return clickableParent;
+};
+
+// Show click ripple effect at position
+const showClickRipple = (x: number, y: number) => {
+  const ripple = document.createElement("div");
+  ripple.style.cssText = `
+    position: fixed;
+    left: ${x}px;
+    top: ${y}px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(34, 197, 94, 0.5);
+    transform: translate(-50%, -50%) scale(0);
+    pointer-events: none;
+    z-index: 10000;
+    animation: gesture-ripple 0.4s ease-out forwards;
+  `;
+  document.body.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 400);
+};
+
 export const HandGestureOverlay = ({
   enabled,
   onToggle,
 }: HandGestureOverlayProps) => {
-  const { isReady, gesture, handPosition, videoElement } =
+  const { isReady, gesture, handPosition, isDragging } =
     useHandGestures(enabled);
   const [isPinching, setIsPinching] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   // Track pinch state for cursor styling
   useEffect(() => {
@@ -31,72 +126,6 @@ export const HandGestureOverlay = ({
     if (!gesture) return;
 
     const handleGesture = (gestureEvent: GestureEvent) => {
-      // Helper to find the best clickable element
-      const findClickableElement = (
-        element: HTMLElement,
-      ): HTMLElement | null => {
-        const tagName = element.tagName.toLowerCase();
-        const isClickable = [
-          "button",
-          "a",
-          "input",
-          "select",
-          "textarea",
-          "label",
-        ].includes(tagName);
-        const hasClickHandler =
-          element.onclick !== null || element.getAttribute("onclick") !== null;
-        const hasRole = [
-          "button",
-          "link",
-          "menuitem",
-          "tab",
-          "checkbox",
-          "radio",
-        ].includes(element.getAttribute("role") || "");
-        const hasCursorPointer =
-          window.getComputedStyle(element).cursor === "pointer";
-        const hasDataAction =
-          element.hasAttribute("data-action") ||
-          element.hasAttribute("data-testid");
-
-        if (
-          isClickable ||
-          hasClickHandler ||
-          hasRole ||
-          hasCursorPointer ||
-          hasDataAction
-        ) {
-          return element;
-        }
-
-        // Check parent elements up to 5 levels
-        const clickableParent = element.closest(
-          'button, a, [role="button"], [onclick], label',
-        ) as HTMLElement | null;
-        return clickableParent;
-      };
-
-      // Show click ripple effect at position
-      const showClickRipple = (x: number, y: number) => {
-        const ripple = document.createElement("div");
-        ripple.style.cssText = `
-                    position: fixed;
-                    left: ${x}px;
-                    top: ${y}px;
-                    width: 40px;
-                    height: 40px;
-                    border-radius: 50%;
-                    background: rgba(34, 197, 94, 0.5);
-                    transform: translate(-50%, -50%) scale(0);
-                    pointer-events: none;
-                    z-index: 10000;
-                    animation: gesture-ripple 0.4s ease-out forwards;
-                `;
-        document.body.appendChild(ripple);
-        setTimeout(() => ripple.remove(), 400);
-      };
-
       switch (gestureEvent.type) {
         case "swipe-left":
           window.history.back();
@@ -109,6 +138,12 @@ export const HandGestureOverlay = ({
           break;
         case "swipe-down":
           window.scrollBy({ top: 100, behavior: "smooth" });
+          break;
+        case "drag":
+          if (gestureEvent.y !== undefined) {
+            const scrollAmount = gestureEvent.y * 2.5; // Sensitivity multiplier
+            window.scrollBy({ top: scrollAmount, behavior: "auto" });
+          }
           break;
         case "pinch":
           if (gestureEvent.x !== undefined && gestureEvent.y !== undefined) {
@@ -203,25 +238,37 @@ export const HandGestureOverlay = ({
         {/* Outer ring */}
         <div
           className={`absolute inset-0 w-12 h-12 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-all duration-150 ${
-            isPinching
-              ? "border-green-400 bg-green-400/30 scale-75"
-              : "border-purple-400 bg-purple-400/20"
+            isDragging
+              ? "border-blue-400 bg-blue-400/30 scale-90"
+              : isPinching
+                ? "border-green-400 bg-green-400/30 scale-75"
+                : "border-purple-400 bg-purple-400/20"
           }`}
         />
 
         {/* Inner dot */}
         <div
           className={`absolute w-3 h-3 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-150 ${
-            isPinching ? "bg-green-400 scale-150" : "bg-purple-500"
+            isDragging
+              ? "bg-blue-400 scale-125"
+              : isPinching
+                ? "bg-green-400 scale-150"
+                : "bg-purple-500"
           }`}
         />
 
-        {/* Pointer icon */}
-        <MousePointer2
-          className={`absolute w-5 h-5 translate-x-1 translate-y-1 transition-all duration-150 ${
-            isPinching ? "text-green-300 scale-90" : "text-white drop-shadow-lg"
-          }`}
-        />
+        {/* Pointer/Grip icon */}
+        {isDragging ? (
+          <GripVertical className="absolute w-5 h-5 translate-x-1 translate-y-1 text-blue-300 drop-shadow-lg" />
+        ) : (
+          <MousePointer2
+            className={`absolute w-5 h-5 translate-x-1 translate-y-1 transition-all duration-150 ${
+              isPinching
+                ? "text-green-300 scale-90"
+                : "text-white drop-shadow-lg"
+            }`}
+          />
+        )}
       </div>
     ) : null;
 
@@ -229,6 +276,7 @@ export const HandGestureOverlay = ({
     <>
       {/* Render cursor via portal directly to body to escape all stacking contexts */}
       {cursorElement && createPortal(cursorElement, document.body)}
+      
       {/* Control Panel */}
       <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
         {/* Experimental Warning */}
@@ -237,6 +285,42 @@ export const HandGestureOverlay = ({
             ⚠️ EXPERIMENTAL FEATURE
           </div>
           <div className="text-orange-100">May impact performance</div>
+        </div>
+
+        {/* Help Panel */}
+        <div className="bg-black/80 backdrop-blur-sm border border-purple-500/30 rounded-lg overflow-hidden">
+          <button
+            onClick={() => setShowHelp(!showHelp)}
+            className="w-full flex items-center justify-between px-3 py-2 text-xs text-white hover:bg-white/5 transition-colors"
+          >
+            <span className="font-medium">Gesture Controls</span>
+            {showHelp ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+          </button>
+          
+          {showHelp && (
+            <div className="px-3 pb-3 space-y-2 text-xs border-t border-purple-500/20 pt-2">
+              <div className="flex items-center gap-2">
+                <span className="text-purple-400 font-mono w-20">Point</span>
+                <span className="text-gray-300">Move cursor</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-green-400 font-mono w-20">Pinch</span>
+                <span className="text-gray-300">Click element</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-blue-400 font-mono w-20">Hold+Move</span>
+                <span className="text-gray-300">Scroll page</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-yellow-400 font-mono w-20">Swipe</span>
+                <span className="text-gray-300">Navigate</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Status indicator */}
@@ -262,8 +346,14 @@ export const HandGestureOverlay = ({
 
         {/* Gesture feedback */}
         {gesture && (
-          <div className="bg-purple-500/20 backdrop-blur-sm border border-purple-500/50 rounded-lg px-3 py-1 text-xs text-white animate-fade-in">
-            {gesture.type.replace("-", " ").toUpperCase()}
+          <div
+            className={`backdrop-blur-sm border rounded-lg px-3 py-1 text-xs text-white animate-fade-in ${
+              isDragging
+                ? "bg-blue-500/20 border-blue-500/50"
+                : "bg-purple-500/20 border-purple-500/50"
+            }`}
+          >
+            {isDragging ? "SCROLLING" : gesture.type.replace("-", " ").toUpperCase()}
           </div>
         )}
       </div>
