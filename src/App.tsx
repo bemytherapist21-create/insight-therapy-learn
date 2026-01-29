@@ -8,7 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Navigation from "./components/Navigation";
 import { Suspense, lazy, useState } from "react";
 import { LoadingFallback } from "./components/ui/LoadingFallback";
-import { HandGestureOverlay } from "@/components/gestures/HandGestureOverlay";
+import { HandGestureOverlay } from "@/components/gestures/HandGestureOverlay"; // Hand gesture controls
 import { Button } from "@/components/ui/button";
 import { Hand } from "lucide-react";
 
