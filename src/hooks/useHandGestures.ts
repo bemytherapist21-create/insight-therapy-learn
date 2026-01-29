@@ -2,14 +2,14 @@ import { useEffect, useRef, useState, useCallback } from "react";
 
 export interface GestureEvent {
   type:
-    | "swipe-left"
-    | "swipe-right"
-    | "swipe-up"
-    | "swipe-down"
-    | "pinch"
-    | "point"
-    | "double-pinch"
-    | "drag";
+  | "swipe-left"
+  | "swipe-right"
+  | "swipe-up"
+  | "swipe-down"
+  | "pinch"
+  | "point"
+  | "double-pinch"
+  | "drag";
   x?: number;
   y?: number;
   confidence: number;
@@ -105,7 +105,7 @@ export const useHandGestures = (enabled: boolean) => {
   const prevPositionRef = useRef<{ x: number; y: number } | null>(null);
   const lastGestureTimeRef = useRef<number>(0);
   const lastPinchTimeRef = useRef<number>(0);
-  
+
   // New refs for drag tracking
   const pinchStartTimeRef = useRef<number | null>(null);
   const isDraggingRef = useRef(false);
@@ -155,13 +155,10 @@ export const useHandGestures = (enabled: boolean) => {
 
     let gestureType: GestureEvent["type"] | null = null;
 
+    // Only detect horizontal swipes (for navigation)
+    // Vertical swipes disabled - use pinch-drag for scrolling
     if (Math.abs(deltaX) > threshold && Math.abs(deltaX) > Math.abs(deltaY)) {
       gestureType = deltaX > 0 ? "swipe-right" : "swipe-left";
-    } else if (
-      Math.abs(deltaY) > threshold &&
-      Math.abs(deltaY) > Math.abs(deltaX)
-    ) {
-      gestureType = deltaY > 0 ? "swipe-down" : "swipe-up";
     }
 
     prevPositionRef.current = { x: currentX, y: currentY };
@@ -211,19 +208,19 @@ export const useHandGestures = (enabled: boolean) => {
         pinchStartTimeRef.current = now;
         dragStartYRef.current = landmarks[8].y;
       }
-      
+
       const holdDuration = now - pinchStartTimeRef.current;
-      
+
       // Enter drag mode after 100ms of holding pinch
       if (holdDuration > 100) {
         if (!isDraggingRef.current) {
           isDraggingRef.current = true;
           setIsDragging(true);
         }
-        
+
         // Calculate scroll delta based on hand movement
         const deltaY = (landmarks[8].y - dragStartYRef.current) * window.innerHeight;
-        
+
         // Only emit drag gesture if there's significant movement
         if (Math.abs(deltaY) > 2) {
           setGesture({ type: "drag", y: deltaY, confidence: 0.9 });
@@ -235,16 +232,16 @@ export const useHandGestures = (enabled: boolean) => {
       // Pinch released
       if (pinchStartTimeRef.current !== null) {
         const holdDuration = now - pinchStartTimeRef.current;
-        
+
         // If it was a quick pinch (not a drag), treat as click
         if (!isDraggingRef.current && holdDuration < 100) {
           // Check for double-pinch
           const timeSinceLastPinch = now - lastPinchTimeRef.current;
           const isDoublePinch = timeSinceLastPinch < 500;
-          
+
           const x = 1 - landmarks[8].x;
           const y = landmarks[8].y;
-          
+
           if (now - lastGestureTimeRef.current >= 300) {
             setGesture({
               type: isDoublePinch ? "double-pinch" : "pinch",
@@ -254,11 +251,11 @@ export const useHandGestures = (enabled: boolean) => {
             });
             lastGestureTimeRef.current = now;
           }
-          
+
           lastPinchTimeRef.current = now;
         }
       }
-      
+
       // Reset drag state
       pinchStartTimeRef.current = null;
       isDraggingRef.current = false;
