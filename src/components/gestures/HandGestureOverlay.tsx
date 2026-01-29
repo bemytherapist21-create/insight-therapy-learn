@@ -33,21 +33,15 @@ export const HandGestureOverlay = ({ enabled, onToggle }: HandGestureOverlayProp
                     window.history.forward();
                     break;
                 case 'swipe-up':
-                    // Zoom in
-                    const currentZoomIn = parseFloat(document.body.style.zoom || '1');
-                    const newZoomIn = Math.min(currentZoomIn + 0.1, 2.0); // Max 200%
-                    document.body.style.zoom = newZoomIn.toString();
+                    window.scrollBy({ top: -100, behavior: 'smooth' });
                     break;
                 case 'swipe-down':
-                    // Zoom out
-                    const currentZoomOut = parseFloat(document.body.style.zoom || '1');
-                    const newZoomOut = Math.max(currentZoomOut - 0.1, 0.5); // Min 50%
-                    document.body.style.zoom = newZoomOut.toString();
+                    window.scrollBy({ top: 100, behavior: 'smooth' });
                     break;
                 case 'pinch':
-                    // Only click interactive elements (with mirror fix)
+                    // Click interactive elements (x/y already mirror-corrected from hook)
                     if (gestureEvent.x !== undefined && gestureEvent.y !== undefined) {
-                        const x = (1 - gestureEvent.x) * window.innerWidth; // Flip horizontally
+                        const x = gestureEvent.x * window.innerWidth;
                         const y = gestureEvent.y * window.innerHeight;
                         const element = document.elementFromPoint(x, y);
                         if (element && element instanceof HTMLElement && isInteractive(element)) {
@@ -56,9 +50,9 @@ export const HandGestureOverlay = ({ enabled, onToggle }: HandGestureOverlayProp
                     }
                     break;
                 case 'double-pinch':
-                    // Only double-click interactive elements (with mirror fix)
+                    // Double-click interactive elements (x/y already mirror-corrected)
                     if (gestureEvent.x !== undefined && gestureEvent.y !== undefined) {
-                        const x = (1 - gestureEvent.x) * window.innerWidth; // Flip horizontally
+                        const x = gestureEvent.x * window.innerWidth;
                         const y = gestureEvent.y * window.innerHeight;
                         const element = document.elementFromPoint(x, y);
                         if (element && element instanceof HTMLElement && isInteractive(element)) {
@@ -72,9 +66,9 @@ export const HandGestureOverlay = ({ enabled, onToggle }: HandGestureOverlayProp
                     }
                     break;
                 case 'point':
-                    // Only highlight interactive elements (with mirror fix)
+                    // Highlight interactive elements (x/y already mirror-corrected)
                     if (gestureEvent.x !== undefined && gestureEvent.y !== undefined) {
-                        const x = (1 - gestureEvent.x) * window.innerWidth; // Flip horizontally
+                        const x = gestureEvent.x * window.innerWidth;
                         const y = gestureEvent.y * window.innerHeight;
                         const element = document.elementFromPoint(x, y);
                         if (element && element instanceof HTMLElement && isInteractive(element)) {
@@ -121,6 +115,23 @@ export const HandGestureOverlay = ({ enabled, onToggle }: HandGestureOverlayProp
             {gesture && (
                 <div className="mt-2 bg-purple-500/20 backdrop-blur-sm border border-purple-500/50 rounded-lg px-3 py-1 text-xs text-white animate-fade-in">
                     {gesture.type.replace('-', ' ').toUpperCase()}
+                </div>
+            )}
+
+            {/* Camera preview (optional) */}
+            {videoElement && (
+                <div className="mt-2 overflow-hidden rounded-lg border-2 border-purple-500/30 hidden">
+                    <video
+                        ref={(el) => {
+                            if (el && videoElement) {
+                                el.srcObject = (videoElement as any).srcObject;
+                            }
+                        }}
+                        className="w-40 h-30 object-cover transform -scale-x-100"
+                        autoPlay
+                        muted
+                        playsInline
+                    />
                 </div>
             )}
         </div>

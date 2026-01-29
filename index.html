@@ -6,8 +6,11 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- MediaPipe for Hand Gestures -->
-  <!-- Loaded on-demand when gestures are enabled (see useHandGestures) -->
+  <!-- MediaPipe for Hand Gestures (CDN - production compatible) -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 
   <!-- Security Headers (via meta tags for static hosting) -->
   <!-- Note: X-Frame-Options should be set via HTTP headers, not meta tags -->
