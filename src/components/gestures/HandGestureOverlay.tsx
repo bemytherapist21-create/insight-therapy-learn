@@ -76,8 +76,8 @@ const findClickableElement = (element: HTMLElement): HTMLElement | null => {
   // Expanded parent search
   const clickableParent = element.closest(
     'button, a, [role="button"], [role="menuitem"], [role="link"], [role="tab"], ' +
-      '[onclick], [onmousedown], label, [tabindex]:not([tabindex="-1"]), ' +
-      "[data-action], [data-state], summary",
+    '[onclick], [onmousedown], label, [tabindex]:not([tabindex="-1"]), ' +
+    "[data-action], [data-state], summary",
   ) as HTMLElement | null;
 
   return clickableParent;
@@ -133,12 +133,6 @@ export const HandGestureOverlay = ({
         case "swipe-right":
           window.history.forward();
           break;
-        case "swipe-up":
-          window.scrollBy({ top: -100, behavior: "smooth" });
-          break;
-        case "swipe-down":
-          window.scrollBy({ top: 100, behavior: "smooth" });
-          break;
         case "drag":
           if (gestureEvent.y !== undefined) {
             const scrollAmount = gestureEvent.y * 2.5; // Sensitivity multiplier
@@ -168,17 +162,17 @@ export const HandGestureOverlay = ({
                   button: 0,
                   buttons: 1,
                 };
-                
+
                 // Focus the element first (important for buttons)
                 if (typeof clickable.focus === 'function') {
                   clickable.focus();
                 }
-                
+
                 // Dispatch mousedown, mouseup, then click for proper handling
                 clickable.dispatchEvent(new MouseEvent("mousedown", eventOptions));
                 clickable.dispatchEvent(new MouseEvent("mouseup", eventOptions));
                 clickable.dispatchEvent(new MouseEvent("click", eventOptions));
-                
+
                 // Also trigger pointerdown/pointerup for React components
                 clickable.dispatchEvent(new PointerEvent("pointerdown", { ...eventOptions, pointerId: 1, pointerType: "mouse" }));
                 clickable.dispatchEvent(new PointerEvent("pointerup", { ...eventOptions, pointerId: 1, pointerType: "mouse" }));
@@ -252,24 +246,22 @@ export const HandGestureOverlay = ({
       >
         {/* Outer ring */}
         <div
-          className={`absolute inset-0 w-12 h-12 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-all duration-150 ${
-            isDragging
+          className={`absolute inset-0 w-12 h-12 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-all duration-150 ${isDragging
               ? "border-blue-400 bg-blue-400/30 scale-90"
               : isPinching
                 ? "border-green-400 bg-green-400/30 scale-75"
                 : "border-purple-400 bg-purple-400/20"
-          }`}
+            }`}
         />
 
         {/* Inner dot */}
         <div
-          className={`absolute w-3 h-3 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-150 ${
-            isDragging
+          className={`absolute w-3 h-3 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-150 ${isDragging
               ? "bg-blue-400 scale-125"
               : isPinching
                 ? "bg-green-400 scale-150"
                 : "bg-purple-500"
-          }`}
+            }`}
         />
 
         {/* Pointer/Grip icon */}
@@ -277,11 +269,10 @@ export const HandGestureOverlay = ({
           <GripVertical className="absolute w-5 h-5 translate-x-1 translate-y-1 text-blue-300 drop-shadow-lg" />
         ) : (
           <MousePointer2
-            className={`absolute w-5 h-5 translate-x-1 translate-y-1 transition-all duration-150 ${
-              isPinching
+            className={`absolute w-5 h-5 translate-x-1 translate-y-1 transition-all duration-150 ${isPinching
                 ? "text-green-300 scale-90"
                 : "text-white drop-shadow-lg"
-            }`}
+              }`}
           />
         )}
       </div>
@@ -291,7 +282,7 @@ export const HandGestureOverlay = ({
     <>
       {/* Render cursor via portal directly to body to escape all stacking contexts */}
       {cursorElement && createPortal(cursorElement, document.body)}
-      
+
       {/* Control Panel */}
       <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
         {/* Experimental Warning */}
@@ -315,7 +306,7 @@ export const HandGestureOverlay = ({
               <ChevronDown className="w-4 h-4" />
             )}
           </button>
-          
+
           {showHelp && (
             <div className="px-3 pb-3 space-y-2 text-xs border-t border-purple-500/20 pt-2">
               <div className="flex items-center gap-2">
@@ -362,11 +353,10 @@ export const HandGestureOverlay = ({
         {/* Gesture feedback */}
         {gesture && (
           <div
-            className={`backdrop-blur-sm border rounded-lg px-3 py-1 text-xs text-white animate-fade-in ${
-              isDragging
+            className={`backdrop-blur-sm border rounded-lg px-3 py-1 text-xs text-white animate-fade-in ${isDragging
                 ? "bg-blue-500/20 border-blue-500/50"
                 : "bg-purple-500/20 border-purple-500/50"
-            }`}
+              }`}
           >
             {isDragging ? "SCROLLING" : gesture.type.replace("-", " ").toUpperCase()}
           </div>
