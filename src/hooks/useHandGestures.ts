@@ -1,416 +1,202 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 export interface GestureEvent {
-  type:
-    | "swipe-left"
-    | "swipe-right"
-    | "swipe-up"
-    | "swipe-down"
-    | "pinch"
-    | "point"
-    | "double-pinch"
-    | "drag";
-  x?: number;
-  y?: number;
-  confidence: number;
+    type: 'swipe-left' | 'swipe-right' | 'swipe-up' | 'swipe-down' | 'click';
+    x?: number;
+    y?: number;
+    confidence: number;
 }
-
-interface HandLandmark {
-  x: number;
-  y: number;
-  z: number;
-}
-
-// Use global MediaPipe loaded from CDN (loaded on-demand)
-declare global {
-  interface Window {
-    Hands: any;
-    Camera: any;
-  }
-}
-
-const ensureScript = (() => {
-  const cache: Record<string, Promise<void>> = {};
-
-  return (id: string, src: string) => {
-    if (cache[id]) return cache[id];
-
-    cache[id] = new Promise<void>((resolve, reject) => {
-      const existing = document.getElementById(id) as HTMLScriptElement | null;
-      if (existing) {
-        // If already loaded, resolve immediately; otherwise wait for it.
-        if ((existing as any).dataset.loaded === "true") return resolve();
-        existing.addEventListener("load", () => resolve(), { once: true });
-        existing.addEventListener(
-          "error",
-          () => reject(new Error(`Failed to load script: ${src}`)),
-          { once: true },
-        );
-        return;
-      }
-
-      const script = document.createElement("script");
-      script.id = id;
-      script.src = src;
-      script.crossOrigin = "anonymous";
-      script.async = true;
-      script.onload = () => {
-        (script as any).dataset.loaded = "true";
-        resolve();
-      };
-      script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
-      document.head.appendChild(script);
-    });
-
-    return cache[id];
-  };
-})();
-
-const ensureMediaPipeLoaded = async () => {
-  // Keep order for compatibility (matches previous index.html order)
-  await ensureScript(
-    "mediapipe-camera-utils",
-    "https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js",
-  );
-  await ensureScript(
-    "mediapipe-control-utils",
-    "https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js",
-  );
-  await ensureScript(
-    "mediapipe-drawing-utils",
-    "https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js",
-  );
-  await ensureScript(
-    "mediapipe-hands",
-    "https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js",
-  );
-
-  if (!window.Hands || !window.Camera) {
-    throw new Error("MediaPipe failed to initialize");
-  }
-};
 
 export const useHandGestures = (enabled: boolean) => {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const handsRef = useRef<any>(null);
-  const cameraRef = useRef<any>(null);
-  const [isReady, setIsReady] = useState(false);
-  const [gesture, setGesture] = useState<GestureEvent | null>(null);
-  const [handPosition, setHandPosition] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+    const videoRef = useRef<HTMLVideoElement | null>(null);
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const [isReady, setIsReady] = useState(false);
+    const [gesture, setGesture] = useState<GestureEvent | null>(null);
 
-  const prevPositionRef = useRef<{ x: number; y: number } | null>(null);
-  const lastGestureTimeRef = useRef<number>(0);
-  const lastPinchTimeRef = useRef<number>(0);
-  
-  // New refs for drag tracking
-  const pinchStartTimeRef = useRef<number | null>(null);
-  const isDraggingRef = useRef(false);
-  const dragStartYRef = useRef<number>(0);
+    const prevFrameRef = useRef<ImageData | null>(null);
+    const motionCenterRef = useRef<{ x: number; y: number } | null>(null);
+    const lastGestureTimeRef = useRef<number>(0);
 
-  const calculateDistance = (
-    point1: HandLandmark,
-    point2: HandLandmark,
-  ): number => {
-    const dx = point1.x - point2.x;
-    const dy = point1.y - point2.y;
-    const dz = point1.z - point2.z;
-    return Math.sqrt(dx * dx + dy * dy + dz * dz);
-  };
-
-  const detectPinch = (landmarks: HandLandmark[]): boolean => {
-    const thumbTip = landmarks[4];
-    const indexTip = landmarks[8];
-    const distance = calculateDistance(thumbTip, indexTip);
-    return distance < 0.05;
-  };
-
-  const detectPoint = (landmarks: HandLandmark[]): boolean => {
-    const indexTip = landmarks[8];
-    const indexBase = landmarks[5];
-    const middleTip = landmarks[12];
-    const middleBase = landmarks[9];
-
-    const indexExtended = indexTip.y < indexBase.y;
-    const middleCurled = middleTip.y > middleBase.y;
-
-    return indexExtended && middleCurled;
-  };
-
-  const detectSwipe = (
-    currentX: number,
-    currentY: number,
-  ): GestureEvent | null => {
-    if (!prevPositionRef.current) {
-      prevPositionRef.current = { x: currentX, y: currentY };
-      return null;
-    }
-
-    const deltaX = currentX - prevPositionRef.current.x;
-    const deltaY = currentY - prevPositionRef.current.y;
-    const threshold = 0.15;
-
-    let gestureType: GestureEvent["type"] | null = null;
-
-    if (Math.abs(deltaX) > threshold && Math.abs(deltaX) > Math.abs(deltaY)) {
-      gestureType = deltaX > 0 ? "swipe-right" : "swipe-left";
-    } else if (
-      Math.abs(deltaY) > threshold &&
-      Math.abs(deltaY) > Math.abs(deltaX)
-    ) {
-      gestureType = deltaY > 0 ? "swipe-down" : "swipe-up";
-    }
-
-    prevPositionRef.current = { x: currentX, y: currentY };
-
-    if (gestureType) {
-      return {
-        type: gestureType,
-        x: currentX,
-        y: currentY,
-        confidence: Math.min(Math.abs(deltaX), Math.abs(deltaY)) / threshold,
-      };
-    }
-
-    return null;
-  };
-
-  const onResults = useCallback((results: any) => {
-    if (
-      !results.multiHandLandmarks ||
-      results.multiHandLandmarks.length === 0
-    ) {
-      prevPositionRef.current = null;
-      setHandPosition(null);
-      // Reset drag state when hand lost
-      pinchStartTimeRef.current = null;
-      isDraggingRef.current = false;
-      setIsDragging(false);
-      return;
-    }
-
-    const landmarks = results.multiHandLandmarks[0];
-    const now = Date.now();
-
-    // Always update hand position for cursor (using index finger tip)
-    const indexTip = landmarks[8];
-    const cursorX = (1 - indexTip.x) * window.innerWidth; // Flip horizontally (mirror)
-    const cursorY = indexTip.y * window.innerHeight;
-    setHandPosition({ x: cursorX, y: cursorY });
-
-    const palmCenter = landmarks[9];
-    const isPinching = detectPinch(landmarks);
-
-    // Handle pinch with drag detection
-    if (isPinching) {
-      if (!pinchStartTimeRef.current) {
-        // Pinch just started
-        pinchStartTimeRef.current = now;
-        dragStartYRef.current = landmarks[8].y;
-      }
-      
-      const holdDuration = now - pinchStartTimeRef.current;
-      
-      // Enter drag mode after 100ms of holding pinch
-      if (holdDuration > 100) {
-        if (!isDraggingRef.current) {
-          isDraggingRef.current = true;
-          setIsDragging(true);
+    // Detect motion in video frames
+    const detectMotion = useCallback((currentFrame: ImageData) => {
+        if (!prevFrameRef.current) {
+            prevFrameRef.current = currentFrame;
+            return null;
         }
-        
-        // Calculate scroll delta based on hand movement
-        const deltaY = (landmarks[8].y - dragStartYRef.current) * window.innerHeight;
-        
-        // Only emit drag gesture if there's significant movement
-        if (Math.abs(deltaY) > 2) {
-          setGesture({ type: "drag", y: deltaY, confidence: 0.9 });
-          dragStartYRef.current = landmarks[8].y; // Reset for next frame
+
+        const prev = prevFrameRef.current.data;
+        const curr = currentFrame.data;
+        const width = currentFrame.width;
+        const height = currentFrame.height;
+
+        // Calculate motion by comparing pixels
+        let motionX = 0;
+        let motionY = 0;
+        let motionPixels = 0;
+        const threshold = 30; // Motion sensitivity
+
+        // Sample pixels (not every pixel for performance)
+        for (let y = 0; y < height; y += 10) {
+            for (let x = 0; x < width; x += 10) {
+                const i = (y * width + x) * 4;
+                const diff = Math.abs(curr[i] - prev[i]) +
+                    Math.abs(curr[i + 1] - prev[i + 1]) +
+                    Math.abs(curr[i + 2] - prev[i + 2]);
+
+                if (diff > threshold) {
+                    motionX += x;
+                    motionY += y;
+                    motionPixels++;
+                }
+            }
         }
-        return;
-      }
-    } else {
-      // Pinch released
-      if (pinchStartTimeRef.current !== null) {
-        const holdDuration = now - pinchStartTimeRef.current;
-        
-        // If it was a quick pinch (not a drag), treat as click
-        if (!isDraggingRef.current && holdDuration < 100) {
-          // Check for double-pinch
-          const timeSinceLastPinch = now - lastPinchTimeRef.current;
-          const isDoublePinch = timeSinceLastPinch < 500;
-          
-          const x = 1 - landmarks[8].x;
-          const y = landmarks[8].y;
-          
-          if (now - lastGestureTimeRef.current >= 300) {
+
+        prevFrameRef.current = currentFrame;
+
+        if (motionPixels < 50) return null; // Not enough motion
+
+        // Calculate center of motion
+        const centerX = motionX / motionPixels / width;
+        const centerY = motionY / motionPixels / height;
+
+        return { x: centerX, y: centerY, strength: motionPixels };
+    }, []);
+
+    // Detect gestures from motion
+    const detectGesture = useCallback((motion: { x: number; y: number; strength: number } | null) => {
+        if (!motion) {
+            motionCenterRef.current = null;
+            return;
+        }
+
+        const now = Date.now();
+
+        // Detect swipes
+        if (motionCenterRef.current && now - lastGestureTimeRef.current > 500) {
+            const deltaX = motion.x - motionCenterRef.current.x;
+            const deltaY = motion.y - motionCenterRef.current.y;
+            const threshold = 0.2;
+
+            if (Math.abs(deltaX) > threshold && Math.abs(deltaX) > Math.abs(deltaY)) {
+                setGesture({
+                    type: deltaX > 0 ? 'swipe-right' : 'swipe-left',
+                    x: motion.x,
+                    y: motion.y,
+                    confidence: Math.min(motion.strength / 500, 1)
+                });
+                lastGestureTimeRef.current = now;
+            } else if (Math.abs(deltaY) > threshold && Math.abs(deltaY) > Math.abs(deltaX)) {
+                setGesture({
+                    type: deltaY > 0 ? 'swipe-down' : 'swipe-up',
+                    x: motion.x,
+                    y: motion.y,
+                    confidence: Math.min(motion.strength / 500, 1)
+                });
+                lastGestureTimeRef.current = now;
+            }
+        }
+
+        // Detect click (sudden motion stop)
+        if (motion.strength < 100 && motionCenterRef.current && now - lastGestureTimeRef.current > 500) {
             setGesture({
-              type: isDoublePinch ? "double-pinch" : "pinch",
-              x,
-              y,
-              confidence: 0.9,
+                type: 'click',
+                x: motionCenterRef.current.x,
+                y: motionCenterRef.current.y,
+                confidence: 0.7
             });
             lastGestureTimeRef.current = now;
-          }
-          
-          lastPinchTimeRef.current = now;
         }
-      }
-      
-      // Reset drag state
-      pinchStartTimeRef.current = null;
-      isDraggingRef.current = false;
-      setIsDragging(false);
-    }
 
-    if (now - lastGestureTimeRef.current < 300) {
-      return;
-    }
+        motionCenterRef.current = { x: motion.x, y: motion.y };
+    }, []);
 
-    if (detectPoint(landmarks)) {
-      const x = 1 - landmarks[8].x;
-      const y = landmarks[8].y;
+    // Process video frames
+    const processFrame = useCallback(() => {
+        if (!videoRef.current || !canvasRef.current || !enabled) return;
 
-      setGesture({
-        type: "point",
-        x,
-        y,
-        confidence: 0.85,
-      });
-      lastGestureTimeRef.current = now;
-      return;
-    }
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        const context = canvas.getContext('2d', { willReadFrequently: true });
 
-    const swipeGesture = detectSwipe(palmCenter.x, palmCenter.y);
-    if (swipeGesture) {
-      setGesture(swipeGesture);
-      lastGestureTimeRef.current = now;
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!enabled) {
-      // Immediate cleanup when disabled
-      try {
-        console.log("[HandGestures] Disabled - cleaning up immediately");
-
-        if (cameraRef.current) {
-          cameraRef.current.stop();
-          cameraRef.current = null;
+        if (!context || video.readyState !== video.HAVE_ENOUGH_DATA) {
+            requestAnimationFrame(processFrame);
+            return;
         }
-        if (handsRef.current) {
-          handsRef.current.close();
-          handsRef.current = null;
-        }
-        if (videoRef.current && document.body.contains(videoRef.current)) {
-          document.body.removeChild(videoRef.current);
-        }
-        videoRef.current = null;
-      } catch (e) {
-        console.warn("[HandGestures] Cleanup on disable error:", e);
-      }
-      setIsReady(false);
-      setGesture(null);
-      setHandPosition(null);
-      setIsDragging(false);
-      return;
-    }
 
-    const initializeHands = async () => {
-      try {
-        console.log("[HandGestures] Starting initialization...");
+        // Draw video frame to canvas
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        await ensureMediaPipeLoaded();
+        // Get frame data
+        const frameData = context.getImageData(0, 0, canvas.width, canvas.height);
 
-        console.log("[HandGestures] MediaPipe loaded");
+        // Detect motion
+        const motion = detectMotion(frameData);
+        detectGesture(motion);
 
-        const video = document.createElement("video");
-        video.style.display = "none";
-        document.body.appendChild(video);
-        videoRef.current = video;
+        requestAnimationFrame(processFrame);
+    }, [enabled, detectMotion, detectGesture]);
 
-        const hands = new window.Hands({
-          locateFile: (file: string) => {
-            return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
-          },
-        });
-
-        hands.setOptions({
-          maxNumHands: 1,
-          modelComplexity: 1,
-          minDetectionConfidence: 0.7,
-          minTrackingConfidence: 0.7,
-        });
-
-        hands.onResults(onResults);
-        handsRef.current = hands;
-
-        console.log("[HandGestures] Starting camera...");
-
-        const camera = new window.Camera(video, {
-          onFrame: async () => {
-            if (handsRef.current) {
-              await handsRef.current.send({ image: video });
+    // Initialize camera
+    useEffect(() => {
+        if (!enabled) {
+            // Cleanup
+            if (videoRef.current && videoRef.current.srcObject) {
+                const stream = videoRef.current.srcObject as MediaStream;
+                stream.getTracks().forEach(track => track.stop());
             }
-          },
-          width: 640,
-          height: 480,
-        });
+            setIsReady(false);
+            return;
+        }
 
-        await camera.start();
-        cameraRef.current = camera;
+        const initializeCamera = async () => {
+            try {
+                // Create video element
+                const video = document.createElement('video');
+                video.width = 320; // Low resolution for performance
+                video.height = 240;
+                video.autoplay = true;
+                video.playsInline = true;
+                videoRef.current = video;
 
-        console.log("[HandGestures] ✅ Initialization complete!");
-        setIsReady(true);
-      } catch (error) {
-        console.error("[HandGestures] ❌ Initialization failed:", error);
-      }
+                // Create canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = 320;
+                canvas.height = 240;
+                canvas.style.display = 'none';
+                document.body.appendChild(canvas);
+                canvasRef.current = canvas;
+
+                // Get camera stream
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 320, height: 240, facingMode: 'user' }
+                });
+
+                video.srcObject = stream;
+                await video.play();
+
+                setIsReady(true);
+                processFrame();
+            } catch (error) {
+                console.error('Failed to initialize camera:', error);
+            }
+        };
+
+        initializeCamera();
+
+        return () => {
+            if (videoRef.current && videoRef.current.srcObject) {
+                const stream = videoRef.current.srcObject as MediaStream;
+                stream.getTracks().forEach(track => track.stop());
+            }
+            if (canvasRef.current && document.body.contains(canvasRef.current)) {
+                document.body.removeChild(canvasRef.current);
+            }
+        };
+    }, [enabled, processFrame]);
+
+    return {
+        isReady,
+        gesture,
+        videoElement: videoRef.current
     };
-
-    initializeHands();
-
-    return () => {
-      try {
-        console.log("[HandGestures] Cleaning up...");
-
-        if (cameraRef.current) {
-          try {
-            cameraRef.current.stop();
-          } catch (e) {
-            console.warn("[HandGestures] Camera stop error:", e);
-          }
-        }
-
-        if (handsRef.current) {
-          try {
-            handsRef.current.close();
-          } catch (e) {
-            console.warn("[HandGestures] Hands close error:", e);
-          }
-        }
-
-        if (videoRef.current && document.body.contains(videoRef.current)) {
-          try {
-            document.body.removeChild(videoRef.current);
-          } catch (e) {
-            console.warn("[HandGestures] Video remove error:", e);
-          }
-        }
-
-        console.log("[HandGestures] ✅ Cleanup complete");
-      } catch (error) {
-        console.error("[HandGestures] Cleanup failed:", error);
-      }
-    };
-  }, [enabled, onResults]);
-
-  return {
-    isReady,
-    gesture,
-    handPosition,
-    isDragging,
-    videoElement: videoRef.current,
-  };
 };
