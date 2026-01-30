@@ -120,11 +120,30 @@ export const useHandGestures = (enabled: boolean) => {
     return Math.sqrt(dx * dx + dy * dy + dz * dz);
   };
 
-  const detectPinch = (landmarks: HandLandmark[]): boolean => {
+  // 2-finger pinch: index + thumb (for clicking)
+  const detectTwoFingerPinch = (landmarks: HandLandmark[]): boolean => {
     const thumbTip = landmarks[4];
     const indexTip = landmarks[8];
-    const distance = calculateDistance(thumbTip, indexTip);
-    return distance < 0.05;
+    const middleTip = landmarks[12];
+
+    const thumbIndexDistance = calculateDistance(thumbTip, indexTip);
+    const thumbMiddleDistance = calculateDistance(thumbTip, middleTip);
+
+    // Index touching thumb, but middle NOT touching thumb
+    return thumbIndexDistance < 0.05 && thumbMiddleDistance > 0.08;
+  };
+
+  // 3-finger pinch: index + middle + thumb (for scrolling)
+  const detectThreeFingerPinch = (landmarks: HandLandmark[]): boolean => {
+    const thumbTip = landmarks[4];
+    const indexTip = landmarks[8];
+    const middleTip = landmarks[12];
+
+    const thumbIndexDistance = calculateDistance(thumbTip, indexTip);
+    const thumbMiddleDistance = calculateDistance(thumbTip, middleTip);
+
+    // Both index AND middle touching thumb
+    return thumbIndexDistance < 0.05 && thumbMiddleDistance < 0.05;
   };
 
   const detectPoint = (landmarks: HandLandmark[]): boolean => {
@@ -198,34 +217,37 @@ export const useHandGestures = (enabled: boolean) => {
 
     const palmCenter = landmarks[9];
 
-    // Detect pinch
-    if (detectPinch(landmarks)) {
+    // Check for 2-finger pinch (click)
+    const isTwoFingerPinch = detectTwoFingerPinch(landmarks);
+    // Check for 3-finger pinch (scroll)
+    const isThreeFingerPinch = detectThreeFingerPinch(landmarks);
+
+    if (isTwoFingerPinch) {
+      // 2-finger pinch = single click
+      if (now - lastGestureTimeRef.current >= 300) {
+        const x = 1 - landmarks[8].x;
+        const y = landmarks[8].y;
+
+        setGesture({
+          type: "pinch",
+          x,
+          y,
+          confidence: 0.9,
+        });
+        lastGestureTimeRef.current = now;
+      }
+      return;
+    }
+
+    if (isThreeFingerPinch) {
+      // 3-finger pinch = scroll mode
       if (!isPinchingRef.current) {
-        // Pinch just started
+        // Scroll pinch just started
         isPinchingRef.current = true;
         pinchStartYRef.current = indexTip.y;
         setIsDragging(false);
-
-        // Check for double pinch (for future use, currently just single click)
-        const timeSinceLastPinch = now - lastPinchTimeRef.current;
-        const isDoublePinch = timeSinceLastPinch < 500;
-
-        if (now - lastGestureTimeRef.current >= 300) {
-          const x = 1 - landmarks[8].x;
-          const y = landmarks[8].y;
-
-          setGesture({
-            type: isDoublePinch ? "double-pinch" : "pinch",
-            x,
-            y,
-            confidence: 0.9,
-          });
-          lastGestureTimeRef.current = now;
-        }
-
-        lastPinchTimeRef.current = now;
       } else {
-        // Continuing to pinch - detect drag for scrolling
+        // Continuing 3-finger pinch - detect drag for scrolling
         const currentY = indexTip.y;
         const deltaY = (currentY - pinchStartYRef.current) * window.innerHeight;
 
@@ -237,7 +259,7 @@ export const useHandGestures = (enabled: boolean) => {
       }
       return;
     } else {
-      // Pinch released
+      // No pinch - release scroll mode
       if (isPinchingRef.current) {
         isPinchingRef.current = false;
         setIsDragging(false);
