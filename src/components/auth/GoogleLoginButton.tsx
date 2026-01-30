@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/safeClient";
+import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
 import { logger } from "@/services/loggingService";
 
@@ -11,36 +11,11 @@ export const GoogleLoginButton = () => {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      // Detect if we're on a custom domain
-      const isCustomDomain =
-        !window.location.hostname.includes("lovable.app") &&
-        !window.location.hostname.includes("lovableproject.com") &&
-        !window.location.hostname.includes("localhost");
+      const { error } = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
 
-      if (isCustomDomain) {
-        // Bypass auth-bridge for custom domains
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo: `${window.location.origin}/`,
-            skipBrowserRedirect: true,
-          },
-        });
-
-        if (error) throw error;
-
-        if (data?.url) {
-          window.location.href = data.url;
-        }
-      } else {
-        // Normal flow for Lovable domains
-        await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo: `${window.location.origin}/`,
-          },
-        });
-      }
+      if (error) throw error;
 
       logger.info("Google OAuth initiated successfully");
     } catch (error) {
