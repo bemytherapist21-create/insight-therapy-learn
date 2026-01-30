@@ -33,6 +33,7 @@ const Auth = lazy(() => import("./pages/Auth"));
 const TherapistRegistration = lazy(
   () => import("./pages/TherapistRegistration"),
 );
+const OAuthCallback = lazy(() => import("./pages/OAuthCallback"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -86,6 +87,8 @@ const App = () => {
                     path="/therapist-registration"
                     element={<TherapistRegistration />}
                   />
+                  {/* OAuth callback routes */}
+                  <Route path="/~oauth/*" element={<OAuthCallback />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
