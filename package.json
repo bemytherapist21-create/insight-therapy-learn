@@ -19,6 +19,7 @@
     "@google/genai": "^1.34.0",
     "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^3.10.0",
+    "@lovable.dev/cloud-auth-js": "^0.0.2",
     "@mediapipe/camera_utils": "^0.3.1675466862",
     "@mediapipe/drawing_utils": "^0.3.1675466124",
     "@mediapipe/hands": "^0.4.1675469240",
