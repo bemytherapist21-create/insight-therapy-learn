@@ -11,16 +11,36 @@ export const GoogleLoginButton = () => {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/`,
-          queryParams: {
-            access_type: "offline",
-            prompt: "consent",
+      // Detect if we're on a custom domain
+      const isCustomDomain =
+        !window.location.hostname.includes("lovable.app") &&
+        !window.location.hostname.includes("lovableproject.com") &&
+        !window.location.hostname.includes("localhost");
+
+      if (isCustomDomain) {
+        // Bypass auth-bridge for custom domains
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: `${window.location.origin}/`,
+            skipBrowserRedirect: true,
           },
-        },
-      });
+        });
+
+        if (error) throw error;
+
+        if (data?.url) {
+          window.location.href = data.url;
+        }
+      } else {
+        // Normal flow for Lovable domains
+        await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: `${window.location.origin}/`,
+          },
+        });
+      }
 
       logger.info("Google OAuth initiated successfully");
     } catch (error) {
