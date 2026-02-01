@@ -27,14 +27,24 @@
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       font-src 'self' https://fonts.gstatic.com https://r2cdn.perplexity.ai data:;
       img-src 'self' data: https: blob:;
-      connect-src 'self' https://*.supabase.co https://ipapi.co https://api.d-id.com https://api.perplexity.ai https://script.google.com https://cdn.jsdelivr.net wss://*.supabase.co https://texttospeech.googleapis.com https://ai.gateway.lovable.dev https://generativelanguage.googleapis.com wss://generativelanguage.googleapis.com;
+      connect-src 'self' https://*.supabase.co https://ipapi.co https://api.d-id.com https://api.perplexity.ai https://script.google.com https://cdn.jsdelivr.net wss://*.supabase.co https://texttospeech.googleapis.com https://ai.gateway.lovable.dev https://generativelanguage.googleapis.com wss://generativelanguage.googleapis.com https://oauth.lovable.app;
       media-src 'self' data: https: blob:;
-      frame-src 'self' https://calendly.com;
+      frame-src 'self' https://calendly.com https://oauth.lovable.app;
       worker-src 'self' blob:;
       base-uri 'self';
       form-action 'self';
       upgrade-insecure-requests;
     " />
+
+  <!-- OAuth Redirect Handler - runs before React loads -->
+  <script>
+    (function() {
+      if (window.location.pathname.startsWith('/~oauth/')) {
+        var target = 'https://oauth.lovable.app' + window.location.pathname + window.location.search + window.location.hash;
+        window.location.replace(target);
+      }
+    })();
+  </script>
 
   <!-- Permissions Policy -->
   <meta http-equiv="Permissions-Policy" content="
