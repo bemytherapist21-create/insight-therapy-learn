@@ -13,6 +13,7 @@ export interface GestureEvent {
   x?: number;
   y?: number;
   confidence: number;
+  timestamp?: number; // Add timestamp to prevent duplicate processing
 }
 
 interface HandLandmark {
@@ -104,11 +105,19 @@ export const useHandGestures = (enabled: boolean) => {
 
   const prevPositionRef = useRef<{ x: number; y: number } | null>(null);
   const lastGestureTimeRef = useRef<number>(0);
-  const lastPinchTimeRef = useRef<number>(0);
 
   // Refs for pinch-drag scrolling
   const isPinchingRef = useRef(false);
   const pinchStartYRef = useRef<number>(0);
+  
+  // Ref to track if component is mounted (prevents state updates after unmount)
+  const isMountedRef = useRef(true);
+  
+  // Keep enabled state in ref to prevent stale closures
+  const enabledRef = useRef(enabled);
+  useEffect(() => {
+    enabledRef.current = enabled;
+  }, [enabled]);
 
   const calculateDistance = (
     point1: HandLandmark,
@@ -194,6 +203,11 @@ export const useHandGestures = (enabled: boolean) => {
   };
 
   const onResults = useCallback((results: any) => {
+    // Check if still mounted and enabled to prevent stale state updates
+    if (!isMountedRef.current || !enabledRef.current) {
+      return;
+    }
+    
     if (
       !results.multiHandLandmarks ||
       results.multiHandLandmarks.length === 0
@@ -223,8 +237,8 @@ export const useHandGestures = (enabled: boolean) => {
     const isThreeFingerPinch = detectThreeFingerPinch(landmarks);
 
     if (isTwoFingerPinch) {
-      // 2-finger pinch = single click
-      if (now - lastGestureTimeRef.current >= 300) {
+      // 2-finger pinch = single click - use 350ms debounce to prevent double triggers
+      if (now - lastGestureTimeRef.current >= 350) {
         const x = 1 - landmarks[8].x;
         const y = landmarks[8].y;
 
@@ -233,6 +247,7 @@ export const useHandGestures = (enabled: boolean) => {
           x,
           y,
           confidence: 0.9,
+          timestamp: now, // Add timestamp to identify unique gestures
         });
         lastGestureTimeRef.current = now;
       }
@@ -251,9 +266,10 @@ export const useHandGestures = (enabled: boolean) => {
         const currentY = indexTip.y;
         const deltaY = (currentY - pinchStartYRef.current) * window.innerHeight;
 
-        if (Math.abs(deltaY) > 5) {
+        // Increase threshold to reduce jitter
+        if (Math.abs(deltaY) > 8) {
           setIsDragging(true);
-          setGesture({ type: "drag", y: deltaY, confidence: 0.9 });
+          setGesture({ type: "drag", y: deltaY, confidence: 0.9, timestamp: now });
           pinchStartYRef.current = currentY; // Update for continuous scrolling
         }
       }
@@ -266,7 +282,8 @@ export const useHandGestures = (enabled: boolean) => {
       }
     }
 
-    if (now - lastGestureTimeRef.current < 300) {
+    // Increase debounce for other gestures to reduce false triggers
+    if (now - lastGestureTimeRef.current < 350) {
       return;
     }
 
@@ -279,6 +296,7 @@ export const useHandGestures = (enabled: boolean) => {
         x,
         y,
         confidence: 0.85,
+        timestamp: now,
       });
       lastGestureTimeRef.current = now;
       return;
@@ -286,12 +304,15 @@ export const useHandGestures = (enabled: boolean) => {
 
     const swipeGesture = detectSwipe(palmCenter.x, palmCenter.y);
     if (swipeGesture) {
-      setGesture(swipeGesture);
+      setGesture({ ...swipeGesture, timestamp: now });
       lastGestureTimeRef.current = now;
     }
   }, []);
 
   useEffect(() => {
+    // Mark as mounted
+    isMountedRef.current = true;
+    
     if (!enabled) {
       // Immediate cleanup when disabled
       try {
@@ -316,6 +337,8 @@ export const useHandGestures = (enabled: boolean) => {
       setGesture(null);
       setHandPosition(null);
       setIsDragging(false);
+      isPinchingRef.current = false;
+      prevPositionRef.current = null;
       return;
     }
 
@@ -373,6 +396,9 @@ export const useHandGestures = (enabled: boolean) => {
     initializeHands();
 
     return () => {
+      // Mark as unmounted to prevent stale state updates
+      isMountedRef.current = false;
+      
       try {
         console.log("[HandGestures] Cleaning up...");
 
@@ -382,6 +408,7 @@ export const useHandGestures = (enabled: boolean) => {
           } catch (e) {
             console.warn("[HandGestures] Camera stop error:", e);
           }
+          cameraRef.current = null;
         }
 
         if (handsRef.current) {
@@ -390,6 +417,7 @@ export const useHandGestures = (enabled: boolean) => {
           } catch (e) {
             console.warn("[HandGestures] Hands close error:", e);
           }
+          handsRef.current = null;
         }
 
         if (videoRef.current && document.body.contains(videoRef.current)) {
@@ -399,6 +427,7 @@ export const useHandGestures = (enabled: boolean) => {
             console.warn("[HandGestures] Video remove error:", e);
           }
         }
+        videoRef.current = null;
 
         console.log("[HandGestures] ✅ Cleanup complete");
       } catch (error) {
