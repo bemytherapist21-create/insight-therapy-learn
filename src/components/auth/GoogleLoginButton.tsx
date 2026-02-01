@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { lovable } from "@/integrations/lovable";
+import { createLovableAuth } from "@lovable.dev/cloud-auth-js";
+import { supabase } from "@/integrations/supabase/safeClient";
 import { toast } from "sonner";
 import { logger } from "@/services/loggingService";
 
@@ -11,11 +12,23 @@ export const GoogleLoginButton = () => {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      const { error } = await lovable.auth.signInWithOAuth("google", {
+      const lovableAuth = createLovableAuth({});
+      const result = await lovableAuth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
       });
 
-      if (error) throw error;
+      if (result.redirected) {
+        // Full-page redirect (non-iframe contexts)
+        return;
+      }
+
+      if (result.error) throw result.error;
+
+      // Popup + web_message flow (iframe/preview contexts)
+      await supabase.auth.setSession(result.tokens);
+
+      // Move user out of auth screen after successful sign-in
+      window.location.assign("/");
 
       logger.info("Google OAuth initiated successfully");
     } catch (error) {
@@ -23,7 +36,11 @@ export const GoogleLoginButton = () => {
         "Google login error",
         error instanceof Error ? error : new Error("Unknown error"),
       );
-      toast.error("Failed to sign in with Google. Please try again.");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to sign in with Google. Please try again.",
+      );
       setLoading(false);
     }
   };
