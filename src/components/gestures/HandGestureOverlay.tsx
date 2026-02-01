@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useHandGestures, GestureEvent } from "@/hooks/useHandGestures";
 import { Hand, X, MousePointer2, GripVertical, ChevronDown, ChevronUp } from "lucide-react";
@@ -8,6 +8,9 @@ interface HandGestureOverlayProps {
   enabled: boolean;
   onToggle: () => void;
 }
+
+// Track last processed gesture to prevent duplicate handling
+let lastProcessedGestureTimestamp = 0;
 
 // Helper to find the best clickable element
 const findClickableElement = (element: HTMLElement): HTMLElement | null => {
@@ -111,6 +114,12 @@ export const HandGestureOverlay = ({
     useHandGestures(enabled);
   const [isPinching, setIsPinching] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  
+  // Use refs to access latest values in callbacks without stale closures
+  const handPositionRef = useRef(handPosition);
+  useEffect(() => {
+    handPositionRef.current = handPosition;
+  }, [handPosition]);
 
   // Track pinch state for cursor styling
   useEffect(() => {
@@ -123,7 +132,17 @@ export const HandGestureOverlay = ({
 
   // Handle gestures
   useEffect(() => {
-    if (!gesture || !handPosition) return;
+    if (!gesture) return;
+    
+    // Prevent duplicate processing using timestamp
+    const gestureTimestamp = gesture.timestamp || 0;
+    if (gestureTimestamp && gestureTimestamp <= lastProcessedGestureTimestamp) {
+      return;
+    }
+    lastProcessedGestureTimestamp = gestureTimestamp;
+    
+    // Use ref for latest hand position to avoid stale closure
+    const currentHandPosition = handPositionRef.current;
 
     const handleGesture = (gestureEvent: GestureEvent) => {
       switch (gestureEvent.type) {
@@ -140,10 +159,10 @@ export const HandGestureOverlay = ({
           }
           break;
         case "pinch":
-          if (handPosition) {
+          if (currentHandPosition) {
             // Use handPosition directly - it's already in screen coordinates
-            const x = handPosition.x;
-            const y = handPosition.y;
+            const x = currentHandPosition.x;
+            const y = currentHandPosition.y;
 
             // Show ripple effect
             showClickRipple(x, y);
@@ -152,38 +171,57 @@ export const HandGestureOverlay = ({
             if (element && element instanceof HTMLElement) {
               const clickable = findClickableElement(element);
               if (clickable) {
-                // Simulate full mouse event sequence for proper click handling
-                const eventOptions = {
+                // Build proper event options
+                const baseEventOptions = {
                   bubbles: true,
                   cancelable: true,
                   view: window,
                   clientX: x,
                   clientY: y,
+                };
+                
+                const mouseEventOptions = {
+                  ...baseEventOptions,
+                  button: 0,
+                  buttons: 1,
+                };
+                
+                const pointerEventOptions = {
+                  ...baseEventOptions,
+                  pointerId: 1,
+                  pointerType: "mouse" as const,
+                  isPrimary: true,
                   button: 0,
                   buttons: 1,
                 };
 
-                // Focus the element first (important for buttons)
+                // Focus the element first (important for buttons and form controls)
                 if (typeof clickable.focus === 'function') {
                   clickable.focus();
                 }
 
-                // Dispatch mousedown, mouseup, then click for proper handling
-                clickable.dispatchEvent(new MouseEvent("mousedown", eventOptions));
-                clickable.dispatchEvent(new MouseEvent("mouseup", eventOptions));
-                clickable.dispatchEvent(new MouseEvent("click", eventOptions));
-
-                // Also trigger pointerdown/pointerup for React components
-                clickable.dispatchEvent(new PointerEvent("pointerdown", { ...eventOptions, pointerId: 1, pointerType: "mouse" }));
-                clickable.dispatchEvent(new PointerEvent("pointerup", { ...eventOptions, pointerId: 1, pointerType: "mouse" }));
+                // CORRECT ORDER: Pointer events BEFORE mouse events for React compatibility
+                clickable.dispatchEvent(new PointerEvent("pointerdown", pointerEventOptions));
+                clickable.dispatchEvent(new MouseEvent("mousedown", mouseEventOptions));
+                
+                // Small delay for realistic timing
+                requestAnimationFrame(() => {
+                  clickable.dispatchEvent(new PointerEvent("pointerup", pointerEventOptions));
+                  clickable.dispatchEvent(new MouseEvent("mouseup", mouseEventOptions));
+                  clickable.dispatchEvent(new MouseEvent("click", {
+                    ...baseEventOptions,
+                    button: 0,
+                    buttons: 0, // No buttons pressed on click
+                  }));
+                });
               }
             }
           }
           break;
         case "double-pinch":
-          if (handPosition) {
-            const x = handPosition.x;
-            const y = handPosition.y;
+          if (currentHandPosition) {
+            const x = currentHandPosition.x;
+            const y = currentHandPosition.y;
             showClickRipple(x, y);
 
             const element = document.elementFromPoint(x, y);
@@ -206,9 +244,9 @@ export const HandGestureOverlay = ({
           break;
         case "point":
           // IMPORTANT: Point gesture ONLY highlights - NEVER clicks, focuses, or dispatches events
-          if (handPosition) {
-            const x = handPosition.x;
-            const y = handPosition.y;
+          if (currentHandPosition) {
+            const x = currentHandPosition.x;
+            const y = currentHandPosition.y;
             const element = document.elementFromPoint(x, y);
             if (element && element instanceof HTMLElement) {
               const clickable = findClickableElement(element);
@@ -228,7 +266,7 @@ export const HandGestureOverlay = ({
     };
 
     handleGesture(gesture);
-  }, [gesture, handPosition]);
+  }, [gesture]); // Remove handPosition dependency - use ref instead
 
   if (!enabled) return null;
 
@@ -297,17 +335,20 @@ export const HandGestureOverlay = ({
 
         {/* Help Panel */}
         <div className="bg-black/80 backdrop-blur-sm border border-purple-500/30 rounded-lg overflow-hidden">
-          <button
-            onClick={() => setShowHelp(!showHelp)}
-            className="w-full flex items-center justify-between px-3 py-2 text-xs text-white hover:bg-white/5 transition-colors"
-          >
-            <span className="font-medium">Gesture Controls</span>
-            {showHelp ? (
-              <ChevronUp className="w-4 h-4" />
-            ) : (
-              <ChevronDown className="w-4 h-4" />
-            )}
-          </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent event from bubbling to gesture handlers
+            setShowHelp(!showHelp);
+          }}
+          className="w-full flex items-center justify-between px-3 py-2 text-xs text-white hover:bg-white/5 transition-colors"
+        >
+          <span className="font-medium">Gesture Controls</span>
+          {showHelp ? (
+            <ChevronUp className="w-4 h-4" />
+          ) : (
+            <ChevronDown className="w-4 h-4" />
+          )}
+        </button>
 
           {showHelp && (
             <div className="px-3 pb-3 space-y-2 text-xs border-t border-purple-500/20 pt-2">
@@ -343,7 +384,10 @@ export const HandGestureOverlay = ({
           </div>
 
           <Button
-            onClick={onToggle}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent event from bubbling
+              onToggle();
+            }}
             size="sm"
             variant="ghost"
             className="h-8 w-8 p-0 hover:bg-white/10"
