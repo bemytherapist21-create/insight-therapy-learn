@@ -1,61 +1,127 @@
 
 
-# Fix Plan: Production 404 Error on Google Sign-in
+# Plan: Switch to BYOK (Bring Your Own Key) Google OAuth
 
-## Problem Summary
+## Overview
 
-Google sign-in works in the **preview** environment but fails on the **production** site (`insight-therapy-learn.lovable.app`) with a 404 error. The managed OAuth flow from `@lovable.dev/cloud-auth-js` attempts to navigate to `/~oauth/initiate`, but this route isn't being caught correctly on production.
+This plan will convert your Google sign-in from Lovable's managed OAuth broker to using your own Google OAuth credentials configured directly in Lovable Cloud. This gives you full control over branding and security.
 
-## Root Cause Analysis
+## Prerequisites (Your Action Required)
 
-The `@lovable.dev/cloud-auth-js` library initiates the OAuth flow by navigating to `/~oauth/initiate?...`. On production:
+Before I implement the code changes, you need to ensure your Google OAuth credentials are configured:
 
-1. The React Router route (`/~oauth/*` → `OAuthBrokerProxy`) may not load fast enough before the browser shows a 404
-2. The Content-Security-Policy (CSP) in `index.html` doesn't include `oauth.lovable.app`, which could block the redirect
-3. There may be a timing issue where the SPA hasn't bootstrapped before the navigation occurs
+1. **In Google Cloud Console** (https://console.cloud.google.com):
+   - Create or select an OAuth 2.0 Client ID (Web application type)
+   - Add to **Authorized redirect URLs**: `https://sudlkozsotxdzvjpxubu.supabase.co/auth/v1/callback`
+   - Note down your **Client ID** and **Client Secret**
 
-## Solution
+2. **In Lovable Cloud Dashboard** (Users → Authentication Settings → Google):
+   - Enter your Google Client ID and Client Secret
+   - Save the configuration
 
-### Change 1: Update Content-Security-Policy
+## Code Changes
 
-Add `https://oauth.lovable.app` to the CSP headers in `index.html` to allow:
-- Connections to the OAuth broker (`connect-src`)
-- Frames from the OAuth broker if popup mode is used (`frame-src`)
+### Change 1: Update GoogleLoginButton.tsx
 
-```text
-File: index.html
+Switch from `@lovable.dev/cloud-auth-js` to direct Supabase auth:
 
-Add to connect-src: https://oauth.lovable.app
-Add to frame-src: https://oauth.lovable.app
+**Current approach:**
+```typescript
+import { createLovableAuth } from "@lovable.dev/cloud-auth-js";
+const lovableAuth = createLovableAuth({});
+const result = await lovableAuth.signInWithOAuth("google", {...});
 ```
 
-### Change 2: Add Immediate Redirect in HTML for OAuth Routes
-
-To ensure `/~oauth/*` routes are handled even before React loads, add a small inline script in `index.html` that checks if the current path starts with `/~oauth/` and immediately redirects to `oauth.lovable.app`.
-
-```text
-File: index.html
-
-Add inline script before React app loads:
-- Check if pathname starts with /~oauth/
-- If yes, redirect immediately to oauth.lovable.app with same path and query
-- This ensures OAuth works even if SPA hasn't loaded yet
+**New approach:**
+```typescript
+import { supabase } from "@/integrations/supabase/safeClient";
+await supabase.auth.signInWithOAuth({
+  provider: "google",
+  options: {
+    redirectTo: `${window.location.origin}/auth/callback`,
+  },
+});
 ```
 
-## Summary of Changes
+### Change 2: Create Auth Callback Handler
 
-| File | Change |
-|------|--------|
-| `index.html` | Add `oauth.lovable.app` to CSP `connect-src` and `frame-src` |
-| `index.html` | Add inline redirect script for `/~oauth/` routes before SPA loads |
+Create a new page `/auth/callback` that processes the OAuth response from Supabase:
 
-## Why This Will Work
+**File: `src/pages/AuthCallback.tsx`**
 
-1. The inline script in `<head>` runs immediately when the page loads, before React bootstraps
-2. If the URL matches `/~oauth/*`, it redirects to the OAuth broker before the 404 page can render
-3. The CSP update ensures the browser allows the connection/redirect to `oauth.lovable.app`
+This component will:
+- Listen for the auth state change after redirect
+- Handle errors gracefully
+- Redirect user to home page on success
 
-This is a robust fix that handles both:
-- First-time page loads (URL starts with `/~oauth/`)
-- SPA navigation (React Router catches `/~oauth/*` routes)
+### Change 3: Add Route for Auth Callback
+
+Add the new callback route to `App.tsx`:
+
+```typescript
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+// ...
+<Route path="/auth/callback" element={<AuthCallback />} />
+```
+
+### Change 4: Clean Up Managed OAuth Artifacts
+
+Remove or disable the managed OAuth components that are no longer needed:
+
+1. **index.html**: Remove the `/~oauth/` redirect script (lines 40-47)
+2. **App.tsx**: Remove the `/~oauth/*` route (no longer needed)
+3. **OAuthBrokerProxy.tsx**: Can be deleted (optional, won't cause harm if kept)
+
+### Change 5: Update CSP if Needed
+
+The Content-Security-Policy in `index.html` already includes the necessary domains for Supabase auth, so no changes are required here.
+
+## Summary of File Changes
+
+| File | Action | Description |
+|------|--------|-------------|
+| `src/components/auth/GoogleLoginButton.tsx` | Modify | Switch to direct Supabase OAuth |
+| `src/pages/AuthCallback.tsx` | Create | Handle OAuth callback from Supabase |
+| `src/App.tsx` | Modify | Add `/auth/callback` route, remove `/~oauth/*` route |
+| `index.html` | Modify | Remove the `/~oauth/` redirect script |
+| `src/pages/OAuthBrokerProxy.tsx` | Delete (optional) | No longer needed |
+
+## Technical Details
+
+### How Direct Supabase OAuth Works
+
+```text
+┌─────────────┐     ┌──────────────┐     ┌────────────────┐     ┌─────────────┐
+│   User      │     │   Your App   │     │   Supabase     │     │   Google    │
+│   clicks    │────▶│   calls      │────▶│   redirects    │────▶│   consent   │
+│   "Google"  │     │   signIn     │     │   to Google    │     │   screen    │
+└─────────────┘     └──────────────┘     └────────────────┘     └─────────────┘
+                                                                       │
+┌─────────────┐     ┌──────────────┐     ┌────────────────┐            │
+│   App       │◀────│   /auth/     │◀────│   Supabase     │◀───────────┘
+│   home      │     │   callback   │     │   callback     │
+└─────────────┘     └──────────────┘     └────────────────┘
+```
+
+1. User clicks "Continue with Google"
+2. App calls `supabase.auth.signInWithOAuth()` with redirect URL
+3. Browser redirects to Supabase → Google consent screen
+4. After consent, Google redirects back to Supabase
+5. Supabase processes tokens and redirects to your `/auth/callback`
+6. Your callback page handles the session and navigates to home
+
+### Error Handling
+
+The new `AuthCallback` component will:
+- Check for error parameters in the URL
+- Display user-friendly error messages
+- Provide a link back to login on failure
+
+## Testing After Implementation
+
+After I implement these changes, you should:
+
+1. **Publish the changes** to production
+2. **Clear browser cookies/cache** for the production site
+3. **Test the flow**: Login page → Click "Continue with Google" → Google consent → Redirected back and logged in
 
