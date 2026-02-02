@@ -33,7 +33,7 @@ const Auth = lazy(() => import("./pages/Auth"));
 const TherapistRegistration = lazy(
   () => import("./pages/TherapistRegistration"),
 );
-const OAuthBrokerProxy = lazy(() => import("./pages/OAuthBrokerProxy"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -87,8 +87,8 @@ const App = () => {
                     path="/therapist-registration"
                     element={<TherapistRegistration />}
                   />
-                  {/* Managed OAuth broker routes */}
-                  <Route path="/~oauth/*" element={<OAuthBrokerProxy />} />
+                  {/* OAuth callback route for direct Supabase auth */}
+                  <Route path="/auth/callback" element={<AuthCallback />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
