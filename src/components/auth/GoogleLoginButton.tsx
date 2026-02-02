@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { createLovableAuth } from "@lovable.dev/cloud-auth-js";
 import { supabase } from "@/integrations/supabase/safeClient";
 import { toast } from "sonner";
 import { logger } from "@/services/loggingService";
@@ -12,25 +11,19 @@ export const GoogleLoginButton = () => {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      const lovableAuth = createLovableAuth({});
-      const result = await lovableAuth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
       });
 
-      if (result.redirected) {
-        // Full-page redirect (non-iframe contexts)
-        return;
+      if (error) {
+        throw error;
       }
 
-      if (result.error) throw result.error;
-
-      // Popup + web_message flow (iframe/preview contexts)
-      await supabase.auth.setSession(result.tokens);
-
-      // Move user out of auth screen after successful sign-in
-      window.location.assign("/");
-
       logger.info("Google OAuth initiated successfully");
+      // Browser will redirect to Google, no need to handle success here
     } catch (error) {
       logger.error(
         "Google login error",

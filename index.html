@@ -36,16 +36,6 @@
       upgrade-insecure-requests;
     " />
 
-  <!-- OAuth Redirect Handler - runs before React loads -->
-  <script>
-    (function() {
-      if (window.location.pathname.startsWith('/~oauth/')) {
-        var target = 'https://oauth.lovable.app' + window.location.pathname + window.location.search + window.location.hash;
-        window.location.replace(target);
-      }
-    })();
-  </script>
-
   <!-- Permissions Policy -->
   <meta http-equiv="Permissions-Policy" content="
       camera=(self),
