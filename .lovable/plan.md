@@ -1,127 +1,108 @@
 
 
-# Plan: Switch to BYOK (Bring Your Own Key) Google OAuth
+# Plan: Precision Insights - Data Analysis Tool
 
 ## Overview
 
-This plan will convert your Google sign-in from Lovable's managed OAuth broker to using your own Google OAuth credentials configured directly in Lovable Cloud. This gives you full control over branding and security.
+Build a multi-step data analysis tool accessible from the "Precision Insights" card on the InsightFusion page. Users upload CSV/Excel files, the AI analyzes the structure, asks clarifying questions about columns and business context, then generates actionable insights with an interactive dashboard.
 
-## Prerequisites (Your Action Required)
+## User Flow
 
-Before I implement the code changes, you need to ensure your Google OAuth credentials are configured:
-
-1. **In Google Cloud Console** (https://console.cloud.google.com):
-   - Create or select an OAuth 2.0 Client ID (Web application type)
-   - Add to **Authorized redirect URLs**: `https://sudlkozsotxdzvjpxubu.supabase.co/auth/v1/callback`
-   - Note down your **Client ID** and **Client Secret**
-
-2. **In Lovable Cloud Dashboard** (Users → Authentication Settings → Google):
-   - Enter your Google Client ID and Client Secret
-   - Save the configuration
-
-## Code Changes
-
-### Change 1: Update GoogleLoginButton.tsx
-
-Switch from `@lovable.dev/cloud-auth-js` to direct Supabase auth:
-
-**Current approach:**
-```typescript
-import { createLovableAuth } from "@lovable.dev/cloud-auth-js";
-const lovableAuth = createLovableAuth({});
-const result = await lovableAuth.signInWithOAuth("google", {...});
+```text
+InsightFusion Page
+  └── Click "Precision Insights" card
+        └── /insight-fusion/precision-insights
+              ├── Step 1: Upload CSV/Excel file
+              ├── Step 2: AI analyzes file structure, shows columns/sheets
+              ├── Step 3: Chat with AI to define columns, business context
+              ├── Step 4: AI generates insights
+              └── Step 5: Dashboard with charts + downloadable summary
 ```
 
-**New approach:**
-```typescript
-import { supabase } from "@/integrations/supabase/safeClient";
-await supabase.auth.signInWithOAuth({
-  provider: "google",
-  options: {
-    redirectTo: `${window.location.origin}/auth/callback`,
-  },
-});
-```
+## Implementation Steps
 
-### Change 2: Create Auth Callback Handler
+### Step 1: Create Storage Bucket for Data Files
 
-Create a new page `/auth/callback` that processes the OAuth response from Supabase:
+Create a `data-files` storage bucket via SQL migration so users can upload their CSV/Excel files. Add RLS policies so users can only access their own uploads.
 
-**File: `src/pages/AuthCallback.tsx`**
+### Step 2: Create the Edge Function - `analyze-data`
 
-This component will:
-- Listen for the auth state change after redirect
-- Handle errors gracefully
-- Redirect user to home page on success
+A single edge function that handles two modes:
 
-### Change 3: Add Route for Auth Callback
+- **Mode: "parse"** - Receives the uploaded file content, uses Lovable AI (gemini-3-flash-preview) to identify sheets, columns, data types, and summary statistics. Returns structured JSON.
+- **Mode: "insights"** - Receives the parsed structure + user-provided column definitions + business context. Uses AI to generate descriptive, diagnostic, predictive, and strategic insights. Also performs market context analysis.
 
-Add the new callback route to `App.tsx`:
+The edge function will use streaming for the insights generation to show results progressively.
 
-```typescript
-const AuthCallback = lazy(() => import("./pages/AuthCallback"));
-// ...
-<Route path="/auth/callback" element={<AuthCallback />} />
-```
+### Step 3: Create the Precision Insights Page
 
-### Change 4: Clean Up Managed OAuth Artifacts
+**File: `src/pages/PrecisionInsights.tsx`**
 
-Remove or disable the managed OAuth components that are no longer needed:
+A multi-step wizard-style page matching the existing site design (glass-card styling, purple-orange gradients, dark background):
 
-1. **index.html**: Remove the `/~oauth/` redirect script (lines 40-47)
-2. **App.tsx**: Remove the `/~oauth/*` route (no longer needed)
-3. **OAuthBrokerProxy.tsx**: Can be deleted (optional, won't cause harm if kept)
+- **Step 1 - Upload**: Drag-and-drop or click-to-upload area for CSV/Excel files. File is uploaded to the storage bucket and content is sent to the edge function for parsing.
+- **Step 2 - Define Structure**: Displays detected sheets, columns, and data types in an interactive form. User can add descriptions/meanings for each column. Highlights any new/unknown columns.
+- **Step 3 - Business Context**: A form/chat where the user describes their business model, revenue streams, KPI priorities, target audience, geography, and growth stage.
+- **Step 4 - Insights Dashboard**: AI-generated insights displayed in 4 layers (Descriptive, Diagnostic, Predictive, Strategic) with:
+  - KPI cards using recharts (bar, line, pie charts)
+  - Trend analysis visualizations
+  - Segment analysis
+  - Risk identification
+  - Market context section
+  - Strategic recommendations
 
-### Change 5: Update CSP if Needed
+### Step 4: Add Route and Navigation
 
-The Content-Security-Policy in `index.html` already includes the necessary domains for Supabase auth, so no changes are required here.
+- Add `/insight-fusion/precision-insights` route to `App.tsx`
+- Make the "Precision Insights" benefit card on InsightFusion page clickable, navigating to this new route
 
-## Summary of File Changes
+### Step 5: Create Supporting Components
+
+- **FileUploader** - Drag-and-drop file upload component with progress indicator
+- **ColumnDefinitionForm** - Interactive form to define column meanings
+- **BusinessContextForm** - Structured form for business details
+- **InsightsDashboard** - Dashboard layout with recharts visualizations
+- **InsightCard** - Individual insight cards with icons and categories
+
+## Files to Create/Modify
 
 | File | Action | Description |
 |------|--------|-------------|
-| `src/components/auth/GoogleLoginButton.tsx` | Modify | Switch to direct Supabase OAuth |
-| `src/pages/AuthCallback.tsx` | Create | Handle OAuth callback from Supabase |
-| `src/App.tsx` | Modify | Add `/auth/callback` route, remove `/~oauth/*` route |
-| `index.html` | Modify | Remove the `/~oauth/` redirect script |
-| `src/pages/OAuthBrokerProxy.tsx` | Delete (optional) | No longer needed |
+| `src/pages/PrecisionInsights.tsx` | Create | Main multi-step wizard page |
+| `src/components/insights/FileUploader.tsx` | Create | File upload component |
+| `src/components/insights/ColumnDefinitionForm.tsx` | Create | Column definition form |
+| `src/components/insights/BusinessContextForm.tsx` | Create | Business context form |
+| `src/components/insights/InsightsDashboard.tsx` | Create | Dashboard with charts |
+| `supabase/functions/analyze-data/index.ts` | Create | Edge function for parsing and insights |
+| `src/App.tsx` | Modify | Add route |
+| `src/pages/InsightFusion.tsx` | Modify | Make Precision Insights card clickable |
+| SQL Migration | Create | Storage bucket + data analysis tables |
 
 ## Technical Details
 
-### How Direct Supabase OAuth Works
+### Database Tables
 
-```text
-┌─────────────┐     ┌──────────────┐     ┌────────────────┐     ┌─────────────┐
-│   User      │     │   Your App   │     │   Supabase     │     │   Google    │
-│   clicks    │────▶│   calls      │────▶│   redirects    │────▶│   consent   │
-│   "Google"  │     │   signIn     │     │   to Google    │     │   screen    │
-└─────────────┘     └──────────────┘     └────────────────┘     └─────────────┘
-                                                                       │
-┌─────────────┐     ┌──────────────┐     ┌────────────────┐            │
-│   App       │◀────│   /auth/     │◀────│   Supabase     │◀───────────┘
-│   home      │     │   callback   │     │   callback     │
-└─────────────┘     └──────────────┘     └────────────────┘
-```
+- **`data_analyses`** - Stores analysis sessions (user_id, file_name, file_path, parsed_structure, column_definitions, business_context, insights, status, timestamps)
 
-1. User clicks "Continue with Google"
-2. App calls `supabase.auth.signInWithOAuth()` with redirect URL
-3. Browser redirects to Supabase → Google consent screen
-4. After consent, Google redirects back to Supabase
-5. Supabase processes tokens and redirects to your `/auth/callback`
-6. Your callback page handles the session and navigates to home
+### Edge Function Architecture
 
-### Error Handling
+The `analyze-data` edge function will:
+1. Accept file content (base64 for Excel, raw text for CSV)
+2. Use Lovable AI to parse structure and generate insights
+3. Handle rate limiting (429) and payment errors (402) gracefully
+4. Stream insights generation for real-time feedback
 
-The new `AuthCallback` component will:
-- Check for error parameters in the URL
-- Display user-friendly error messages
-- Provide a link back to login on failure
+### Design Consistency
 
-## Testing After Implementation
+All new components will use the existing design system:
+- `glass-card` class for card backgrounds
+- `bg-gradient-primary` for buttons
+- `hover:shadow-glow` for interactive elements
+- Purple/orange gradient accents
+- White text on dark backgrounds
+- `animate-fade-in` and `animate-scale-in` for animations
 
-After I implement these changes, you should:
+### File Parsing Approach
 
-1. **Publish the changes** to production
-2. **Clear browser cookies/cache** for the production site
-3. **Test the flow**: Login page → Click "Continue with Google" → Google consent → Redirected back and logged in
+Since we cannot run Python in the browser, CSV parsing will be done client-side using basic JavaScript (splitting by delimiters). For Excel files, the file will be sent to the edge function where AI will extract the structure from the raw content. For large files, only the first 100 rows will be sampled for analysis.
 
