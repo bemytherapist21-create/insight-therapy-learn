@@ -22,6 +22,7 @@ const SimpleVoiceTherapy = lazy(() => import("./pages/SimpleVoiceTherapy"));
 const GeminiVoiceTherapy = lazy(() => import("./pages/GeminiVoiceTherapy"));
 const InsightFusion = lazy(() => import("./pages/InsightFusion"));
 const StrategicInsight = lazy(() => import("./pages/StrategicInsight"));
+const PrecisionInsights = lazy(() => import("./pages/PrecisionInsights"));
 const AILearning = lazy(() => import("./pages/AILearning"));
 const Register = lazy(() => import("./pages/Register"));
 const Login = lazy(() => import("./pages/Login"));
@@ -72,6 +73,10 @@ const App = () => {
                   <Route
                     path="/insight-fusion/Generate/StrategicInsight"
                     element={<StrategicInsight />}
+                  />
+                  <Route
+                    path="/insight-fusion/precision-insights"
+                    element={<PrecisionInsights />}
                   />
                   <Route path="/ai-learning" element={<AILearning />} />
                   <Route path="/about" element={<Home />} />
