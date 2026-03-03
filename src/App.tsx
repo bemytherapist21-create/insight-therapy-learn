@@ -37,7 +37,7 @@ const TherapistRegistration = lazy(
 );
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
-const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const PrecisionInsights = lazy(() => import("./pages/PrecisionInsights"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -86,10 +86,13 @@ const App = () => {
                     path="/ai-therapy/voice-classic"
                     element={<GeminiVoiceTherapy />}
                   />
-                  <Route path="/insight-fusion" element={<InsightFusion />} />
                   <Route
                     path="/insight-fusion/Generate/StrategicInsight"
                     element={<StrategicInsight />}
+                  />
+                  <Route
+                    path="/insight-fusion/PrecisionInsights"
+                    element={<PrecisionInsights />}
                   />
                   <Route path="/ai-learning" element={<AILearning />} />
                   <Route path="/about" element={<Home />} />
@@ -107,8 +110,6 @@ const App = () => {
                   />
                   <Route path="/blog" element={<Blog />} />
                   <Route path="/blog/:slug" element={<BlogPost />} />
-                  {/* OAuth callback route for direct Supabase auth */}
-                  <Route path="/auth/callback" element={<AuthCallback />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>

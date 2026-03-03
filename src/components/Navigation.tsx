@@ -89,6 +89,7 @@ const Navigation = () => {
     { name: "About", path: "/about" },
     { name: "Services", path: "/services" },
     { name: "Blog", path: "/blog" },
+    { name: "Insights", path: "/insight-fusion/PrecisionInsights" },
     { name: "Contact", path: "/contact" },
   ];
 
@@ -241,8 +242,8 @@ const Navigation = () => {
                 size="icon"
                 onClick={toggleSound}
                 className={`h-7 w-7 transition-all duration-300 ${soundEnabled
-                    ? "text-primary bg-primary/20"
-                    : "text-muted-foreground hover:text-foreground"
+                  ? "text-primary bg-primary/20"
+                  : "text-muted-foreground hover:text-foreground"
                   }`}
                 title={soundEnabled ? "Mute sounds" : "Enable sounds"}
               >
@@ -262,8 +263,8 @@ const Navigation = () => {
                     size="icon"
                     onClick={() => toggleEffect(effect.id)}
                     className={`transition-all duration-300 h-7 w-7 ${activeEffect === effect.id
-                        ? `${effect.color} ${effect.bg}`
-                        : "text-muted-foreground hover:text-foreground"
+                      ? `${effect.color} ${effect.bg}`
+                      : "text-muted-foreground hover:text-foreground"
                       }`}
                     title={effect.label}
                   >
@@ -277,8 +278,8 @@ const Navigation = () => {
                   key={item.name}
                   to={item.path}
                   className={`relative transition-all duration-300 ${isActive(item.path)
-                      ? "text-primary font-semibold"
-                      : "text-foreground hover:text-primary"
+                    ? "text-primary font-semibold"
+                    : "text-foreground hover:text-primary"
                     }`}
                 >
                   {item.name}
@@ -354,8 +355,8 @@ const Navigation = () => {
                     size="sm"
                     onClick={toggleSound}
                     className={`h-8 px-2 ${soundEnabled
-                        ? "text-primary bg-primary/20"
-                        : "text-muted-foreground"
+                      ? "text-primary bg-primary/20"
+                      : "text-muted-foreground"
                       }`}
                   >
                     {soundEnabled ? (
@@ -374,8 +375,8 @@ const Navigation = () => {
                       size="sm"
                       onClick={() => toggleEffect(effect.id)}
                       className={`transition-all duration-300 h-8 px-2 ${activeEffect === effect.id
-                          ? `${effect.color} ${effect.bg}`
-                          : "text-muted-foreground"
+                        ? `${effect.color} ${effect.bg}`
+                        : "text-muted-foreground"
                         }`}
                     >
                       <effect.icon className="w-3.5 h-3.5 mr-1" />
@@ -390,8 +391,8 @@ const Navigation = () => {
                     to={item.path}
                     onClick={() => setIsOpen(false)}
                     className={`py-2 transition-colors ${isActive(item.path)
-                        ? "text-primary font-semibold"
-                        : "text-foreground hover:text-primary"
+                      ? "text-primary font-semibold"
+                      : "text-foreground hover:text-primary"
                       }`}
                   >
                     {item.name}
