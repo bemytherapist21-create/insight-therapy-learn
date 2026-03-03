@@ -1,98 +1,242 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Calendar, Clock, User, ExternalLink } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, User } from "lucide-react";
 import { blogPosts } from "./Blog";
 
 // Full blog content mapped by slug
 const blogContent: Record<string, React.ReactNode> = {
-    "crisp-and-clean-ironing-service-app": (
+    "unlock-antigravity-power-3-plugins": (
         <>
             <p className="text-lg leading-relaxed mb-6">
-                In a world of complex apps, sometimes the most impactful solutions are the simplest ones. We recently built <strong>Crisp &amp; Clean</strong>, a Progressive Web App (PWA) for a local ironing service that lets nearby customers select what they want ironed, place an order via WhatsApp, and track whether their clothes are ready for pickup — all without downloading anything from an app store.
+                Antigravity is powerful by itself. But if you are not using the right plugins, you are only using a small part of what it can really do. This guide explains three essential plugins that can turn Antigravity into a more reliable, accurate, and production-ready AI system: <strong>GSD</strong>, <strong>Ralph Loop</strong>, and <strong>CodeRabbit</strong>.
+            </p>
+            <p className="text-muted-foreground leading-relaxed mb-8">
+                By the end of this guide, you will clearly understand what each plugin does, why it is important, and how to install and use it properly.
             </p>
 
-            <h2 className="text-2xl font-bold text-foreground mt-10 mb-4">The Problem</h2>
+            {/* === Plugin 1: GSD === */}
+            <h2 className="text-2xl font-bold text-foreground mt-10 mb-4">1. GSD (Get Sh*t Done for Antigravity)</h2>
+
+            <h3 className="text-xl font-semibold text-foreground mt-6 mb-3">What GSD Does</h3>
             <p className="text-muted-foreground leading-relaxed mb-6">
-                A local ironing shop wanted a simple way for customers to place orders digitally. The shop doesn't offer pickup or drop-off — customers bring their own items and collect them once ironed. The owner wanted a system where:
+                GSD takes a big project and breaks it into small, clear, manageable tasks. Instead of asking AI to handle everything at once, GSD makes it focus on one small task at a time. This reduces confusion and improves accuracy.
+            </p>
+            <p className="text-muted-foreground leading-relaxed mb-6">
+                It helps solve two common AI problems:
             </p>
             <ul className="list-disc list-inside space-y-2 text-muted-foreground mb-6 pl-4">
-                <li>Customers can browse item categories (Men, Women, Kids, Home Linen, Accessories, Winter Wear)</li>
-                <li>Each item costs a flat <strong>₹10</strong></li>
-                <li>Orders are confirmed via WhatsApp to the shop owner's number</li>
-                <li>The shop owner can update the order status (e.g., "Ironing In Progress" → "Ready for Pickup")</li>
-                <li>Customers can see the live status of their order</li>
+                <li><strong>Hallucination</strong> — AI making up incorrect information</li>
+                <li><strong>Context overload</strong> — AI forgetting earlier instructions in large projects</li>
+            </ul>
+            <p className="text-muted-foreground leading-relaxed mb-6">
+                When tasks are small and isolated, the results become more predictable and stable.
+            </p>
+
+            <h3 className="text-xl font-semibold text-foreground mt-6 mb-3">Key Benefits</h3>
+            <div className="grid md:grid-cols-2 gap-4 mb-8">
+                <div className="glass-card rounded-xl p-5">
+                    <h4 className="font-bold text-foreground mb-2">🧩 Task Decomposition</h4>
+                    <p className="text-sm text-muted-foreground">Breaks large projects into small, isolated steps</p>
+                </div>
+                <div className="glass-card rounded-xl p-5">
+                    <h4 className="font-bold text-foreground mb-2">🎯 Improved Accuracy</h4>
+                    <p className="text-sm text-muted-foreground">Small tasks prevent AI from drifting or hallucinating</p>
+                </div>
+                <div className="glass-card rounded-xl p-5">
+                    <h4 className="font-bold text-foreground mb-2">📈 Consistent Output</h4>
+                    <p className="text-sm text-muted-foreground">Produces predictable and stable results every time</p>
+                </div>
+                <div className="glass-card rounded-xl p-5">
+                    <h4 className="font-bold text-foreground mb-2">📋 Organized Workflow</h4>
+                    <p className="text-sm text-muted-foreground">Keeps long projects clean and structured</p>
+                </div>
+            </div>
+
+            <h3 className="text-xl font-semibold text-foreground mt-6 mb-3">Installation</h3>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+                Repository: <a href="https://github.com/toonight/get-shit-done-for-antigravity" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">github.com/toonight/get-shit-done-for-antigravity</a>
+            </p>
+            <ol className="list-decimal list-inside space-y-2 text-muted-foreground mb-6 pl-4">
+                <li>Clone the repository from GitHub</li>
+                <li>Follow the setup instructions in the README file</li>
+                <li>Register the plugin inside Antigravity as described in the documentation</li>
+            </ol>
+            <div className="glass-card rounded-xl p-4 mb-8">
+                <code className="bg-muted px-3 py-1.5 rounded text-sm block overflow-x-auto">
+                    git clone https://github.com/toonight/get-shit-done-for-antigravity.git
+                </code>
+            </div>
+
+            <h3 className="text-xl font-semibold text-foreground mt-6 mb-3">How to Use</h3>
+            <ul className="list-disc list-inside space-y-2 text-muted-foreground mb-8 pl-4">
+                <li>Clearly define your project goal</li>
+                <li>Let GSD divide it into small tasks</li>
+                <li>Execute each task separately</li>
+                <li>Keep the workflow clean and structured</li>
             </ul>
 
-            <h2 className="text-2xl font-bold text-foreground mt-10 mb-4">The Solution</h2>
+            {/* === Plugin 2: Ralph Loop === */}
+            <h2 className="text-2xl font-bold text-foreground mt-10 mb-4">2. Ralph Loop</h2>
+
+            <h3 className="text-xl font-semibold text-foreground mt-6 mb-3">What Ralph Loop Does</h3>
             <p className="text-muted-foreground leading-relaxed mb-6">
-                We built a responsive, single-page React application using <strong>Vite</strong> with a premium glassmorphic design. The app features three main tabs:
+                Ralph Loop is an autonomous planning and execution agent. It reads your PRD (Product Requirements Document), checks current project progress, decides the next small task, builds the solution, tests whether it works, fixes issues if needed, and repeats the process until the result is correct.
+            </p>
+
+            {/* Loop diagram */}
+            <div className="glass-card rounded-xl p-6 mb-8">
+                <div className="flex flex-wrap items-center justify-center gap-2 text-center">
+                    <div className="glass-card rounded-lg px-4 py-3 min-w-[80px]">
+                        <div className="text-lg mb-1">📄</div>
+                        <span className="text-xs font-semibold text-muted-foreground">Read PRD</span>
+                    </div>
+                    <span className="text-muted-foreground">→</span>
+                    <div className="glass-card rounded-lg px-4 py-3 min-w-[80px]">
+                        <div className="text-lg mb-1">🔍</div>
+                        <span className="text-xs font-semibold text-muted-foreground">Check</span>
+                    </div>
+                    <span className="text-muted-foreground">→</span>
+                    <div className="glass-card rounded-lg px-4 py-3 min-w-[80px]">
+                        <div className="text-lg mb-1">📋</div>
+                        <span className="text-xs font-semibold text-muted-foreground">Decide</span>
+                    </div>
+                    <span className="text-muted-foreground">→</span>
+                    <div className="glass-card rounded-lg px-4 py-3 min-w-[80px]">
+                        <div className="text-lg mb-1">🔨</div>
+                        <span className="text-xs font-semibold text-muted-foreground">Build</span>
+                    </div>
+                    <span className="text-muted-foreground">→</span>
+                    <div className="glass-card rounded-lg px-4 py-3 min-w-[80px]">
+                        <div className="text-lg mb-1">🧪</div>
+                        <span className="text-xs font-semibold text-muted-foreground">Test</span>
+                    </div>
+                    <span className="text-muted-foreground">→</span>
+                    <div className="glass-card rounded-lg px-4 py-3 min-w-[80px]">
+                        <div className="text-lg mb-1">🔧</div>
+                        <span className="text-xs font-semibold text-muted-foreground">Fix</span>
+                    </div>
+                    <span className="text-primary font-bold text-lg">↻</span>
+                </div>
+            </div>
+
+            <h3 className="text-xl font-semibold text-foreground mt-6 mb-3">Key Benefits</h3>
+            <div className="grid md:grid-cols-2 gap-4 mb-8">
+                <div className="glass-card rounded-xl p-5">
+                    <h4 className="font-bold text-foreground mb-2">🤖 Autonomous</h4>
+                    <p className="text-sm text-muted-foreground">Automatically decides the next step</p>
+                </div>
+                <div className="glass-card rounded-xl p-5">
+                    <h4 className="font-bold text-foreground mb-2">🔄 Self-Correcting</h4>
+                    <p className="text-sm text-muted-foreground">Tests its own output and fixes mistakes</p>
+                </div>
+                <div className="glass-card rounded-xl p-5">
+                    <h4 className="font-bold text-foreground mb-2">⚡ Speeds Up Dev</h4>
+                    <p className="text-sm text-muted-foreground">Eliminates constant manual instructions</p>
+                </div>
+                <div className="glass-card rounded-xl p-5">
+                    <h4 className="font-bold text-foreground mb-2">💆 Reduces Workload</h4>
+                    <p className="text-sm text-muted-foreground">Takes the mental burden off developers</p>
+                </div>
+            </div>
+
+            <h3 className="text-xl font-semibold text-foreground mt-6 mb-3">Installation</h3>
+            <ol className="list-decimal list-inside space-y-2 text-muted-foreground mb-8 pl-4">
+                <li>Open Antigravity</li>
+                <li>Go to Extensions</li>
+                <li>Search for "Ralph Loop"</li>
+                <li>Install and enable it</li>
+            </ol>
+
+            <h3 className="text-xl font-semibold text-foreground mt-6 mb-3">How to Use</h3>
+            <ul className="list-disc list-inside space-y-2 text-muted-foreground mb-8 pl-4">
+                <li>Provide a clear and detailed PRD</li>
+                <li>Start the agent</li>
+                <li>Let Ralph Loop plan, build, test, and improve</li>
+                <li>Review the saved outputs as tasks are completed</li>
+            </ul>
+
+            {/* === Plugin 3: CodeRabbit === */}
+            <h2 className="text-2xl font-bold text-foreground mt-10 mb-4">3. CodeRabbit</h2>
+
+            <h3 className="text-xl font-semibold text-foreground mt-6 mb-3">What CodeRabbit Does</h3>
+            <p className="text-muted-foreground leading-relaxed mb-6">
+                CodeRabbit is a real-time AI code review tool. It reviews your code while you work, finds bugs before you run the program, suggests fixes using AI, and helps prevent serious production errors. It works like an extra senior developer reviewing your code instantly.
+            </p>
+
+            <h3 className="text-xl font-semibold text-foreground mt-6 mb-3">Key Benefits</h3>
+            <div className="grid md:grid-cols-2 gap-4 mb-8">
+                <div className="glass-card rounded-xl p-5">
+                    <h4 className="font-bold text-foreground mb-2">🐛 Early Bug Detection</h4>
+                    <p className="text-sm text-muted-foreground">Finds bugs before you even run the program</p>
+                </div>
+                <div className="glass-card rounded-xl p-5">
+                    <h4 className="font-bold text-foreground mb-2">✨ Cleaner PRs</h4>
+                    <p className="text-sm text-muted-foreground">Ensures pull requests are polished before merging</p>
+                </div>
+                <div className="glass-card rounded-xl p-5">
+                    <h4 className="font-bold text-foreground mb-2">🛡️ Better Code Quality</h4>
+                    <p className="text-sm text-muted-foreground">AI-powered fixes improve maintainability</p>
+                </div>
+                <div className="glass-card rounded-xl p-5">
+                    <h4 className="font-bold text-foreground mb-2">🚀 Safer Deployments</h4>
+                    <p className="text-sm text-muted-foreground">Prevents serious production errors from reaching users</p>
+                </div>
+            </div>
+
+            <h3 className="text-xl font-semibold text-foreground mt-6 mb-3">Installation</h3>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+                Website: <a href="https://www.coderabbit.ai/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">coderabbit.ai</a>
+            </p>
+            <ol className="list-decimal list-inside space-y-2 text-muted-foreground mb-8 pl-4">
+                <li>Visit the website and sign up</li>
+                <li>Connect your repository (GitHub, GitLab, etc.)</li>
+                <li>Enable real-time code review</li>
+                <li>Adjust review settings if needed</li>
+            </ol>
+
+            <h3 className="text-xl font-semibold text-foreground mt-6 mb-3">How to Use</h3>
+            <ul className="list-disc list-inside space-y-2 text-muted-foreground mb-8 pl-4">
+                <li>Write or update your code normally</li>
+                <li>Let CodeRabbit review the changes automatically</li>
+                <li>Apply the suggested fixes before merging or deploying</li>
+            </ul>
+
+            {/* === Recommended Workflow === */}
+            <h2 className="text-2xl font-bold text-foreground mt-10 mb-4">Recommended Workflow (Best Practice)</h2>
+            <p className="text-muted-foreground leading-relaxed mb-6">
+                For best results, use all three plugins together:
             </p>
 
             <div className="grid md:grid-cols-3 gap-4 mb-8">
-                <div className="glass-card rounded-xl p-5">
-                    <h3 className="font-bold text-foreground mb-2">🏠 Home</h3>
-                    <p className="text-sm text-muted-foreground">Browse categories, add items to cart, and review your order before confirming via WhatsApp.</p>
+                <div className="glass-card rounded-xl p-5 text-center">
+                    <div className="text-3xl mb-3">🧩</div>
+                    <h4 className="font-bold text-foreground mb-2">1. GSD</h4>
+                    <p className="text-sm text-muted-foreground">Break the project into small, manageable tasks</p>
                 </div>
-                <div className="glass-card rounded-xl p-5">
-                    <h3 className="font-bold text-foreground mb-2">📋 My Orders</h3>
-                    <p className="text-sm text-muted-foreground">Track the real-time status of your orders — from "Pending Drop-off" to "Ready for Pickup".</p>
+                <div className="glass-card rounded-xl p-5 text-center">
+                    <div className="text-3xl mb-3">🔄</div>
+                    <h4 className="font-bold text-foreground mb-2">2. Ralph Loop</h4>
+                    <p className="text-sm text-muted-foreground">Plan, build, test, and improve automatically</p>
                 </div>
-                <div className="glass-card rounded-xl p-5">
-                    <h3 className="font-bold text-foreground mb-2">🛡️ Shop Dashboard</h3>
-                    <p className="text-sm text-muted-foreground">The shop owner can view all orders and update their status with a single tap.</p>
-                </div>
-            </div>
-
-            <h2 className="text-2xl font-bold text-foreground mt-10 mb-4">Key Features</h2>
-
-            <h3 className="text-xl font-semibold text-foreground mt-6 mb-3">WhatsApp Integration</h3>
-            <p className="text-muted-foreground leading-relaxed mb-6">
-                When a customer confirms their order, the app generates a pre-filled WhatsApp message with the complete order breakdown — item names, quantities, total price, and the shop's Google Maps location. The message is sent directly to the shop owner's WhatsApp number (+91 70834 92882).
-            </p>
-
-            <h3 className="text-xl font-semibold text-foreground mt-6 mb-3">Order Tracking via localStorage</h3>
-            <p className="text-muted-foreground leading-relaxed mb-6">
-                Since this is a local, low-traffic application, we used the browser's <code className="bg-muted px-2 py-0.5 rounded text-sm">localStorage</code> as a simple data store. Orders are saved locally with their status, and the shop owner can transition them through the status flow: <em>Pending Drop-off → Ironing In Progress → Ready for Pickup</em>.
-            </p>
-
-            <h3 className="text-xl font-semibold text-foreground mt-6 mb-3">Google Maps Location</h3>
-            <p className="text-muted-foreground leading-relaxed mb-6">
-                The shop's coordinates (<strong>18°36'24.4"N 73°56'04.2"E</strong>) are embedded directly in the checkout flow. Customers see a clickable "View Shop Location on Map" link, and the same location is included in the WhatsApp confirmation message.
-            </p>
-
-            <h3 className="text-xl font-semibold text-foreground mt-6 mb-3">Progressive Web App (PWA)</h3>
-            <p className="text-muted-foreground leading-relaxed mb-6">
-                The app is configured as a PWA using <code className="bg-muted px-2 py-0.5 rounded text-sm">vite-plugin-pwa</code>. Once hosted, customers visiting the URL on their phone will be prompted to "Add to Home Screen". The app installs with a custom icon and runs in standalone mode — looking and feeling like a native app without requiring any app store submission.
-            </p>
-
-            <h2 className="text-2xl font-bold text-foreground mt-10 mb-4">Tech Stack</h2>
-            <div className="glass-card rounded-xl p-6 mb-8">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                    <div>
-                        <div className="text-2xl mb-1">⚡</div>
-                        <div className="font-semibold text-foreground">Vite</div>
-                        <div className="text-xs text-muted-foreground">Build Tool</div>
-                    </div>
-                    <div>
-                        <div className="text-2xl mb-1">⚛️</div>
-                        <div className="font-semibold text-foreground">React</div>
-                        <div className="text-xs text-muted-foreground">UI Library</div>
-                    </div>
-                    <div>
-                        <div className="text-2xl mb-1">🎨</div>
-                        <div className="font-semibold text-foreground">Vanilla CSS</div>
-                        <div className="text-xs text-muted-foreground">Styling</div>
-                    </div>
-                    <div>
-                        <div className="text-2xl mb-1">📱</div>
-                        <div className="font-semibold text-foreground">PWA</div>
-                        <div className="text-xs text-muted-foreground">Installable</div>
-                    </div>
+                <div className="glass-card rounded-xl p-5 text-center">
+                    <div className="text-3xl mb-3">🐇</div>
+                    <h4 className="font-bold text-foreground mb-2">3. CodeRabbit</h4>
+                    <p className="text-sm text-muted-foreground">Review and fix code continuously</p>
                 </div>
             </div>
 
-            <h2 className="text-2xl font-bold text-foreground mt-10 mb-4">Takeaways</h2>
             <p className="text-muted-foreground leading-relaxed mb-6">
-                Not every business needs a complex backend or a native mobile app. For hyperlocal services with a small customer base, a well-designed PWA with WhatsApp integration can be the perfect solution — fast to build, free to host, and zero friction for customers. Sometimes, the best technology is the one that gets out of the way and just works.
+                This combination helps you reduce AI mistakes, automate development steps, and produce more reliable, production-ready outputs.
+            </p>
+
+            {/* === Final Thoughts === */}
+            <h2 className="text-2xl font-bold text-foreground mt-10 mb-4">Final Thoughts</h2>
+            <div className="glass-card rounded-xl p-6 mb-6">
+                <blockquote className="text-lg font-medium italic text-foreground border-l-4 border-primary pl-4">
+                    "Using Antigravity without these plugins is like driving a high-performance car without proper controls."
+                </blockquote>
+            </div>
+            <p className="text-muted-foreground leading-relaxed mb-6">
+                When you combine <strong>GSD</strong>, <strong>Ralph Loop</strong>, and <strong>CodeRabbit</strong>, you unlock most of Antigravity's real potential. If you want serious, structured, production-level AI development — this is the setup you should use.
             </p>
         </>
     ),

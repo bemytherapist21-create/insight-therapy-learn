@@ -14,15 +14,15 @@ export interface BlogPostMeta {
 
 export const blogPosts: BlogPostMeta[] = [
     {
-        slug: "crisp-and-clean-ironing-service-app",
-        title: "Building Crisp & Clean — A Local Ironing Service PWA",
+        slug: "unlock-antigravity-power-3-plugins",
+        title: "How to Unlock 90% of Antigravity's Power Using 3 Simple Plugins",
         excerpt:
-            "How we built a modern Progressive Web App for a local ironing service that lets customers pick items, place orders via WhatsApp, and track their ironing status — all without downloading from an app store.",
+            "A complete guide to three essential plugins — GSD, Ralph Loop, and CodeRabbit — that turn Antigravity into a reliable, accurate, and production-ready AI development system.",
         date: "March 3, 2026",
-        readTime: "5 min read",
+        readTime: "8 min read",
         author: "The Everything AI",
-        coverGradient: "from-indigo-600 via-purple-600 to-pink-500",
-        tags: ["PWA", "React", "WhatsApp Integration", "Local Business"],
+        coverGradient: "from-violet-600 via-purple-600 to-fuchsia-500",
+        tags: ["Antigravity", "Plugins", "AI Development", "Productivity"],
     },
 ];
 
