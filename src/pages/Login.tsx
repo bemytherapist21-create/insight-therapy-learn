@@ -23,22 +23,7 @@ import { GoogleLoginButton } from "@/components/auth/GoogleLoginButton";
 const Login = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-
-  const getSafeRedirect = (value: string | null) => {
-    if (!value) return ROUTES.HOME;
-    if (!value.startsWith("/") || value.startsWith("//")) return ROUTES.HOME;
-    return value;
-  };
-
-  const redirectFromQuery = getSafeRedirect(searchParams.get("redirect"));
-  const redirectFromStorage = getSafeRedirect(
-    typeof window !== "undefined"
-      ? sessionStorage.getItem("postLoginRedirect")
-      : null,
-  );
-  const resolvedRedirect =
-    redirectFromQuery !== ROUTES.HOME ? redirectFromQuery : redirectFromStorage;
-
+  const redirectTo = searchParams.get("redirect") || ROUTES.HOME;
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -74,13 +59,8 @@ const Login = () => {
       // Reset rate limiter on successful login
       rateLimiter.reset("login");
 
-      // Redirect to intended page or home - use replace to avoid back-button issues
-      try {
-        sessionStorage.removeItem("postLoginRedirect");
-      } catch {
-        // ignore storage issues in restricted browser contexts
-      }
-      navigate(resolvedRedirect, { replace: true });
+      // Redirect to intended page or home
+      navigate(redirectTo);
     } catch (error) {
       errorService.handleError(error, "Login failed");
     } finally {

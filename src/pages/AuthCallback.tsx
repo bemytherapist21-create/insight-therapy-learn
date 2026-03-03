@@ -56,32 +56,9 @@ const AuthCallback = () => {
 
         if (session) {
           logger.info("OAuth callback successful, user authenticated");
-          // Get redirect destination from query params with sessionStorage fallback
-          const redirectParam = params.get("redirect");
-          const storedRedirect =
-            typeof window !== "undefined"
-              ? sessionStorage.getItem("postLoginRedirect")
-              : null;
-
-          const safeRedirect = (value: string | null) => {
-            if (!value) return "/";
-            if (!value.startsWith("/") || value.startsWith("//")) return "/";
-            return value;
-          };
-
-          const redirectTo = safeRedirect(redirectParam) !== "/"
-            ? safeRedirect(redirectParam)
-            : safeRedirect(storedRedirect);
-
-          try {
-            sessionStorage.removeItem("postLoginRedirect");
-          } catch {
-            // ignore storage issues in restricted browser contexts
-          }
-
           // Small delay to ensure session is propagated
           setTimeout(() => {
-            navigate(redirectTo, { replace: true });
+            navigate("/", { replace: true });
           }, 500);
         } else {
           // No session and no error - might be a stale callback, redirect to login
