@@ -129,7 +129,7 @@ export const VoiceTherapyMinimax = ({ onBack }: VoiceTherapyProps) => {
       )}
 
       {/* Two Column Grid */}
-      <div className="grid md:grid-cols-2 gap-6 h-[600px]">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[400px] md:h-[600px]">
         {/* Left Panel - Voice Controls */}
         <Card className="glass-card overflow-hidden h-full">
           <div className="p-8 flex flex-col items-center justify-between h-full">
