@@ -10,6 +10,8 @@ import { ArrowRight } from "lucide-react";
 import { HeroSection } from "@/components/home/HeroSection";
 import { ServiceCard } from "@/components/home/ServiceCard";
 import { ContactForm } from "@/components/home/ContactForm";
+import { Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Home = () => {
   const services = [
@@ -63,6 +65,8 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+
 
       {/* Features Section */}
       <section className="py-20 bg-black/20">

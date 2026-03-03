@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Calendar, Clock, User } from "lucide-react";
+import { ArrowRight, Calendar, Clock, User, Sparkles } from "lucide-react";
 
 export interface BlogPostMeta {
     slug: string;
@@ -38,6 +38,33 @@ const Blog = () => {
                     <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                         Stories, insights, and case studies from our projects and experiments in AI, web development, and technology.
                     </p>
+                </div>
+
+                {/* Featured Guide Box */}
+                <div className="mb-12">
+                    <div
+                        onClick={() => (window.location.href = "/blog/unlock-antigravity-power-3-plugins")}
+                        className="glass-card p-8 rounded-3xl border-primary/30 cursor-pointer overflow-hidden relative group hover:shadow-glow transition-all duration-300"
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+                            <div className="w-24 h-24 bg-gradient-primary rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-500 shadow-xl shadow-primary/20">
+                                <Sparkles className="w-12 h-12 text-white animate-pulse" />
+                            </div>
+                            <div className="flex-1 text-center md:text-left">
+                                <h2 className="text-2xl md:text-4xl font-black text-white mb-3">
+                                    Use Antigravity to its <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400">maximum potential</span>
+                                </h2>
+                                <p className="text-white/70 text-lg mb-4">
+                                    Master the essential plugins and elite workflows that turn Antigravity into a production-ready AI powerhouse.
+                                </p>
+                                <div className="inline-flex items-center gap-2 text-primary font-bold text-lg group-hover:gap-3 transition-all">
+                                    Get the Elite Guide <ArrowRight className="w-5 h-5" />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/10 blur-3xl rounded-full" />
+                    </div>
                 </div>
 
                 {/* Blog Posts Grid */}

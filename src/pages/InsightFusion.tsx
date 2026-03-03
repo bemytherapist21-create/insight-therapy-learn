@@ -19,6 +19,7 @@ import {
   Sparkles,
   Mic,
   MicOff,
+  ArrowRight,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -318,6 +319,7 @@ const InsightFusion = () => {
       title: "Precision Insights",
       description:
         "AI-powered analysis delivers laser-focused business intelligence",
+      link: "/insight-fusion/PrecisionInsights",
     },
     {
       icon: TrendingUp,
@@ -401,27 +403,7 @@ const InsightFusion = () => {
               </div>
             </div>
 
-            {/* Precision Insights Launcher */}
-            <div className="glass-card max-w-2xl mx-auto p-8 mb-12 border-2 border-primary/50 relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="relative flex flex-col md:flex-row items-center gap-6 text-left">
-                <div className="w-20 h-20 bg-primary/20 rounded-2xl flex items-center justify-center shrink-0">
-                  <BarChart3 className="w-10 h-10 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-white mb-2">New: Precision Insights</h3>
-                  <p className="text-white/70 text-sm mb-4">
-                    Upload your data files (CSV/Excel) for deep-dive AI analysis, automated KPI tracking, and strategic forecasts.
-                  </p>
-                  <Button
-                    onClick={() => navigate("/insight-fusion/PrecisionInsights")}
-                    className="bg-primary hover:bg-primary/90 text-white font-bold px-8"
-                  >
-                    Launch Precision Insights
-                  </Button>
-                </div>
-              </div>
-            </div>
+
 
             {/* Booking Call to Action */}
             <div className="glass-card max-w-lg mx-auto p-6">
@@ -452,17 +434,23 @@ const InsightFusion = () => {
             {benefits.map((benefit, index) => (
               <Card
                 key={benefit.title}
-                className="glass-card text-center hover-lift animate-scale-in"
+                className={`glass-card text-center transition-all duration-300 animate-scale-in ${(benefit as any).link ? 'cursor-pointer hover:border-primary/50 hover:bg-primary/5' : ''}`}
                 style={{ animationDelay: `${index * 0.1}s` }}
+                onClick={() => (benefit as any).link && navigate((benefit as any).link)}
               >
                 <CardContent className="pt-6">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-primary rounded-2xl flex items-center justify-center">
+                  <div className={`w-16 h-16 mx-auto mb-4 bg-gradient-primary rounded-2xl flex items-center justify-center transition-transform duration-300 ${(benefit as any).link ? 'group-hover:scale-110' : ''}`}>
                     <benefit.icon className="w-8 h-8 text-primary-foreground" />
                   </div>
                   <h3 className="text-lg font-bold text-white mb-2">
                     {benefit.title}
                   </h3>
                   <p className="text-white/70 text-sm">{benefit.description}</p>
+                  {(benefit as any).link && (
+                    <div className="mt-4 text-primary text-xs font-bold flex items-center justify-center gap-1 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                      Access Now <ArrowRight className="w-3 h-3" />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
