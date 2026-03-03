@@ -59,8 +59,8 @@ const Login = () => {
       // Reset rate limiter on successful login
       rateLimiter.reset("login");
 
-      // Redirect to intended page or home
-      navigate(redirectTo);
+      // Redirect to intended page or home - use replace to avoid back-button issues
+      navigate(redirectTo, { replace: true });
     } catch (error) {
       errorService.handleError(error, "Login failed");
     } finally {

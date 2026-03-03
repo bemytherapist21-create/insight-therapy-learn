@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/safeClient";
@@ -7,14 +8,19 @@ import { logger } from "@/services/loggingService";
 
 export const GoogleLoginButton = () => {
   const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get("redirect") || "/";
 
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
+      const callbackUrl = new URL(`${window.location.origin}/auth/callback`);
+      callbackUrl.searchParams.set("redirect", redirect);
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: callbackUrl.toString(),
         },
       });
 

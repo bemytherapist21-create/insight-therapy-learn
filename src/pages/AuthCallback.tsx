@@ -56,9 +56,11 @@ const AuthCallback = () => {
 
         if (session) {
           logger.info("OAuth callback successful, user authenticated");
+          // Get redirect destination from query params
+          const redirectTo = params.get("redirect") || "/";
           // Small delay to ensure session is propagated
           setTimeout(() => {
-            navigate("/", { replace: true });
+            navigate(redirectTo, { replace: true });
           }, 500);
         } else {
           // No session and no error - might be a stale callback, redirect to login
