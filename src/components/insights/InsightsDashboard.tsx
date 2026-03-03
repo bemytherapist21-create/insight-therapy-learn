@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BarChart3, Target, Lightbulb, Search, AlertTriangle, Globe, TrendUp, TrendDown } from "lucide-react";
+import { BarChart3, Target, Lightbulb, Search, AlertTriangle, Globe, TrendingUp, TrendingDown } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell } from "recharts";
 
 interface InsightsDashboardProps {
@@ -11,8 +11,8 @@ interface InsightsDashboardProps {
 const CHART_COLORS = ["#8A2BE2", "#FF8C00", "#4facfe", "#00f2fe", "#f093fb", "#f5576c"];
 
 const trendIcon = (trend?: string) => {
-    if (trend?.toLowerCase() === "up") return <TrendUp className="w-3 h-3 text-green-400" />;
-    if (trend?.toLowerCase() === "down") return <TrendDown className="w-3 h-3 text-red-400" />;
+    if (trend?.toLowerCase() === "up") return <TrendingUp className="w-3 h-3 text-green-400" />;
+    if (trend?.toLowerCase() === "down") return <TrendingDown className="w-3 h-3 text-red-400" />;
     return null;
 };
 
