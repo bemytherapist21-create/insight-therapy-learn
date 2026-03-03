@@ -231,7 +231,6 @@ const InsightFusion = () => {
       title: "Precision Insights",
       description:
         "AI-powered analysis delivers laser-focused business intelligence",
-      link: "/insight-fusion/precision-insights",
     },
     {
       icon: TrendingUp,
@@ -344,9 +343,8 @@ const InsightFusion = () => {
             {benefits.map((benefit, index) => (
               <Card
                 key={benefit.title}
-                className={`glass-card text-center hover-lift animate-scale-in ${benefit.link ? "cursor-pointer" : ""}`}
+                className="glass-card text-center hover-lift animate-scale-in"
                 style={{ animationDelay: `${index * 0.1}s` }}
-                onClick={() => benefit.link && navigate(benefit.link)}
               >
                 <CardContent className="pt-6">
                   <div className="w-16 h-16 mx-auto mb-4 bg-gradient-primary rounded-2xl flex items-center justify-center">

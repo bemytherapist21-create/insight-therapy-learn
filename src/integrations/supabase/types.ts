@@ -35,48 +35,6 @@ export type Database = {
         }
         Relationships: []
       }
-      data_analyses: {
-        Row: {
-          business_context: Json | null
-          column_definitions: Json | null
-          created_at: string
-          file_name: string
-          file_path: string | null
-          id: string
-          insights: Json | null
-          parsed_structure: Json | null
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          business_context?: Json | null
-          column_definitions?: Json | null
-          created_at?: string
-          file_name: string
-          file_path?: string | null
-          id?: string
-          insights?: Json | null
-          parsed_structure?: Json | null
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          business_context?: Json | null
-          column_definitions?: Json | null
-          created_at?: string
-          file_name?: string
-          file_path?: string | null
-          id?: string
-          insights?: Json | null
-          parsed_structure?: Json | null
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       detection_events: {
         Row: {
           actual_risk: boolean | null
