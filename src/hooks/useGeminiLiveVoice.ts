@@ -7,7 +7,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { GoogleGenAI, Modality, LiveServerMessage } from "@google/genai";
 import { decode, decodeAudioData, createBlob } from "@/services/audioUtils";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/safeClient";
 import { logger } from "@/services/loggingService";
 
 export type VoiceStatus =
@@ -359,8 +359,8 @@ export function useGeminiLiveVoice(): UseGeminiLiveVoiceReturn {
       }
 
       // On desktop, AudioContexts can remain suspended unless explicitly resumed after a user gesture.
-      await inputAudioContext.resume().catch(() => { });
-      await outputAudioContext.resume().catch(() => { });
+      await inputAudioContext.resume().catch(() => {});
+      await outputAudioContext.resume().catch(() => {});
       audioContextRef.current = {
         input: inputAudioContext,
         output: outputAudioContext,

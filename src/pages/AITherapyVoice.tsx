@@ -25,16 +25,6 @@ const AITherapyVoice = () => {
               Back to Options
             </Button>
 
-            <div className="mb-6 flex flex-wrap gap-3">
-              <Button
-                variant="outline"
-                className="bg-white/5 border-white/20 text-white hover:bg-white/10"
-                onClick={() => navigate("/ai-therapy/voice-classic")}
-              >
-                Having trouble on laptop? Try Classic Voice Mode
-              </Button>
-            </div>
-
             <VoiceTherapyMinimax onBack={() => navigate("/ai-therapy")} />
           </motion.div>
         </div>

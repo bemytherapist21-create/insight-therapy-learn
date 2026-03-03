@@ -25,16 +25,24 @@ export default function AuthCallback() {
     const run = async () => {
       try {
         // Domain Enforcement: If we land on lovable.app, redirect to primary domain immediately
-        if (window.location.hostname.includes("lovable.app")) {
-          const primaryDomain = "https://theeverythingai.com";
-          const currentPath = window.location.pathname + window.location.search + window.location.hash;
+        if (
+          window.location.hostname.includes("lovable.app") ||
+          window.location.hostname === "theeverythingai.com"
+        ) {
+          const primaryDomain = "https://www.theeverythingai.com";
+          const currentPath =
+            window.location.pathname +
+            window.location.search +
+            window.location.hash;
           window.location.replace(`${primaryDomain}${currentPath}`);
           return;
         }
 
         const desired =
           sanitizeRedirectPath(searchParams.get("redirect")) ||
-          sanitizeRedirectPath(localStorage.getItem(AUTH_REDIRECT_STORAGE_KEY)) ||
+          sanitizeRedirectPath(
+            localStorage.getItem(AUTH_REDIRECT_STORAGE_KEY),
+          ) ||
           sanitizeRedirectPath(localStorage.getItem(LAST_THERAPY_ROUTE_KEY)) ||
           "/"; // Fallback to home on current origin
 
@@ -54,7 +62,9 @@ export default function AuthCallback() {
             "OAuth error from provider",
             new Error(errorDescription || errorParam),
           );
-          setError(errorDescription || "Authentication failed. Please try again.");
+          setError(
+            errorDescription || "Authentication failed. Please try again.",
+          );
           return;
         }
 
@@ -69,7 +79,9 @@ export default function AuthCallback() {
           }
         } else {
           // Handle implicit flow tokens in hash fragment
-          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          const hashParams = new URLSearchParams(
+            window.location.hash.substring(1),
+          );
           const accessToken = hashParams.get("access_token");
           const refreshToken = hashParams.get("refresh_token");
           if (accessToken && refreshToken) {
@@ -118,7 +130,10 @@ export default function AuthCallback() {
         }
 
         // Navigate to intended destination
-        navigate(desired, { replace: true, state: { from: location.pathname } });
+        navigate(desired, {
+          replace: true,
+          state: { from: location.pathname },
+        });
       } catch (err) {
         logger.error(
           "Unexpected error in auth callback",

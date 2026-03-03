@@ -2,7 +2,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/hooks/useAuth";
 import Navigation from "./components/Navigation";
@@ -146,11 +152,27 @@ const DomainGuard = () => {
 
   useEffect(() => {
     const hostname = window.location.hostname;
-    if (hostname.includes("lovable.app")) {
-      const newUrl = `https://theeverythingai.com${window.location.pathname}${window.location.search}${window.location.hash}`;
-      window.location.replace(newUrl);
+    // Redirect lovable.app or non-www to www.theeverythingai.com
+    if (
+      hostname.includes("lovable.app") ||
+      hostname === "theeverythingai.com"
+    ) {
+      const newUrl = `https://www.theeverythingai.com${window.location.pathname}${window.location.search}${window.location.hash}`;
+      if (window.location.href !== newUrl) {
+        window.location.replace(newUrl);
+      }
     }
-  }, [location]);
+
+    // Intercept rogue Supabase root redirects that have access tokens
+    const hash = window.location.hash;
+    if (
+      hash &&
+      hash.includes("access_token=") &&
+      window.location.pathname !== "/auth/callback"
+    ) {
+      window.location.replace(`/auth/callback${window.location.search}${hash}`);
+    }
+  }, [location, window.location.hash]);
 
   return null;
 };

@@ -25,7 +25,7 @@ export const GoogleLoginButton = ({
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback${
+          redirectTo: `${window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? window.location.origin : "https://www.theeverythingai.com"}/auth/callback${
             safeRedirect ? `?redirect=${encodeURIComponent(safeRedirect)}` : ""
           }`,
           queryParams: {
