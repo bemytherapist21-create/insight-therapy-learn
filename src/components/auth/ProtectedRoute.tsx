@@ -19,9 +19,17 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   if (!user) {
+    const fullRedirectPath = `${location.pathname}${location.search}${location.hash}`;
+
+    try {
+      sessionStorage.setItem("postLoginRedirect", fullRedirectPath);
+    } catch {
+      // ignore storage issues in restricted browser contexts
+    }
+
     return (
       <Navigate
-        to={`/login?redirect=${encodeURIComponent(location.pathname)}`}
+        to={`/login?redirect=${encodeURIComponent(fullRedirectPath)}`}
         replace
       />
     );
