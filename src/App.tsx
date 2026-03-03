@@ -35,6 +35,8 @@ const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const TherapistRegistration = lazy(
   () => import("./pages/TherapistRegistration"),
 );
+const Blog = lazy(() => import("./pages/Blog"));
+const BlogPost = lazy(() => import("./pages/BlogPost"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -103,6 +105,8 @@ const App = () => {
                     path="/therapist-registration"
                     element={<TherapistRegistration />}
                   />
+                  <Route path="/blog" element={<Blog />} />
+                  <Route path="/blog/:slug" element={<BlogPost />} />
                   {/* OAuth callback route for direct Supabase auth */}
                   <Route path="/auth/callback" element={<AuthCallback />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

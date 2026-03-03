@@ -88,6 +88,7 @@ const Navigation = () => {
     { name: "Home", path: "/" },
     { name: "About", path: "/about" },
     { name: "Services", path: "/services" },
+    { name: "Blog", path: "/blog" },
     { name: "Contact", path: "/contact" },
   ];
 
@@ -239,11 +240,10 @@ const Navigation = () => {
                 variant="ghost"
                 size="icon"
                 onClick={toggleSound}
-                className={`h-7 w-7 transition-all duration-300 ${
-                  soundEnabled
+                className={`h-7 w-7 transition-all duration-300 ${soundEnabled
                     ? "text-primary bg-primary/20"
                     : "text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
                 title={soundEnabled ? "Mute sounds" : "Enable sounds"}
               >
                 {soundEnabled ? (
@@ -261,11 +261,10 @@ const Navigation = () => {
                     variant="ghost"
                     size="icon"
                     onClick={() => toggleEffect(effect.id)}
-                    className={`transition-all duration-300 h-7 w-7 ${
-                      activeEffect === effect.id
+                    className={`transition-all duration-300 h-7 w-7 ${activeEffect === effect.id
                         ? `${effect.color} ${effect.bg}`
                         : "text-muted-foreground hover:text-foreground"
-                    }`}
+                      }`}
                     title={effect.label}
                   >
                     <effect.icon className="w-3.5 h-3.5" />
@@ -277,11 +276,10 @@ const Navigation = () => {
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`relative transition-all duration-300 ${
-                    isActive(item.path)
+                  className={`relative transition-all duration-300 ${isActive(item.path)
                       ? "text-primary font-semibold"
                       : "text-foreground hover:text-primary"
-                  }`}
+                    }`}
                 >
                   {item.name}
                   {isActive(item.path) && (
@@ -355,11 +353,10 @@ const Navigation = () => {
                     variant="ghost"
                     size="sm"
                     onClick={toggleSound}
-                    className={`h-8 px-2 ${
-                      soundEnabled
+                    className={`h-8 px-2 ${soundEnabled
                         ? "text-primary bg-primary/20"
                         : "text-muted-foreground"
-                    }`}
+                      }`}
                   >
                     {soundEnabled ? (
                       <Volume2 className="w-3.5 h-3.5 mr-1" />
@@ -376,11 +373,10 @@ const Navigation = () => {
                       variant="ghost"
                       size="sm"
                       onClick={() => toggleEffect(effect.id)}
-                      className={`transition-all duration-300 h-8 px-2 ${
-                        activeEffect === effect.id
+                      className={`transition-all duration-300 h-8 px-2 ${activeEffect === effect.id
                           ? `${effect.color} ${effect.bg}`
                           : "text-muted-foreground"
-                      }`}
+                        }`}
                     >
                       <effect.icon className="w-3.5 h-3.5 mr-1" />
                       <span className="text-xs">{effect.label}</span>
@@ -393,11 +389,10 @@ const Navigation = () => {
                     key={item.name}
                     to={item.path}
                     onClick={() => setIsOpen(false)}
-                    className={`py-2 transition-colors ${
-                      isActive(item.path)
+                    className={`py-2 transition-colors ${isActive(item.path)
                         ? "text-primary font-semibold"
                         : "text-foreground hover:text-primary"
-                    }`}
+                      }`}
                   >
                     {item.name}
                   </Link>
