@@ -33,8 +33,10 @@ export const VoiceTherapyMinimax = ({ onBack }: VoiceTherapyProps) => {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      const currentPath = window.location.pathname;
-      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
+      const currentPath = `${window.location.pathname}${window.location.search}`;
+      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`, {
+        replace: true,
+      });
     }
   }, [user, authLoading, navigate]);
 
