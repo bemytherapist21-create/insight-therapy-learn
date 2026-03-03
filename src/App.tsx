@@ -2,11 +2,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/hooks/useAuth";
 import Navigation from "./components/Navigation";
-import { Suspense, lazy, useState } from "react";
+import { Suspense, lazy, useState, useEffect } from "react";
 import { LoadingFallback } from "./components/ui/LoadingFallback";
 import { HandGestureOverlay } from "@/components/gestures/HandGestureOverlay"; // Hand gesture controls
 import { Button } from "@/components/ui/button";
@@ -53,6 +53,7 @@ const App = () => {
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <DomainGuard />
               <RouteTracker />
               <Navigation />
               <Suspense fallback={<LoadingFallback />}>
@@ -86,6 +87,7 @@ const App = () => {
                     path="/ai-therapy/voice-classic"
                     element={<GeminiVoiceTherapy />}
                   />
+                  <Route path="/insight-fusion" element={<InsightFusion />} />
                   <Route
                     path="/insight-fusion/Generate/StrategicInsight"
                     element={<StrategicInsight />}
@@ -137,6 +139,20 @@ const App = () => {
       </ThemeProvider>
     </QueryClientProvider>
   );
+};
+
+const DomainGuard = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    const hostname = window.location.hostname;
+    if (hostname.includes("lovable.app")) {
+      const newUrl = `https://theeverythingai.com${window.location.pathname}${window.location.search}${window.location.hash}`;
+      window.location.replace(newUrl);
+    }
+  }, [location]);
+
+  return null;
 };
 
 export default App;

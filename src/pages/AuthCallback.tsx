@@ -24,6 +24,14 @@ export default function AuthCallback() {
   useEffect(() => {
     const run = async () => {
       try {
+        // Domain Enforcement: If we land on lovable.app, redirect to primary domain immediately
+        if (window.location.hostname.includes("lovable.app")) {
+          const primaryDomain = "https://theeverythingai.com";
+          const currentPath = window.location.pathname + window.location.search + window.location.hash;
+          window.location.replace(`${primaryDomain}${currentPath}`);
+          return;
+        }
+
         const desired =
           sanitizeRedirectPath(searchParams.get("redirect")) ||
           sanitizeRedirectPath(localStorage.getItem(AUTH_REDIRECT_STORAGE_KEY)) ||

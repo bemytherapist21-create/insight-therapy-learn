@@ -88,8 +88,8 @@ const Navigation = () => {
     { name: "Home", path: "/" },
     { name: "About", path: "/about" },
     { name: "Services", path: "/services" },
-    { name: "Blog", path: "/blog" },
-    { name: "Insights", path: "/insight-fusion/PrecisionInsights" },
+    { name: "Blog", path: "/blog", prominent: true },
+    { name: "Insights", path: "/insight-fusion" },
     { name: "Contact", path: "/contact" },
   ];
 
@@ -279,7 +279,7 @@ const Navigation = () => {
                   to={item.path}
                   className={`relative transition-all duration-300 ${isActive(item.path)
                     ? "text-primary font-semibold"
-                    : "text-foreground hover:text-primary"
+                    : (item as any).prominent ? "text-primary hover:text-primary/80 font-medium scale-110" : "text-foreground hover:text-primary"
                     }`}
                 >
                   {item.name}

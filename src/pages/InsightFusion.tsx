@@ -401,6 +401,28 @@ const InsightFusion = () => {
               </div>
             </div>
 
+            {/* Precision Insights Launcher */}
+            <div className="glass-card max-w-2xl mx-auto p-8 mb-12 border-2 border-primary/50 relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="relative flex flex-col md:flex-row items-center gap-6 text-left">
+                <div className="w-20 h-20 bg-primary/20 rounded-2xl flex items-center justify-center shrink-0">
+                  <BarChart3 className="w-10 h-10 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold text-white mb-2">New: Precision Insights</h3>
+                  <p className="text-white/70 text-sm mb-4">
+                    Upload your data files (CSV/Excel) for deep-dive AI analysis, automated KPI tracking, and strategic forecasts.
+                  </p>
+                  <Button
+                    onClick={() => navigate("/insight-fusion/PrecisionInsights")}
+                    className="bg-primary hover:bg-primary/90 text-white font-bold px-8"
+                  >
+                    Launch Precision Insights
+                  </Button>
+                </div>
+              </div>
+            </div>
+
             {/* Booking Call to Action */}
             <div className="glass-card max-w-lg mx-auto p-6">
               <div className="flex items-center justify-center gap-4 mb-4">
