@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/safeClient";
 import { Button } from "@/components/ui/button";
@@ -20,15 +20,39 @@ import { sanitizeEmail } from "@/lib/validation";
 import { ROUTES, SUCCESS_MESSAGES } from "@/config/constants";
 import { GoogleLoginButton } from "@/components/auth/GoogleLoginButton";
 
+const AUTH_REDIRECT_STORAGE_KEY = "auth.redirectTo";
+const LAST_THERAPY_ROUTE_KEY = "app.lastTherapyRoute";
+
+function sanitizeRedirectPath(path: string | null): string | null {
+  if (!path) return null;
+  if (!path.startsWith("/")) return null;
+  if (path.startsWith("//")) return null;
+  return path;
+}
+
 const Login = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || ROUTES.HOME;
+  const redirectTo =
+    sanitizeRedirectPath(searchParams.get("redirect")) ||
+    sanitizeRedirectPath(localStorage.getItem(LAST_THERAPY_ROUTE_KEY)) ||
+    ROUTES.AI_THERAPY;
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+
+  useEffect(() => {
+    // Preserve intended destination for OAuth flows that return to callback/root.
+    try {
+      if (redirectTo) {
+        localStorage.setItem(AUTH_REDIRECT_STORAGE_KEY, redirectTo);
+      }
+    } catch {
+      // ignore
+    }
+  }, [redirectTo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,7 +190,7 @@ const Login = () => {
               </div>
             </div>
 
-            <GoogleLoginButton />
+            <GoogleLoginButton redirectPath={redirectTo} />
 
             <p className="text-center text-sm text-white/70">
               Don't have an account?{" "}

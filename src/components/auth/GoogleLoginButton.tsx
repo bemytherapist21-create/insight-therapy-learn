@@ -5,16 +5,33 @@ import { supabase } from "@/integrations/supabase/safeClient";
 import { toast } from "sonner";
 import { logger } from "@/services/loggingService";
 
-export const GoogleLoginButton = () => {
+export const GoogleLoginButton = ({
+  redirectPath,
+}: {
+  redirectPath?: string;
+}) => {
   const [loading, setLoading] = useState(false);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
+      const safeRedirect =
+        redirectPath &&
+        redirectPath.startsWith("/") &&
+        !redirectPath.startsWith("//")
+          ? redirectPath
+          : "";
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback${
+            safeRedirect ? `?redirect=${encodeURIComponent(safeRedirect)}` : ""
+          }`,
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
         },
       });
 

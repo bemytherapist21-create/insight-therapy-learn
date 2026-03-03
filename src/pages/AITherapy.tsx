@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { ROUTES } from "@/config/constants";
 
 const AITherapy = () => {
   const navigate = useNavigate();
@@ -62,7 +63,7 @@ const AITherapy = () => {
       ],
       gradient: "from-purple-500 to-blue-500",
       action: "Start Chat Session",
-      onClick: () => navigate("/ai-therapy/chat"),
+      onClick: () => navigate(ROUTES.CHAT),
     },
     {
       type: "AI Voice Therapist",
@@ -77,7 +78,7 @@ const AITherapy = () => {
       ],
       gradient: "from-blue-500 to-cyan-500",
       action: "Start Voice Session",
-      onClick: () => navigate("/ai-therapy/voice"),
+      onClick: () => navigate(ROUTES.AI_VOICE),
     },
     {
       type: "Human Therapist",

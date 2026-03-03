@@ -72,6 +72,7 @@ export const EMOTION_COLORS: Record<string, string> = {
 export const ROUTES = {
   HOME: "/",
   AUTH: "/auth",
+  AUTH_CALLBACK: "/auth/callback",
   LOGIN: "/login",
   REGISTER: "/register",
   FORGOT_PASSWORD: "/forgot-password",
@@ -79,6 +80,8 @@ export const ROUTES = {
   TERMS: "/terms",
   PRIVACY: "/privacy",
   AI_THERAPY: "/ai-therapy",
+  CHAT: "/chat",
+  AI_VOICE: "/ai-voice",
   AI_THERAPY_CHAT: "/ai-therapy/chat",
   AI_THERAPY_VOICE: "/ai-therapy/voice",
   INSIGHT_FUSION: "/insight-fusion",

@@ -1,78 +1,128 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/safeClient";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/safeClient";
+import { ROUTES } from "@/config/constants";
 import { logger } from "@/services/loggingService";
 
-/**
- * Auth callback page for handling OAuth redirects from Supabase.
- * This page processes the authentication response after Google OAuth.
- */
-const AuthCallback = () => {
+const AUTH_REDIRECT_STORAGE_KEY = "auth.redirectTo";
+const LAST_THERAPY_ROUTE_KEY = "app.lastTherapyRoute";
+
+function sanitizeRedirectPath(path: string | null): string | null {
+  if (!path) return null;
+  if (!path.startsWith("/")) return null;
+  if (path.startsWith("//")) return null;
+  return path;
+}
+
+export default function AuthCallback() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const handleAuthCallback = async () => {
+    const run = async () => {
       try {
-        // Check for error in URL params (Supabase sends errors this way)
+        const desired =
+          sanitizeRedirectPath(searchParams.get("redirect")) ||
+          sanitizeRedirectPath(localStorage.getItem(AUTH_REDIRECT_STORAGE_KEY)) ||
+          sanitizeRedirectPath(localStorage.getItem(LAST_THERAPY_ROUTE_KEY)) ||
+          ROUTES.AI_THERAPY;
+
+        // Clear stored redirect to avoid sticky redirects
+        try {
+          localStorage.removeItem(AUTH_REDIRECT_STORAGE_KEY);
+        } catch {
+          // ignore
+        }
+
+        // Handle provider error params
         const params = new URLSearchParams(window.location.search);
         const errorParam = params.get("error");
         const errorDescription = params.get("error_description");
-
         if (errorParam) {
-          logger.error("OAuth error from provider", new Error(errorDescription || errorParam));
+          logger.error(
+            "OAuth error from provider",
+            new Error(errorDescription || errorParam),
+          );
           setError(errorDescription || "Authentication failed. Please try again.");
           return;
         }
 
-        // Check for hash fragment (Supabase sends tokens in hash for implicit flow)
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = hashParams.get("access_token");
-        const refreshToken = hashParams.get("refresh_token");
-
-        if (accessToken && refreshToken) {
-          // Set the session manually if tokens are in the hash
-          const { error: sessionError } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-
-          if (sessionError) {
-            logger.error("Failed to set session", sessionError);
-            setError("Failed to complete sign in. Please try again.");
-            return;
+        // If we came back from OAuth with a code flow, exchange it.
+        const url = new URL(window.location.href);
+        const code = url.searchParams.get("code");
+        if (code) {
+          try {
+            await supabase.auth.exchangeCodeForSession(code);
+          } catch {
+            // If exchange fails, still continue to route; user can re-login.
+          }
+        } else {
+          // Handle implicit flow tokens in hash fragment
+          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          const accessToken = hashParams.get("access_token");
+          const refreshToken = hashParams.get("refresh_token");
+          if (accessToken && refreshToken) {
+            const { error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+            if (sessionError) {
+              logger.error("Failed to set session", sessionError);
+              setError("Failed to complete sign in. Please try again.");
+              return;
+            }
+          } else {
+            // Trigger session hydration (also handles other flows)
+            try {
+              await supabase.auth.getSession();
+            } catch {
+              // ignore
+            }
           }
         }
 
-        // Get the current session (might have been set by Supabase automatically)
-        const { data: { session }, error: getSessionError } = await supabase.auth.getSession();
+        // Clean fragments like "#access_token=..." so we don't end up at "/#"
+        try {
+          const cleaned = new URL(window.location.href);
+          cleaned.hash = "";
+          cleaned.searchParams.delete("code");
+          cleaned.searchParams.delete("redirect");
+          cleaned.searchParams.delete("error");
+          cleaned.searchParams.delete("error_description");
+          window.history.replaceState(
+            {},
+            document.title,
+            `${cleaned.pathname}${cleaned.search}`,
+          );
+        } catch {
+          // ignore
+        }
 
-        if (getSessionError) {
-          logger.error("Failed to get session", getSessionError);
-          setError("Failed to verify sign in. Please try again.");
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session) {
+          navigate(ROUTES.LOGIN, { replace: true });
           return;
         }
 
-        if (session) {
-          logger.info("OAuth callback successful, user authenticated");
-          // Small delay to ensure session is propagated
-          setTimeout(() => {
-            navigate("/", { replace: true });
-          }, 500);
-        } else {
-          // No session and no error - might be a stale callback, redirect to login
-          logger.warn("OAuth callback with no session");
-          navigate("/login", { replace: true });
-        }
+        // Navigate to intended destination
+        navigate(desired, { replace: true, state: { from: location.pathname } });
       } catch (err) {
-        logger.error("Unexpected error in auth callback", err instanceof Error ? err : new Error(String(err)));
+        logger.error(
+          "Unexpected error in auth callback",
+          err instanceof Error ? err : new Error(String(err)),
+        );
         setError("An unexpected error occurred. Please try again.");
       }
     };
 
-    handleAuthCallback();
-  }, [navigate]);
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (error) {
     return (
@@ -81,10 +131,12 @@ const AuthCallback = () => {
           <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-destructive/10 flex items-center justify-center">
             <span className="text-destructive text-xl">!</span>
           </div>
-          <h2 className="text-xl font-semibold text-foreground mb-2">Sign In Failed</h2>
+          <h2 className="text-xl font-semibold text-foreground mb-2">
+            Sign In Failed
+          </h2>
           <p className="text-muted-foreground mb-6">{error}</p>
           <button
-            onClick={() => navigate("/login")}
+            onClick={() => navigate(ROUTES.LOGIN)}
             className="text-primary hover:underline font-medium"
           >
             Return to Login
@@ -95,13 +147,11 @@ const AuthCallback = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-        <p className="mt-4 text-muted-foreground">Completing sign in...</p>
+    <div className="min-h-screen flex items-center justify-center bg-black p-6">
+      <div className="flex items-center gap-3 text-white/80">
+        <Loader2 className="w-5 h-5 animate-spin text-purple-400" />
+        <span>Signing you in…</span>
       </div>
     </div>
   );
-};
-
-export default AuthCallback;
+}

@@ -20,7 +20,7 @@ import {
   Mic,
   MicOff,
 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { InlineWidget } from "react-calendly";
@@ -37,6 +37,59 @@ const InsightFusion = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    const SpeechRecognition =
+      (window as any).webkitSpeechRecognition ||
+      (window as any).SpeechRecognition;
+
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = "en-US";
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results?.[0]?.[0]?.transcript || "";
+      if (transcript.trim()) {
+        setQuery(transcript);
+        toast.success("Voice input captured!");
+      } else {
+        toast.info("No speech detected. Please try again.");
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error:", event?.error);
+      if (
+        event?.error === "not-allowed" ||
+        event?.error === "permission-denied"
+      ) {
+        toast.error(
+          "Microphone access denied. Please allow microphone permissions in your browser.",
+        );
+      } else {
+        toast.error(`Voice input error: ${event?.error || "unknown"}`);
+      }
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      try {
+        recognition.stop();
+      } catch {
+        // ignore
+      }
+    };
+  }, []);
 
   const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
     // Convert blob to base64 efficiently using FileReader
@@ -68,21 +121,28 @@ const InsightFusion = () => {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    const response = await fetch("/api/transcribe-audio", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        audio: base64Audio,
-        mimeType: audioBlob.type,
-      }),
-    });
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const response = await fetch(
+      `${supabaseUrl}/functions/v1/transcribe-audio`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          audio: base64Audio,
+          mimeType: audioBlob.type,
+        }),
+      },
+    );
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const errorMessage = errorData.error || `Transcription failed: ${response.status}`;
+      const errorMessage =
+        errorData.error || `Transcription failed: ${response.status}`;
 
-      if (errorMessage.includes("Authentication required") ||
-        errorMessage.includes("Invalid or expired token")) {
+      if (
+        errorMessage.includes("Authentication required") ||
+        errorMessage.includes("Invalid or expired token")
+      ) {
         throw new Error("AUTH_REQUIRED");
       }
       throw new Error(errorMessage);
@@ -94,12 +154,39 @@ const InsightFusion = () => {
 
   const handleVoiceInput = async () => {
     if (isListening) {
+      // Stop SpeechRecognition if active
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // ignore
+        }
+        setIsListening(false);
+        return;
+      }
+
       // Stop recording
       if (
         mediaRecorderRef.current &&
         mediaRecorderRef.current.state !== "inactive"
       ) {
         mediaRecorderRef.current.stop();
+        setIsListening(false);
+      }
+      return;
+    }
+
+    // Prefer SpeechRecognition when available (more reliable on many laptops)
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+        toast.info("Listening... Speak now");
+      } catch (error) {
+        console.error("Failed to start speech recognition:", error);
+        toast.error(
+          "Could not start voice input. Please check microphone permissions.",
+        );
         setIsListening(false);
       }
       return;
