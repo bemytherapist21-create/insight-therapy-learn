@@ -296,27 +296,42 @@ export function useGeminiLiveVoice(): UseGeminiLiveVoiceReturn {
         throw new Error("Please log in to use voice therapy");
       }
 
-      console.log("[Voice] Fetching API token...");
-      const tokenResponse = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gemini-live-token`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.session.access_token}`,
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      let activeApiKey = "";
+      try {
+        console.log("[Voice] Fetching API token via Supabase Edge Function...");
+        const tokenResponse = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gemini-live-token`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.session.access_token}`,
+              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            },
           },
-        },
-      );
+        );
 
-      if (!tokenResponse.ok) {
-        const errorData = await tokenResponse.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to get voice session token");
+        if (tokenResponse.ok) {
+          const { apiKey } = await tokenResponse.json();
+          if (apiKey) activeApiKey = apiKey;
+        } else {
+          console.warn("[Voice] Edge function returned non-OK status.");
+        }
+      } catch (err) {
+        console.warn("[Voice] Edge function call failed:", err);
       }
 
-      const { apiKey } = await tokenResponse.json();
-      if (!apiKey) {
-        throw new Error("No API key received");
+      if (!activeApiKey) {
+        console.log(
+          "[Voice] Falling back to local VITE_GEMINI_API_KEY environment variable...",
+        );
+        activeApiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
+      }
+
+      if (!activeApiKey) {
+        throw new Error(
+          "Voice therapy API key is missing. Please configure VITE_GEMINI_API_KEY locally or deploy the gemini-live-token edge function with Supabase.",
+        );
       }
 
       console.log("[Voice] Token received, requesting microphone...");
@@ -368,10 +383,10 @@ export function useGeminiLiveVoice(): UseGeminiLiveVoiceReturn {
 
       // Initialize Gemini Live
       console.log("[Voice] Connecting to Gemini Live...");
-      const ai = new GoogleGenAI({ apiKey });
+      const ai = new GoogleGenAI({ apiKey: activeApiKey });
 
       const sessionPromise = ai.live.connect({
-        model: "gemini-2.0-flash-exp",
+        model: "gemini-2.5-flash-native-audio-preview-12-2025",
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
