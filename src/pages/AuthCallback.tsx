@@ -44,7 +44,7 @@ export default function AuthCallback() {
             localStorage.getItem(AUTH_REDIRECT_STORAGE_KEY),
           ) ||
           sanitizeRedirectPath(localStorage.getItem(LAST_THERAPY_ROUTE_KEY)) ||
-          "/"; // Fallback to home on current origin
+          ROUTES.AI_THERAPY;
 
         // Clear stored redirect to avoid sticky redirects
         try {

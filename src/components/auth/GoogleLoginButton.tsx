@@ -26,50 +26,26 @@ export const GoogleLoginButton = ({
         safeRedirect ? `?redirect=${encodeURIComponent(safeRedirect)}` : ""
       }`;
 
-      // Detect if we're on a custom domain
-      const isCustomDomain =
-        !window.location.hostname.includes("lovable.app") &&
-        !window.location.hostname.includes("lovableproject.com") &&
-        !window.location.hostname.includes("localhost");
+      const isLocalhost =
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1";
 
-      if (
-        isCustomDomain ||
-        window.location.hostname === "theeverythingai.com" ||
-        window.location.hostname === "www.theeverythingai.com"
-      ) {
-        // Bypass auth-bridge for custom domains
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo: `https://www.theeverythingai.com${callbackPath}`,
-            skipBrowserRedirect: true,
-            queryParams: {
-              access_type: "offline",
-              prompt: "consent",
-            },
+      const redirectOrigin = isLocalhost
+        ? window.location.origin
+        : "https://www.theeverythingai.com";
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${redirectOrigin}${callbackPath}`,
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
           },
-        });
+        },
+      });
 
-        if (error) throw error;
-
-        if (data?.url) {
-          window.location.href = data.url;
-        }
-      } else {
-        // Normal flow for Lovable domains
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo: `${window.location.origin}${callbackPath}`,
-            queryParams: {
-              access_type: "offline",
-              prompt: "consent",
-            },
-          },
-        });
-
-        if (error) throw error;
-      }
+      if (error) throw error;
 
       logger.info("Google OAuth initiated successfully");
     } catch (error) {

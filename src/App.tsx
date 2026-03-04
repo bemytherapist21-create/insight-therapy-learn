@@ -18,6 +18,7 @@ import { HandGestureOverlay } from "@/components/gestures/HandGestureOverlay"; /
 import { Button } from "@/components/ui/button";
 import { Hand } from "lucide-react";
 import RouteTracker from "@/components/RouteTracker";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 // Lazy load pages for performance optimization
 const Home = lazy(() => import("./pages/Home"));
@@ -93,14 +94,29 @@ const App = () => {
                     path="/ai-therapy/voice-classic"
                     element={<GeminiVoiceTherapy />}
                   />
-                  <Route path="/insight-fusion" element={<InsightFusion />} />
+                  <Route
+                    path="/insight-fusion"
+                    element={
+                      <ProtectedRoute>
+                        <InsightFusion />
+                      </ProtectedRoute>
+                    }
+                  />
                   <Route
                     path="/insight-fusion/Generate/StrategicInsight"
-                    element={<StrategicInsight />}
+                    element={
+                      <ProtectedRoute>
+                        <StrategicInsight />
+                      </ProtectedRoute>
+                    }
                   />
                   <Route
                     path="/insight-fusion/PrecisionInsights"
-                    element={<PrecisionInsights />}
+                    element={
+                      <ProtectedRoute>
+                        <PrecisionInsights />
+                      </ProtectedRoute>
+                    }
                   />
                   <Route path="/ai-learning" element={<AILearning />} />
                   <Route path="/about" element={<Home />} />
@@ -160,6 +176,7 @@ const DomainGuard = () => {
       const newUrl = `https://www.theeverythingai.com${window.location.pathname}${window.location.search}${window.location.hash}`;
       if (window.location.href !== newUrl) {
         window.location.replace(newUrl);
+        return;
       }
     }
 
@@ -172,7 +189,7 @@ const DomainGuard = () => {
     ) {
       window.location.replace(`/auth/callback${window.location.search}${hash}`);
     }
-  }, [location, window.location.hash]);
+  }, [location]);
 
   return null;
 };
