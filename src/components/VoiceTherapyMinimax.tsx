@@ -17,6 +17,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useGeminiLiveVoice, VoicePersona } from "@/hooks/useGeminiLiveVoice";
 import { toast } from "sonner";
 import { useCountryDetection } from "@/hooks/useCountryDetection";
+import { CrisisResourcesBanner } from "@/components/safety/CrisisResourcesBanner";
 
 interface VoiceTherapyProps {
   onBack?: () => void;
@@ -399,11 +400,7 @@ export const VoiceTherapyMinimax = ({ onBack: _onBack }: VoiceTherapyProps) => {
 
       {/* Guardian Notice */}
       <div className="mt-6 p-4 bg-gradient-to-r from-purple-500/20 to-purple-600/20 rounded-lg border border-purple-500/30">
-        <p className="text-sm text-white/80 text-center">
-          🛡️ <strong>Project Guardian Protected</strong> - Powered by Gemini
-          Live for real-time voice therapy. If you're experiencing a crisis,
-          please contact the 988 Suicide &amp; Crisis Lifeline.
-        </p>
+        <CrisisResourcesBanner variant="minimal" />
       </div>
     </div>
   );
