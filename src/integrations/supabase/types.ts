@@ -200,6 +200,30 @@ export type Database = {
           },
         ]
       }
+      user_usage: {
+        Row: {
+          feature: string
+          id: string
+          last_used_at: string | null
+          usage_count: number
+          user_id: string
+        }
+        Insert: {
+          feature: string
+          id?: string
+          last_used_at?: string | null
+          usage_count?: number
+          user_id: string
+        }
+        Update: {
+          feature?: string
+          id?: string
+          last_used_at?: string | null
+          usage_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       voice_messages: {
         Row: {
           avatar_url: string | null
