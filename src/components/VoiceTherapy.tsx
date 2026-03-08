@@ -27,6 +27,7 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
+  const { canUse, remaining, showPaywall, setShowPaywall, incrementUsage } = useUsageGate("voice");
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
