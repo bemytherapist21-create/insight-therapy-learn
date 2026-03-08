@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Upload, Columns, Briefcase, BarChart3, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/safeClient";
+import { useUsageGate } from "@/hooks/useUsageGate";
+import { PaywallModal } from "@/components/PaywallModal";
 import FileUploader from "@/components/insights/FileUploader";
 import ColumnDefinitionForm from "@/components/insights/ColumnDefinitionForm";
 import BusinessContextForm from "@/components/insights/BusinessContextForm";
