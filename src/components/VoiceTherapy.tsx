@@ -9,6 +9,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/safeClient";
 import { toast } from "sonner";
 import { CrisisResourcesBanner } from "@/components/safety/CrisisResourcesBanner";
+import { useUsageGate } from "@/hooks/useUsageGate";
+import { PaywallModal } from "@/components/PaywallModal";
 
 // Voice Therapy - Gemini via Lovable AI (NO OpenAI, NO Browser Speech API)
 
