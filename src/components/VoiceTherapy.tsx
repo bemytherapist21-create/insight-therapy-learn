@@ -511,6 +511,7 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
       <div className="mt-6 p-4 bg-gradient-to-r from-purple-500/20 to-purple-600/20 rounded-lg border border-purple-500/30">
         <CrisisResourcesBanner variant="minimal" />
       </div>
+      <PaywallModal open={showPaywall} onOpenChange={setShowPaywall} feature="voice" />
     </div>
   );
 };
