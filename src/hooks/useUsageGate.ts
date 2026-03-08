@@ -65,8 +65,8 @@ export const useUsageGate = (feature: GatedFeature): UsageGateResult => {
     fetchUsage();
   }, [user, feature]);
 
-  const canUse = isSubscribed || usageCount < FREE_LIMIT;
-  const remaining = Math.max(0, FREE_LIMIT - usageCount);
+  const canUse = isWhitelisted || isSubscribed || usageCount < FREE_LIMIT;
+  const remaining = isWhitelisted ? Infinity : Math.max(0, FREE_LIMIT - usageCount);
 
   const incrementUsage = useCallback(async (): Promise<boolean> => {
     if (!user) return false;
