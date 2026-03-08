@@ -39,6 +39,7 @@ const PrecisionInsights = () => {
     const navigate = useNavigate();
     const [currentStep, setCurrentStep] = useState<Step>("upload");
     const [isProcessing, setIsProcessing] = useState(false);
+    const { canUse, remaining, showPaywall, setShowPaywall, incrementUsage } = useUsageGate("precision_insights");
     const [isGenerating, setIsGenerating] = useState(false);
     const [parsedStructure, setParsedStructure] = useState<ParsedStructure | null>(null);
     const [columnDefinitions, setColumnDefinitions] = useState<Record<string, string>>({});
