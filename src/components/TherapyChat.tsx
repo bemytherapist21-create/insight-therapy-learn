@@ -9,6 +9,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { CrisisResourcesBanner } from "@/components/safety/CrisisResourcesBanner";
 import { useCountryDetection } from "@/hooks/useCountryDetection";
+import { useUsageGate } from "@/hooks/useUsageGate";
+import { PaywallModal } from "@/components/PaywallModal";
 interface Message {
   role: "user" | "assistant";
   content: string;
