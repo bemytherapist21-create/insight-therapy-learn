@@ -262,11 +262,18 @@ const InsightFusion = () => {
     window.open(CALENDLY_URL, "_blank");
   };
 
-  const handleResearch = () => {
+  const handleResearch = async () => {
     if (!query.trim()) {
       toast.error("Please enter a research question");
       return;
     }
+
+    if (!canUse) {
+      setShowPaywall(true);
+      return;
+    }
+    const allowed = await incrementUsage();
+    if (!allowed) return;
 
     // Navigate to dedicated research page
     navigate(
