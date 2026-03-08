@@ -36,6 +36,7 @@ const InsightFusion = () => {
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
+  const { canUse, remaining, showPaywall, setShowPaywall, incrementUsage } = useUsageGate("research");
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
