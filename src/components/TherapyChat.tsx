@@ -240,10 +240,12 @@ export const TherapyChat = () => {
       </div>
 
       <p className="text-xs text-center text-muted-foreground">
+        {remaining > 0 && !canUse ? "" : remaining > 0 ? `${remaining} free session${remaining !== 1 ? "s" : ""} remaining · ` : ""}
         This AI provides supportive guidance but is not a replacement for
         professional therapy. Always consult a licensed mental health
         professional for serious concerns.
       </p>
-    </div>
+
+      <PaywallModal open={showPaywall} onOpenChange={setShowPaywall} feature="chat" />
   );
 };
