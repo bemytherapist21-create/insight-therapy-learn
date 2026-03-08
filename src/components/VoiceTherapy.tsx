@@ -90,6 +90,13 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
   };
 
   const startRecording = useCallback(async () => {
+    if (!canUse) {
+      setShowPaywall(true);
+      return;
+    }
+    const allowed = await incrementUsage();
+    if (!allowed) return;
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
