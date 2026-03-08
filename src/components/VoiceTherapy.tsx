@@ -9,6 +9,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/safeClient";
 import { toast } from "sonner";
 import { CrisisResourcesBanner } from "@/components/safety/CrisisResourcesBanner";
+import { useUsageGate } from "@/hooks/useUsageGate";
+import { PaywallModal } from "@/components/PaywallModal";
 
 // Voice Therapy - Gemini via Lovable AI (NO OpenAI, NO Browser Speech API)
 
@@ -25,6 +27,7 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
+  const { canUse, remaining, showPaywall, setShowPaywall, incrementUsage } = useUsageGate("voice");
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -87,6 +90,13 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
   };
 
   const startRecording = useCallback(async () => {
+    if (!canUse) {
+      setShowPaywall(true);
+      return;
+    }
+    const allowed = await incrementUsage();
+    if (!allowed) return;
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -501,6 +511,7 @@ export const VoiceTherapy = ({ onBack }: VoiceTherapyProps) => {
       <div className="mt-6 p-4 bg-gradient-to-r from-purple-500/20 to-purple-600/20 rounded-lg border border-purple-500/30">
         <CrisisResourcesBanner variant="minimal" />
       </div>
+      <PaywallModal open={showPaywall} onOpenChange={setShowPaywall} feature="voice" />
     </div>
   );
 };

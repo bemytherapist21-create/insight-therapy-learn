@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Upload, Columns, Briefcase, BarChart3, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/safeClient";
+import { useUsageGate } from "@/hooks/useUsageGate";
+import { PaywallModal } from "@/components/PaywallModal";
 import FileUploader from "@/components/insights/FileUploader";
 import ColumnDefinitionForm from "@/components/insights/ColumnDefinitionForm";
 import BusinessContextForm from "@/components/insights/BusinessContextForm";
@@ -37,6 +39,7 @@ const PrecisionInsights = () => {
     const navigate = useNavigate();
     const [currentStep, setCurrentStep] = useState<Step>("upload");
     const [isProcessing, setIsProcessing] = useState(false);
+    const { canUse, remaining, showPaywall, setShowPaywall, incrementUsage } = useUsageGate("precision_insights");
     const [isGenerating, setIsGenerating] = useState(false);
     const [parsedStructure, setParsedStructure] = useState<ParsedStructure | null>(null);
     const [columnDefinitions, setColumnDefinitions] = useState<Record<string, string>>({});
@@ -46,6 +49,13 @@ const PrecisionInsights = () => {
     const currentStepIndex = steps.findIndex((s) => s.id === currentStep);
 
     const handleFileProcessed = async (content: string, fileName: string) => {
+        if (!canUse) {
+            setShowPaywall(true);
+            return;
+        }
+        const allowed = await incrementUsage();
+        if (!allowed) return;
+
         setIsProcessing(true);
         setFileContent(content);
         try {
@@ -235,6 +245,7 @@ const PrecisionInsights = () => {
                     )}
                 </div>
             </div>
+        <PaywallModal open={showPaywall} onOpenChange={setShowPaywall} feature="precision_insights" />
         </div>
     );
 };

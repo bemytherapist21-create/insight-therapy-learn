@@ -26,6 +26,8 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { InlineWidget } from "react-calendly";
 import { supabase } from "@/integrations/supabase/safeClient";
+import { useUsageGate } from "@/hooks/useUsageGate";
+import { PaywallModal } from "@/components/PaywallModal";
 
 const CALENDLY_URL = "https://calendly.com/bhupeshpandey62/30min";
 
@@ -34,6 +36,7 @@ const InsightFusion = () => {
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
+  const { canUse, remaining, showPaywall, setShowPaywall, incrementUsage } = useUsageGate("research");
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -259,11 +262,18 @@ const InsightFusion = () => {
     window.open(CALENDLY_URL, "_blank");
   };
 
-  const handleResearch = () => {
+  const handleResearch = async () => {
     if (!query.trim()) {
       toast.error("Please enter a research question");
       return;
     }
+
+    if (!canUse) {
+      setShowPaywall(true);
+      return;
+    }
+    const allowed = await incrementUsage();
+    if (!allowed) return;
 
     // Navigate to dedicated research page
     navigate(
@@ -539,6 +549,7 @@ const InsightFusion = () => {
           </div>
         </div>
       </section>
+      <PaywallModal open={showPaywall} onOpenChange={setShowPaywall} feature="research" />
     </div>
   );
 };

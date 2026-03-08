@@ -9,6 +9,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { CrisisResourcesBanner } from "@/components/safety/CrisisResourcesBanner";
 import { useCountryDetection } from "@/hooks/useCountryDetection";
+import { useUsageGate } from "@/hooks/useUsageGate";
+import { PaywallModal } from "@/components/PaywallModal";
 interface Message {
   role: "user" | "assistant";
   content: string;
@@ -33,7 +35,7 @@ export const TherapyChat = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { resources, country } = useCountryDetection();
-
+  const { canUse, remaining, showPaywall, setShowPaywall, incrementUsage } = useUsageGate("chat");
   useEffect(() => {
     if (!authLoading && !user) {
       const currentPath = window.location.pathname;
@@ -51,6 +53,14 @@ export const TherapyChat = () => {
 
   const sendMessage = async () => {
     if (!input.trim() || loading || !user) return;
+
+    if (!canUse) {
+      setShowPaywall(true);
+      return;
+    }
+
+    const allowed = await incrementUsage();
+    if (!allowed) return;
 
     const userMessage = input.trim();
     setInput("");
@@ -230,10 +240,13 @@ export const TherapyChat = () => {
       </div>
 
       <p className="text-xs text-center text-muted-foreground">
+        {remaining > 0 && !canUse ? "" : remaining > 0 ? `${remaining} free session${remaining !== 1 ? "s" : ""} remaining · ` : ""}
         This AI provides supportive guidance but is not a replacement for
         professional therapy. Always consult a licensed mental health
         professional for serious concerns.
       </p>
+
+      <PaywallModal open={showPaywall} onOpenChange={setShowPaywall} feature="chat" />
     </div>
   );
 };
