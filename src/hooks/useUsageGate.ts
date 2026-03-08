@@ -70,7 +70,7 @@ export const useUsageGate = (feature: GatedFeature): UsageGateResult => {
 
   const incrementUsage = useCallback(async (): Promise<boolean> => {
     if (!user) return false;
-    if (isSubscribed) return true;
+    if (isWhitelisted || isSubscribed) return true;
 
     if (usageCount >= FREE_LIMIT) {
       setShowPaywall(true);
