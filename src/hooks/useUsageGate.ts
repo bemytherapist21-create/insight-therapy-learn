@@ -17,12 +17,15 @@ interface UsageGateResult {
   isSubscribed: boolean;
 }
 
+const WHITELISTED_EMAILS = ["bhupeshpandey62@gmail.com"];
+
 export const useUsageGate = (feature: GatedFeature): UsageGateResult => {
   const { user } = useAuth();
   const [usageCount, setUsageCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showPaywall, setShowPaywall] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const isWhitelisted = user?.email ? WHITELISTED_EMAILS.includes(user.email) : false;
 
   // Fetch usage count
   useEffect(() => {
@@ -62,12 +65,12 @@ export const useUsageGate = (feature: GatedFeature): UsageGateResult => {
     fetchUsage();
   }, [user, feature]);
 
-  const canUse = isSubscribed || usageCount < FREE_LIMIT;
-  const remaining = Math.max(0, FREE_LIMIT - usageCount);
+  const canUse = isWhitelisted || isSubscribed || usageCount < FREE_LIMIT;
+  const remaining = isWhitelisted ? Infinity : Math.max(0, FREE_LIMIT - usageCount);
 
   const incrementUsage = useCallback(async (): Promise<boolean> => {
     if (!user) return false;
-    if (isSubscribed) return true;
+    if (isWhitelisted || isSubscribed) return true;
 
     if (usageCount >= FREE_LIMIT) {
       setShowPaywall(true);
