@@ -247,5 +247,6 @@ export const TherapyChat = () => {
       </p>
 
       <PaywallModal open={showPaywall} onOpenChange={setShowPaywall} feature="chat" />
+    </div>
   );
 };
