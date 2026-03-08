@@ -245,6 +245,7 @@ const PrecisionInsights = () => {
                     )}
                 </div>
             </div>
+        <PaywallModal open={showPaywall} onOpenChange={setShowPaywall} feature="precision_insights" />
         </div>
     );
 };
