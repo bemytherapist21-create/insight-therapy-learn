@@ -54,6 +54,14 @@ export const TherapyChat = () => {
   const sendMessage = async () => {
     if (!input.trim() || loading || !user) return;
 
+    if (!canUse) {
+      setShowPaywall(true);
+      return;
+    }
+
+    const allowed = await incrementUsage();
+    if (!allowed) return;
+
     const userMessage = input.trim();
     setInput("");
     setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
