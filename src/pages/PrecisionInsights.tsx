@@ -49,6 +49,13 @@ const PrecisionInsights = () => {
     const currentStepIndex = steps.findIndex((s) => s.id === currentStep);
 
     const handleFileProcessed = async (content: string, fileName: string) => {
+        if (!canUse) {
+            setShowPaywall(true);
+            return;
+        }
+        const allowed = await incrementUsage();
+        if (!allowed) return;
+
         setIsProcessing(true);
         setFileContent(content);
         try {
