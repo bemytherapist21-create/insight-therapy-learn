@@ -35,7 +35,7 @@ export const TherapyChat = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { resources, country } = useCountryDetection();
-
+  const { canUse, remaining, showPaywall, setShowPaywall, incrementUsage } = useUsageGate("chat");
   useEffect(() => {
     if (!authLoading && !user) {
       const currentPath = window.location.pathname;
