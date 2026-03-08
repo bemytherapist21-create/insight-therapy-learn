@@ -549,7 +549,6 @@ const InsightFusion = () => {
           </div>
         </div>
       </section>
-    </div>
       <PaywallModal open={showPaywall} onOpenChange={setShowPaywall} feature="research" />
     </div>
   );
