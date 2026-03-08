@@ -17,12 +17,15 @@ interface UsageGateResult {
   isSubscribed: boolean;
 }
 
+const WHITELISTED_EMAILS = ["bhupeshpandey62@gmail.com"];
+
 export const useUsageGate = (feature: GatedFeature): UsageGateResult => {
   const { user } = useAuth();
   const [usageCount, setUsageCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showPaywall, setShowPaywall] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const isWhitelisted = user?.email ? WHITELISTED_EMAILS.includes(user.email) : false;
 
   // Fetch usage count
   useEffect(() => {
