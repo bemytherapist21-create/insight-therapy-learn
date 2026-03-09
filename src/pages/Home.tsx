@@ -16,6 +16,17 @@ import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Home = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    const hash = location.hash.replace("#", "");
+    if (hash) {
+      setTimeout(() => {
+        document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    }
+  }, [location]);
+
   const services = [
     {
       icon: Brain,
