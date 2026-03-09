@@ -44,6 +44,7 @@ const TherapistRegistration = lazy(
 );
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
+const BlackMirrorGadgets = lazy(() => import("./pages/BlackMirrorGadgets"));
 const PrecisionInsights = lazy(() => import("./pages/PrecisionInsights"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -133,6 +134,7 @@ const App = () => {
                     element={<TherapistRegistration />}
                   />
                   <Route path="/blog" element={<Blog />} />
+                  <Route path="/blog/black-mirror-gadgets" element={<BlackMirrorGadgets />} />
                   <Route path="/blog/:slug" element={<BlogPost />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />

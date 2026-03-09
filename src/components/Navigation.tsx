@@ -88,8 +88,26 @@ const Navigation = () => {
     { name: "Home", path: "/#", prominent: false },
     { name: "Services", path: "/#services", prominent: false },
     { name: "About", path: "/#about", prominent: false },
+    { name: "Blog", path: "/blog", prominent: false },
     { name: "Contact", path: "/#contact", prominent: false },
   ];
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, item: { name: string; path: string }) => {
+    if (item.path.startsWith("/#")) {
+      e.preventDefault();
+      const sectionId = item.path.replace("/#", "");
+      if (location.pathname === "/") {
+        if (sectionId) {
+          document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth" });
+        } else {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+      } else {
+        navigate("/" + (sectionId ? `#${sectionId}` : ""));
+      }
+      setIsOpen(false);
+    }
+  };
 
   const effectOptions = [
     {
@@ -277,6 +295,7 @@ const Navigation = () => {
                 <Link
                   key={item.name}
                   to={item.path}
+                  onClick={(e) => handleNavClick(e, item)}
                   className={`relative transition-all duration-300 ${
                     isActive(item.path)
                       ? "text-primary font-semibold"
@@ -394,7 +413,7 @@ const Navigation = () => {
                   <Link
                     key={item.name}
                     to={item.path}
-                    onClick={() => setIsOpen(false)}
+                    onClick={(e) => handleNavClick(e, item)}
                     className={`py-2 transition-colors ${
                       isActive(item.path)
                         ? "text-primary font-semibold"

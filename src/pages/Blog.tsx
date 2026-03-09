@@ -14,6 +14,17 @@ export interface BlogPostMeta {
 
 export const blogPosts: BlogPostMeta[] = [
     {
+        slug: "black-mirror-gadgets",
+        title: "Black Mirror Gadgets: What's Real, What's Coming, and What's Yours to Build",
+        excerpt:
+            "A classified technology assessment tracking every Black Mirror gadget — which ones already exist, which are in development, and which are wide open for first movers.",
+        date: "March 9, 2026",
+        readTime: "10 min read",
+        author: "The Everything AI",
+        coverGradient: "from-red-600 via-gray-900 to-black",
+        tags: ["Black Mirror", "Technology", "AI", "Future Tech"],
+    },
+    {
         slug: "unlock-antigravity-power-3-plugins",
         title: "How to Unlock 90% of Antigravity's Power Using 3 Simple Plugins",
         excerpt:
