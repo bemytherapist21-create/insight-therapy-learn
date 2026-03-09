@@ -232,7 +232,7 @@ export default function BlackMirrorGadgets() {
       background: "#000",
       color: "#fff",
       fontFamily: "'Courier New', monospace",
-      padding: "0",
+      paddingTop: "5rem",
       overflowX: "hidden",
     }}>
       {/* Scanline overlay */}

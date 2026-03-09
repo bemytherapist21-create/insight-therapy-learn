@@ -413,7 +413,7 @@ const Navigation = () => {
                   <Link
                     key={item.name}
                     to={item.path}
-                    onClick={() => setIsOpen(false)}
+                    onClick={(e) => handleNavClick(e, item)}
                     className={`py-2 transition-colors ${
                       isActive(item.path)
                         ? "text-primary font-semibold"
