@@ -211,7 +211,7 @@ const dangerColor = (val: number) => {
   return "#30d158";
 };
 
-const progressColor = (val) => {
+const progressColor = (val: number) => {
   if (val >= 60) return "#ff9500";
   if (val >= 35) return "#0a84ff";
   return "#30d158";
