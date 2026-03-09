@@ -217,7 +217,7 @@ const progressColor = (val: number) => {
   return "#30d158";
 };
 
-export default function App() {
+export default function BlackMirrorGadgets() {
   const [tab, setTab] = useState("created");
 
   const tabs = [
