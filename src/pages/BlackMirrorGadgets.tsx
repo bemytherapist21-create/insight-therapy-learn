@@ -205,7 +205,7 @@ const gadgets: { created: GadgetCreated[]; inProgress: GadgetInProgress[]; untou
   ],
 };
 
-const dangerColor = (val) => {
+const dangerColor = (val: number) => {
   if (val >= 85) return "#ff2d55";
   if (val >= 65) return "#ff9500";
   return "#30d158";
