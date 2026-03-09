@@ -1,6 +1,10 @@
 import { useState } from "react";
 
-const gadgets = {
+interface GadgetCreated { name: string; episode: string; real: string; danger: number; }
+interface GadgetInProgress { name: string; episode: string; real: string; progress: number; }
+interface GadgetUntouched { name: string; episode: string; idea: string; }
+
+const gadgets: { created: GadgetCreated[]; inProgress: GadgetInProgress[]; untouched: GadgetUntouched[] } = {
   created: [
     {
       name: "Social Credit Score",
