@@ -295,6 +295,7 @@ const Navigation = () => {
                 <Link
                   key={item.name}
                   to={item.path}
+                  onClick={(e) => handleNavClick(e, item)}
                   className={`relative transition-all duration-300 ${
                     isActive(item.path)
                       ? "text-primary font-semibold"
