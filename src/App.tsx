@@ -44,6 +44,7 @@ const TherapistRegistration = lazy(
 );
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
+const BlackMirrorGadgets = lazy(() => import("./pages/BlackMirrorGadgets"));
 const PrecisionInsights = lazy(() => import("./pages/PrecisionInsights"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
