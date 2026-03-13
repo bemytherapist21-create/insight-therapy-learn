@@ -52,6 +52,14 @@ const Home = () => {
       link: "/ai-learning",
       gradient: "from-orange-500 to-red-500",
     },
+    {
+      icon: Sparkles,
+      title: "Experimentation Products",
+      description:
+        "Try our cutting-edge experimental AI tools — from branded resume builders to more.",
+      link: "/experiments",
+      gradient: "from-emerald-500 to-teal-500",
+    },
   ];
 
   return (
