@@ -52,6 +52,14 @@ const Home = () => {
       link: "/ai-learning",
       gradient: "from-orange-500 to-red-500",
     },
+    {
+      icon: Sparkles,
+      title: "Experimentation Products",
+      description:
+        "Try our cutting-edge experimental AI tools — from branded resume builders to more.",
+      link: "/experiments",
+      gradient: "from-emerald-500 to-teal-500",
+    },
   ];
 
   return (
@@ -71,7 +79,7 @@ const Home = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
             {services.map((service, index) => (
               <ServiceCard key={service.title} {...service} index={index} />
             ))}

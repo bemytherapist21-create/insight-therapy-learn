@@ -46,6 +46,8 @@ const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 const BlackMirrorGadgets = lazy(() => import("./pages/BlackMirrorGadgets"));
 const PrecisionInsights = lazy(() => import("./pages/PrecisionInsights"));
+const Experiments = lazy(() => import("./pages/Experiments"));
+const ResumeForge = lazy(() => import("./pages/ResumeForge"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -136,6 +138,8 @@ const App = () => {
                   <Route path="/blog" element={<Blog />} />
                   <Route path="/blog/black-mirror-gadgets" element={<BlackMirrorGadgets />} />
                   <Route path="/blog/:slug" element={<BlogPost />} />
+                  <Route path="/experiments" element={<Experiments />} />
+                  <Route path="/experiments/resume-forge" element={<ResumeForge />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
