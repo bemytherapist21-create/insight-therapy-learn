@@ -276,18 +276,9 @@ const BlogPost = () => {
 
                 {/* Cover */}
                 <div
-                    className={`h-56 md:h-72 bg-gradient-to-br ${post.coverGradient} rounded-2xl flex items-end p-8 mb-8`}
+                    className={`h-56 md:h-72 bg-gradient-to-br ${post.gradient} rounded-2xl flex items-center justify-center mb-8`}
                 >
-                    <div className="flex flex-wrap gap-2">
-                        {post.tags.map((tag) => (
-                            <span
-                                key={tag}
-                                className="px-3 py-1 bg-white/20 backdrop-blur-sm text-white text-xs font-medium rounded-full"
-                            >
-                                {tag}
-                            </span>
-                        ))}
-                    </div>
+                    <post.icon className="w-16 h-16 text-white/80" />
                 </div>
 
                 {/* Title */}
