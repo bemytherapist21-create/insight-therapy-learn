@@ -42,31 +42,28 @@ const ResumeForge = () => {
   const [paymentLoading, setPaymentLoading] = useState(false);
 
   // Check if user already paid
-  const [initialCheckDone, setInitialCheckDone] = useState(false);
-  
-  if (!initialCheckDone) {
-    setInitialCheckDone(true);
-    if (user) {
-      (async () => {
-        try {
-          const { data } = await supabase
-            .from("product_purchases" as any)
-            .select("id")
-            .eq("user_id", user.id)
-            .eq("product_slug", PRODUCT_SLUG)
-            .eq("status", "paid")
-            .maybeSingle();
-          if (data) setHasPaid(true);
-        } catch {
-          // ignore
-        } finally {
-          setCheckingPayment(false);
-        }
-      })();
-    } else {
+  useEffect(() => {
+    if (!user) {
       setCheckingPayment(false);
+      return;
     }
-  }
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("product_purchases" as any)
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("product_slug", PRODUCT_SLUG)
+          .eq("status", "paid")
+          .maybeSingle();
+        if (data) setHasPaid(true);
+      } catch {
+        // ignore
+      } finally {
+        setCheckingPayment(false);
+      }
+    })();
+  }, [user]);
 
   const handlePayment = useCallback(async () => {
     if (!user) {
