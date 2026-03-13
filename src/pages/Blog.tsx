@@ -50,7 +50,7 @@ const Blog = () => {
             <div className="container mx-auto px-4 max-w-5xl">
                 {/* Header */}
                 <div className="text-center mb-16">
-                    <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-[#8A2BE2] to-[#FF8C00] bg-clip-text text-transparent mb-4">
+                    <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-[#8A2BE2] to-[#FF8C00] bg-clip-text text-transparent mb-4 pb-2">
                         Blog
                     </h1>
                     <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
