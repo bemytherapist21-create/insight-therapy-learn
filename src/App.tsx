@@ -138,6 +138,8 @@ const App = () => {
                   <Route path="/blog" element={<Blog />} />
                   <Route path="/blog/black-mirror-gadgets" element={<BlackMirrorGadgets />} />
                   <Route path="/blog/:slug" element={<BlogPost />} />
+                  <Route path="/experiments" element={<Experiments />} />
+                  <Route path="/experiments/resume-forge" element={<ResumeForge />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
