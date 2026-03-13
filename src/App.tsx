@@ -46,6 +46,8 @@ const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 const BlackMirrorGadgets = lazy(() => import("./pages/BlackMirrorGadgets"));
 const PrecisionInsights = lazy(() => import("./pages/PrecisionInsights"));
+const Experiments = lazy(() => import("./pages/Experiments"));
+const ResumeForge = lazy(() => import("./pages/ResumeForge"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
