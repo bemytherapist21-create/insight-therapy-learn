@@ -141,6 +141,7 @@ const App = () => {
                   <Route path="/blog/:slug" element={<BlogPost />} />
                   <Route path="/experiments" element={<Experiments />} />
                   <Route path="/experiments/resume-forge" element={<ResumeForge />} />
+                  <Route path="/admin/resume-generations" element={<AdminResumeGenerations />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
