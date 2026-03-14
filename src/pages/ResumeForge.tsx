@@ -179,7 +179,7 @@ const ResumeForge = () => {
           </p>
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-6">
             <p className="text-3xl font-bold text-foreground">
-              ₹99 <span className="text-sm font-normal text-muted-foreground">one-time</span>
+              ₹99 <span className="text-sm font-normal text-muted-foreground">per resume</span>
             </p>
           </div>
           <Button onClick={handlePayment} disabled={paymentLoading} className="w-full" size="lg">
