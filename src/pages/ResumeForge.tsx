@@ -41,7 +41,7 @@ const ResumeForge = () => {
   const [checkingPayment, setCheckingPayment] = useState(true);
   const [paymentLoading, setPaymentLoading] = useState(false);
 
-  // Check if user already paid
+  // Check if user has an unused (pending generation) purchase
   useEffect(() => {
     if (!user) {
       setCheckingPayment(false);
@@ -127,13 +127,23 @@ const ResumeForge = () => {
       if (error) throw error;
       setGeneratedHtml(data.html);
       toast.success("Resume generated!");
+      // Mark purchase as used so next generation requires new payment
+      if (user) {
+        await supabase
+          .from("product_purchases" as any)
+          .update({ status: "used" } as any)
+          .eq("user_id", user.id)
+          .eq("product_slug", PRODUCT_SLUG)
+          .eq("status", "paid");
+        setHasPaid(false);
+      }
     } catch (err) {
       console.error(err);
       toast.error("Generation failed. Please try again.");
     } finally {
       setGenerating(false);
     }
-  }, [resumeText, companyName, companyWebsite, jobDescription]);
+  }, [resumeText, companyName, companyWebsite, jobDescription, user]);
 
   const downloadHtml = () => {
     const blob = new Blob([generatedHtml], { type: "text/html" });
@@ -179,7 +189,7 @@ const ResumeForge = () => {
           </p>
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-6">
             <p className="text-3xl font-bold text-foreground">
-              ₹99 <span className="text-sm font-normal text-muted-foreground">one-time</span>
+              ₹99 <span className="text-sm font-normal text-muted-foreground">per resume</span>
             </p>
           </div>
           <Button onClick={handlePayment} disabled={paymentLoading} className="w-full" size="lg">
