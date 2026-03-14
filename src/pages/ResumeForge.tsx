@@ -41,7 +41,7 @@ const ResumeForge = () => {
   const [checkingPayment, setCheckingPayment] = useState(true);
   const [paymentLoading, setPaymentLoading] = useState(false);
 
-  // Check if user already paid
+  // Check if user has an unused (pending generation) purchase
   useEffect(() => {
     if (!user) {
       setCheckingPayment(false);
