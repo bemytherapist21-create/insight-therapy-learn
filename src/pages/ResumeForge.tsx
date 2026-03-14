@@ -121,12 +121,39 @@ const ResumeForge = () => {
     }
     setGenerating(true);
     try {
+      // Log generation start
+      let genId: string | null = null;
+      if (user) {
+        const { data: genRow } = await supabase
+          .from("resume_generations" as any)
+          .insert({
+            user_id: user.id,
+            user_email: user.email || "",
+            company_name: companyName,
+            company_website: companyWebsite || null,
+            job_description_snippet: jobDescription.slice(0, 200),
+            status: "generating",
+          } as any)
+          .select("id")
+          .single();
+        if (genRow) genId = (genRow as any).id;
+      }
+
       const { data, error } = await supabase.functions.invoke("generate-resume", {
         body: { resumeText, companyName, companyWebsite, jobDescription },
       });
       if (error) throw error;
       setGeneratedHtml(data.html);
       toast.success("Resume generated!");
+
+      // Mark generation as completed
+      if (user && genId) {
+        await supabase
+          .from("resume_generations" as any)
+          .update({ status: "completed" } as any)
+          .eq("id", genId);
+      }
+
       // Mark purchase as used so next generation requires new payment
       if (user) {
         await supabase
