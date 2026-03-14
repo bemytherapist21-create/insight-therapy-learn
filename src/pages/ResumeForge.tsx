@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/safeClient";
 import { Button } from "@/components/ui/button";
@@ -17,15 +17,21 @@ import {
   CheckCircle2,
   Lock,
   History,
+  Upload,
+  X,
 } from "lucide-react";
 
 const PRODUCT_SLUG = "resume-forge";
 const PRODUCT_PRICE = 9900; // ₹99 in paise
 
 const steps = [
-  { icon: FileText, label: "Resume", description: "Paste your resume" },
+  { icon: FileText, label: "Resume", description: "Upload or paste resume" },
   { icon: Building2, label: "Company", description: "Target company" },
-  { icon: ClipboardList, label: "Job Description", description: "Paste the JD" },
+  {
+    icon: ClipboardList,
+    label: "Job Description",
+    description: "Paste the JD",
+  },
   { icon: Sparkles, label: "Generate", description: "Get your resume" },
 ];
 
@@ -42,6 +48,87 @@ const ResumeForge = () => {
   const [checkingPayment, setCheckingPayment] = useState(true);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [pastGenerations, setPastGenerations] = useState<any[]>([]);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [fileProcessing, setFileProcessing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Extract text from an uploaded file (PDF, DOCX, or TXT)
+  const processUploadedFile = useCallback(async (file: File) => {
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      toast.error("File too large. Maximum size is 10MB.");
+      return;
+    }
+
+    setFileProcessing(true);
+    setUploadedFile(file);
+
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase();
+
+      if (ext === "txt") {
+        const text = await file.text();
+        setResumeText(text);
+        toast.success(`Loaded ${file.name}`);
+      } else if (ext === "pdf") {
+        // Use pdf.js from CDN to extract text
+        const pdfjsLib = await import(
+          "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/+esm" as any
+        );
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.worker.min.mjs";
+
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let fullText = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          const pageText = content.items.map((item: any) => item.str).join(" ");
+          fullText += pageText + "\n\n";
+        }
+        setResumeText(fullText.trim());
+        toast.success(
+          `Extracted text from ${file.name} (${pdf.numPages} pages)`,
+        );
+      } else if (ext === "docx") {
+        // Basic DOCX extraction: read XML inside the zip
+        // DOCX files are ZIP archives containing XML
+        const { BlobReader, ZipReader, TextWriter } = await import(
+          "https://cdn.jsdelivr.net/npm/@nicolo-ribaudo/zip.js@2.7.32/+esm" as any
+        );
+        const zipReader = new ZipReader(new BlobReader(file));
+        const entries = await zipReader.getEntries();
+        const documentEntry = entries.find(
+          (e: any) => e.filename === "word/document.xml",
+        );
+        if (!documentEntry) {
+          throw new Error("Invalid DOCX file");
+        }
+        const xmlText = await documentEntry.getData(new TextWriter());
+        await zipReader.close();
+        // Strip XML tags to get plain text
+        const plainText = xmlText
+          .replace(/<\/w:p>/g, "\n")
+          .replace(/<[^>]+>/g, "")
+          .replace(/\n{3,}/g, "\n\n")
+          .trim();
+        setResumeText(plainText);
+        toast.success(`Extracted text from ${file.name}`);
+      } else {
+        toast.error("Unsupported file type. Please upload PDF, DOCX, or TXT.");
+        setUploadedFile(null);
+      }
+    } catch (err) {
+      console.error("File processing error:", err);
+      toast.error(
+        "Failed to read file. Please try pasting your resume text instead.",
+      );
+      setUploadedFile(null);
+    } finally {
+      setFileProcessing(false);
+    }
+  }, []);
 
   // Check if user has an unused (pending generation) purchase
   useEffect(() => {
@@ -83,9 +170,17 @@ const ResumeForge = () => {
     }
     setPaymentLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("create-product-order", {
-        body: { userId: user.id, email: user.email, productSlug: PRODUCT_SLUG, amount: PRODUCT_PRICE },
-      });
+      const { data, error } = await supabase.functions.invoke(
+        "create-product-order",
+        {
+          body: {
+            userId: user.id,
+            email: user.email,
+            productSlug: PRODUCT_SLUG,
+            amount: PRODUCT_PRICE,
+          },
+        },
+      );
       if (error) throw error;
 
       const options = {
@@ -97,19 +192,24 @@ const ResumeForge = () => {
         order_id: data.orderId,
         prefill: { email: user.email || "" },
         handler: async (response: any) => {
-          const { error: verifyError } = await supabase.functions.invoke("verify-product-payment", {
-            body: {
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              userId: user.id,
-              productSlug: PRODUCT_SLUG,
+          const { error: verifyError } = await supabase.functions.invoke(
+            "verify-product-payment",
+            {
+              body: {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                userId: user.id,
+                productSlug: PRODUCT_SLUG,
+              },
             },
-          });
+          );
           if (verifyError) {
             toast.error("Payment verification failed");
           } else {
-            toast.success("Payment successful! You can now use Resume Brandifier.");
+            toast.success(
+              "Payment successful! You can now use Resume Brandifier.",
+            );
             setHasPaid(true);
           }
         },
@@ -150,9 +250,12 @@ const ResumeForge = () => {
         if (genRow) genId = (genRow as any).id;
       }
 
-      const { data, error } = await supabase.functions.invoke("generate-resume", {
-        body: { resumeText, companyName, companyWebsite, jobDescription },
-      });
+      const { data, error } = await supabase.functions.invoke(
+        "generate-resume",
+        {
+          body: { resumeText, companyName, companyWebsite, jobDescription },
+        },
+      );
       if (error) throw error;
       setGeneratedHtml(data.html);
       toast.success("Resume generated!");
@@ -198,8 +301,12 @@ const ResumeForge = () => {
       <div className="min-h-screen pt-24 pb-16 flex items-center justify-center">
         <Card className="glass-card max-w-md w-full text-center p-8">
           <Lock className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-          <h2 className="text-2xl font-bold text-foreground mb-2">Login Required</h2>
-          <p className="text-muted-foreground mb-6">Please sign in to use Resume Brandifier.</p>
+          <h2 className="text-2xl font-bold text-foreground mb-2">
+            Login Required
+          </h2>
+          <p className="text-muted-foreground mb-6">
+            Please sign in to use Resume Brandifier.
+          </p>
           <Button asChild>
             <a href="/login?redirect=/experiments/resume-forge">Sign In</a>
           </Button>
@@ -221,19 +328,32 @@ const ResumeForge = () => {
       <div className="min-h-screen pt-24 pb-16 flex items-center justify-center">
         <Card className="glass-card max-w-md w-full text-center p-8">
           <Sparkles className="w-12 h-12 mx-auto text-emerald-400 mb-4" />
-          <h2 className="text-2xl font-bold text-foreground mb-2">Resume Brandifier</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-2">
+            Resume Brandifier
+          </h2>
           <p className="text-muted-foreground mb-4">
-            Generate a stunning, company-branded HTML resume with 3-theme toggle.
+            Generate a stunning, company-branded HTML resume with 3-theme
+            toggle.
           </p>
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-6">
             <p className="text-3xl font-bold text-foreground">
-              ₹99 <span className="text-sm font-normal text-muted-foreground">per resume</span>
+              ₹99{" "}
+              <span className="text-sm font-normal text-muted-foreground">
+                per resume
+              </span>
             </p>
           </div>
-          <Button onClick={handlePayment} disabled={paymentLoading} className="w-full" size="lg">
+          <Button
+            onClick={handlePayment}
+            disabled={paymentLoading}
+            className="w-full"
+            size="lg"
+          >
             {paymentLoading ? "Loading..." : "Pay ₹99 & Unlock"}
           </Button>
-          <p className="text-xs text-muted-foreground mt-3">Secured by Razorpay. UPI, cards & wallets.</p>
+          <p className="text-xs text-muted-foreground mt-3">
+            Secured by Razorpay. UPI, cards & wallets.
+          </p>
         </Card>
       </div>
     );
@@ -274,17 +394,104 @@ const ResumeForge = () => {
         {currentStep === 0 && (
           <Card className="glass-card">
             <CardHeader>
-              <CardTitle>Step 1: Paste Your Resume</CardTitle>
+              <CardTitle>Step 1: Upload or Paste Your Resume</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* File Upload Zone */}
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const file = e.dataTransfer.files?.[0];
+                  if (file) processUploadedFile(file);
+                }}
+                className="relative border-2 border-dashed rounded-xl p-8 transition-all duration-300 border-white/20 hover:border-emerald-500/50 hover:bg-emerald-500/5 cursor-pointer text-center"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.docx,.doc,.txt"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) processUploadedFile(file);
+                    e.target.value = "";
+                  }}
+                  className="hidden"
+                />
+                {fileProcessing ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="w-10 h-10 text-emerald-400 animate-spin" />
+                    <p className="text-sm text-muted-foreground">
+                      Extracting text from file...
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-3">
+                    <Upload className="w-10 h-10 text-emerald-400" />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        Drop your resume here, or click to browse
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Supports PDF, DOCX, and TXT (max 10MB)
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Show uploaded file name */}
+              {uploadedFile && (
+                <div className="flex items-center justify-between p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-emerald-400" />
+                    <span className="text-sm font-medium text-foreground">
+                      {uploadedFile.name}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      ({(uploadedFile.size / 1024).toFixed(1)} KB)
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setUploadedFile(null);
+                      setResumeText("");
+                    }}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+
+              {/* Divider */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-white/10" />
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                  or paste below
+                </span>
+                <div className="flex-1 h-px bg-white/10" />
+              </div>
+
+              {/* Textarea for pasting or editing extracted text */}
               <Textarea
-                placeholder="Paste your resume text here..."
+                placeholder="Paste your resume text here, or upload a file above..."
                 value={resumeText}
                 onChange={(e) => setResumeText(e.target.value)}
-                rows={14}
+                rows={12}
                 className="bg-background/50"
               />
-              <Button onClick={() => setCurrentStep(1)} disabled={!resumeText.trim()}>
+              <Button
+                onClick={() => setCurrentStep(1)}
+                disabled={!resumeText.trim()}
+              >
                 Next →
               </Button>
             </CardContent>
@@ -313,7 +520,10 @@ const ResumeForge = () => {
                 <Button variant="outline" onClick={() => setCurrentStep(0)}>
                   ← Back
                 </Button>
-                <Button onClick={() => setCurrentStep(2)} disabled={!companyName.trim()}>
+                <Button
+                  onClick={() => setCurrentStep(2)}
+                  disabled={!companyName.trim()}
+                >
                   Next →
                 </Button>
               </div>
@@ -360,7 +570,9 @@ const ResumeForge = () => {
                 <p className="text-lg text-muted-foreground">
                   Generating your company-branded resume...
                 </p>
-                <p className="text-sm text-muted-foreground mt-2">This may take 30-60 seconds</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  This may take 30-60 seconds
+                </p>
               </Card>
             ) : generatedHtml ? (
               <>
@@ -383,8 +595,14 @@ const ResumeForge = () => {
               </>
             ) : (
               <Card className="glass-card p-8 text-center">
-                <p className="text-muted-foreground">Generation failed. Please try again.</p>
-                <Button onClick={() => setCurrentStep(2)} variant="outline" className="mt-4">
+                <p className="text-muted-foreground">
+                  Generation failed. Please try again.
+                </p>
+                <Button
+                  onClick={() => setCurrentStep(2)}
+                  variant="outline"
+                  className="mt-4"
+                >
                   ← Go Back
                 </Button>
               </Card>
@@ -405,14 +623,22 @@ const ResumeForge = () => {
                   className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30"
                 >
                   <div>
-                    <span className="font-medium text-foreground">{gen.company_name}</span>
+                    <span className="font-medium text-foreground">
+                      {gen.company_name}
+                    </span>
                     <span className="text-sm text-muted-foreground ml-3">
                       {new Date(gen.created_at).toLocaleDateString("en-IN", {
-                        day: "numeric", month: "short", year: "numeric",
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
                       })}
                     </span>
                   </div>
-                  <Badge variant={gen.status === "completed" ? "default" : "secondary"}>
+                  <Badge
+                    variant={
+                      gen.status === "completed" ? "default" : "secondary"
+                    }
+                  >
                     {gen.status}
                   </Badge>
                 </div>
