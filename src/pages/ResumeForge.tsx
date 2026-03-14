@@ -391,6 +391,35 @@ const ResumeForge = () => {
             )}
           </div>
         )}
+
+        {/* Past Generations */}
+        {pastGenerations.length > 0 && (
+          <div className="mt-12">
+            <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+              <History className="w-5 h-5" /> Your Past Generations
+            </h2>
+            <div className="grid gap-3">
+              {pastGenerations.map((gen: any) => (
+                <div
+                  key={gen.id}
+                  className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30"
+                >
+                  <div>
+                    <span className="font-medium text-foreground">{gen.company_name}</span>
+                    <span className="text-sm text-muted-foreground ml-3">
+                      {new Date(gen.created_at).toLocaleDateString("en-IN", {
+                        day: "numeric", month: "short", year: "numeric",
+                      })}
+                    </span>
+                  </div>
+                  <Badge variant={gen.status === "completed" ? "default" : "secondary"}>
+                    {gen.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
