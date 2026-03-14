@@ -151,7 +151,7 @@ const ResumeForge = () => {
         <Card className="glass-card max-w-md w-full text-center p-8">
           <Lock className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
           <h2 className="text-2xl font-bold text-foreground mb-2">Login Required</h2>
-          <p className="text-muted-foreground mb-6">Please sign in to use ResumeForge.</p>
+          <p className="text-muted-foreground mb-6">Please sign in to use Resume Brandifier.</p>
           <Button asChild>
             <a href="/login?redirect=/experiments/resume-forge">Sign In</a>
           </Button>
