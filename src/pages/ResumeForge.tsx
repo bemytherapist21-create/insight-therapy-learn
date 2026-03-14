@@ -195,7 +195,7 @@ const ResumeForge = () => {
     <div className="min-h-screen pt-24 pb-16">
       <div className="container mx-auto px-4 max-w-4xl">
         <h1 className="text-3xl md:text-4xl font-bold text-center bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent mb-8 pb-2">
-          ResumeForge
+          Resume Brandifier
         </h1>
 
         {/* Stepper */}

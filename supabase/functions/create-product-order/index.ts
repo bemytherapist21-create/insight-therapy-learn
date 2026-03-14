@@ -29,7 +29,7 @@ serve(async (req) => {
       body: JSON.stringify({
         amount,
         currency: "INR",
-        receipt: `prod_${productSlug}_${userId}_${Date.now()}`,
+        receipt: `p_${productSlug.slice(0, 10)}_${Date.now()}`,
         notes: { userId, email: email || "", productSlug },
       }),
     });
