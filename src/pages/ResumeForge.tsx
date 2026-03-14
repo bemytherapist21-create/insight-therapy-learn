@@ -173,7 +173,7 @@ const ResumeForge = () => {
       <div className="min-h-screen pt-24 pb-16 flex items-center justify-center">
         <Card className="glass-card max-w-md w-full text-center p-8">
           <Sparkles className="w-12 h-12 mx-auto text-emerald-400 mb-4" />
-          <h2 className="text-2xl font-bold text-foreground mb-2">ResumeForge</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-2">Resume Brandifier</h2>
           <p className="text-muted-foreground mb-4">
             Generate a stunning, company-branded HTML resume with 3-theme toggle.
           </p>
