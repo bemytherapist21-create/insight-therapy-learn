@@ -98,7 +98,7 @@ const ResumeForge = () => {
           if (verifyError) {
             toast.error("Payment verification failed");
           } else {
-            toast.success("Payment successful! You can now use ResumeForge.");
+            toast.success("Payment successful! You can now use Resume Brandifier.");
             setHasPaid(true);
           }
         },
