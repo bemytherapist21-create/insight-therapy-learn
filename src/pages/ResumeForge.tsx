@@ -16,6 +16,7 @@ import {
   Loader2,
   CheckCircle2,
   Lock,
+  History,
 } from "lucide-react";
 
 const PRODUCT_SLUG = "resume-forge";
