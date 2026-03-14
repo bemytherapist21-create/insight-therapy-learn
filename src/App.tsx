@@ -48,6 +48,7 @@ const BlackMirrorGadgets = lazy(() => import("./pages/BlackMirrorGadgets"));
 const PrecisionInsights = lazy(() => import("./pages/PrecisionInsights"));
 const Experiments = lazy(() => import("./pages/Experiments"));
 const ResumeForge = lazy(() => import("./pages/ResumeForge"));
+const AdminResumeGenerations = lazy(() => import("./pages/AdminResumeGenerations"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
