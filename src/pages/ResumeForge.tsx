@@ -127,13 +127,23 @@ const ResumeForge = () => {
       if (error) throw error;
       setGeneratedHtml(data.html);
       toast.success("Resume generated!");
+      // Mark purchase as used so next generation requires new payment
+      if (user) {
+        await supabase
+          .from("product_purchases" as any)
+          .update({ status: "used" } as any)
+          .eq("user_id", user.id)
+          .eq("product_slug", PRODUCT_SLUG)
+          .eq("status", "paid");
+        setHasPaid(false);
+      }
     } catch (err) {
       console.error(err);
       toast.error("Generation failed. Please try again.");
     } finally {
       setGenerating(false);
     }
-  }, [resumeText, companyName, companyWebsite, jobDescription]);
+  }, [resumeText, companyName, companyWebsite, jobDescription, user]);
 
   const downloadHtml = () => {
     const blob = new Blob([generatedHtml], { type: "text/html" });

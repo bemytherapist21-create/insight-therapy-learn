@@ -16,7 +16,7 @@ const products = [
     title: "Resume Brandifier",
     description:
       "Upload your resume, enter a target company & job description, and get a stunning company-branded HTML resume with 3-theme toggle.",
-    price: "₹99",
+    price: "₹99/resume",
     gradient: "from-emerald-500 to-teal-500",
     requiresLogin: true,
   },
