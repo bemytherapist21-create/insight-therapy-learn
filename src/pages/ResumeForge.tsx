@@ -82,7 +82,7 @@ const ResumeForge = () => {
         amount: data.amount,
         currency: data.currency,
         name: "The Everything AI",
-        description: "ResumeForge – One-time access",
+        description: "Resume Brandifier – One-time access",
         order_id: data.orderId,
         prefill: { email: user.email || "" },
         handler: async (response: any) => {
