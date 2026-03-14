@@ -394,7 +394,7 @@ const ResumeForge = () => {
         {currentStep === 0 && (
           <Card className="glass-card">
             <CardHeader>
-              <CardTitle>Step 1: Upload or Paste Your Resume</CardTitle>
+              <CardTitle>Step 1: Upload Your Resume</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* File Upload Zone */}
@@ -471,26 +471,11 @@ const ResumeForge = () => {
                 </div>
               )}
 
-              {/* Divider */}
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-white/10" />
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">
-                  or paste below
-                </span>
-                <div className="flex-1 h-px bg-white/10" />
-              </div>
-
-              {/* Textarea for pasting or editing extracted text */}
-              <Textarea
-                placeholder="Paste your resume text here, or upload a file above..."
-                value={resumeText}
-                onChange={(e) => setResumeText(e.target.value)}
-                rows={12}
-                className="bg-background/50"
-              />
+              {/* Next Button */}
               <Button
                 onClick={() => setCurrentStep(1)}
                 disabled={!resumeText.trim()}
+                className="w-full"
               >
                 Next →
               </Button>
