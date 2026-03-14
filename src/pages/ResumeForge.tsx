@@ -308,7 +308,7 @@ const ResumeForge = () => {
             Please sign in to use Resume Brandifier.
           </p>
           <Button asChild>
-            <a href="/login?redirect=/experiments/resume-forge">Sign In</a>
+            <a href="/login?redirect=/experiments/resume-brandifier">Sign In</a>
           </Button>
         </Card>
       </div>

@@ -48,7 +48,9 @@ const BlackMirrorGadgets = lazy(() => import("./pages/BlackMirrorGadgets"));
 const PrecisionInsights = lazy(() => import("./pages/PrecisionInsights"));
 const Experiments = lazy(() => import("./pages/Experiments"));
 const ResumeForge = lazy(() => import("./pages/ResumeForge"));
-const AdminResumeGenerations = lazy(() => import("./pages/AdminResumeGenerations"));
+const AdminResumeGenerations = lazy(
+  () => import("./pages/AdminResumeGenerations"),
+);
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -137,11 +139,20 @@ const App = () => {
                     element={<TherapistRegistration />}
                   />
                   <Route path="/blog" element={<Blog />} />
-                  <Route path="/blog/black-mirror-gadgets" element={<BlackMirrorGadgets />} />
+                  <Route
+                    path="/blog/black-mirror-gadgets"
+                    element={<BlackMirrorGadgets />}
+                  />
                   <Route path="/blog/:slug" element={<BlogPost />} />
                   <Route path="/experiments" element={<Experiments />} />
-                  <Route path="/experiments/resume-forge" element={<ResumeForge />} />
-                  <Route path="/admin/resume-generations" element={<AdminResumeGenerations />} />
+                  <Route
+                    path="/experiments/resume-brandifier"
+                    element={<ResumeForge />}
+                  />
+                  <Route
+                    path="/admin/resume-generations"
+                    element={<AdminResumeGenerations />}
+                  />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>

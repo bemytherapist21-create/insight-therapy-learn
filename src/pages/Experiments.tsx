@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 
 const products = [
   {
-    slug: "resume-forge",
+    slug: "resume-brandifier",
     icon: FileText,
     title: "Resume Brandifier",
     description:
@@ -31,7 +31,8 @@ const Experiments = () => {
             Experimentation Products
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Try our cutting-edge experimental AI tools. Each product is a standalone experience.
+            Try our cutting-edge experimental AI tools. Each product is a
+            standalone experience.
           </p>
         </div>
 
@@ -58,7 +59,10 @@ const Experiments = () => {
                       {product.price}
                     </Badge>
                     {product.requiresLogin && (
-                      <Badge variant="outline" className="text-xs flex items-center gap-1">
+                      <Badge
+                        variant="outline"
+                        className="text-xs flex items-center gap-1"
+                      >
                         <Lock className="w-3 h-3" /> Login Required
                       </Badge>
                     )}
