@@ -51,14 +51,23 @@ const ResumeForge = () => {
     }
     (async () => {
       try {
-        const { data } = await supabase
-          .from("product_purchases" as any)
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("product_slug", PRODUCT_SLUG)
-          .eq("status", "paid")
-          .maybeSingle();
-        if (data) setHasPaid(true);
+        const [purchaseRes, historyRes] = await Promise.all([
+          supabase
+            .from("product_purchases" as any)
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("product_slug", PRODUCT_SLUG)
+            .eq("status", "paid")
+            .maybeSingle(),
+          supabase
+            .from("resume_generations" as any)
+            .select("id, company_name, status, created_at")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false })
+            .limit(10),
+        ]);
+        if (purchaseRes.data) setHasPaid(true);
+        if (historyRes.data) setPastGenerations(historyRes.data as any[]);
       } catch {
         // ignore
       } finally {
