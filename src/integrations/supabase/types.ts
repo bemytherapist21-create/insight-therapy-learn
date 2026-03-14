@@ -192,6 +192,39 @@ export type Database = {
         }
         Relationships: []
       }
+      resume_generations: {
+        Row: {
+          company_name: string
+          company_website: string | null
+          created_at: string
+          id: string
+          job_description_snippet: string | null
+          status: string
+          user_email: string | null
+          user_id: string
+        }
+        Insert: {
+          company_name: string
+          company_website?: string | null
+          created_at?: string
+          id?: string
+          job_description_snippet?: string | null
+          status?: string
+          user_email?: string | null
+          user_id: string
+        }
+        Update: {
+          company_name?: string
+          company_website?: string | null
+          created_at?: string
+          id?: string
+          job_description_snippet?: string | null
+          status?: string
+          user_email?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       safety_violations: {
         Row: {
           action_taken: string

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/safeClient";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import {
   Loader2,
   CheckCircle2,
   Lock,
+  History,
 } from "lucide-react";
 
 const PRODUCT_SLUG = "resume-forge";
@@ -40,6 +41,7 @@ const ResumeForge = () => {
   const [hasPaid, setHasPaid] = useState(false);
   const [checkingPayment, setCheckingPayment] = useState(true);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [pastGenerations, setPastGenerations] = useState<any[]>([]);
 
   // Check if user has an unused (pending generation) purchase
   useEffect(() => {
@@ -49,14 +51,23 @@ const ResumeForge = () => {
     }
     (async () => {
       try {
-        const { data } = await supabase
-          .from("product_purchases" as any)
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("product_slug", PRODUCT_SLUG)
-          .eq("status", "paid")
-          .maybeSingle();
-        if (data) setHasPaid(true);
+        const [purchaseRes, historyRes] = await Promise.all([
+          supabase
+            .from("product_purchases" as any)
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("product_slug", PRODUCT_SLUG)
+            .eq("status", "paid")
+            .maybeSingle(),
+          supabase
+            .from("resume_generations" as any)
+            .select("id, company_name, status, created_at")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false })
+            .limit(10),
+        ]);
+        if (purchaseRes.data) setHasPaid(true);
+        if (historyRes.data) setPastGenerations(historyRes.data as any[]);
       } catch {
         // ignore
       } finally {
@@ -121,12 +132,39 @@ const ResumeForge = () => {
     }
     setGenerating(true);
     try {
+      // Log generation start
+      let genId: string | null = null;
+      if (user) {
+        const { data: genRow } = await supabase
+          .from("resume_generations" as any)
+          .insert({
+            user_id: user.id,
+            user_email: user.email || "",
+            company_name: companyName,
+            company_website: companyWebsite || null,
+            job_description_snippet: jobDescription.slice(0, 200),
+            status: "generating",
+          } as any)
+          .select("id")
+          .single();
+        if (genRow) genId = (genRow as any).id;
+      }
+
       const { data, error } = await supabase.functions.invoke("generate-resume", {
         body: { resumeText, companyName, companyWebsite, jobDescription },
       });
       if (error) throw error;
       setGeneratedHtml(data.html);
       toast.success("Resume generated!");
+
+      // Mark generation as completed
+      if (user && genId) {
+        await supabase
+          .from("resume_generations" as any)
+          .update({ status: "completed" } as any)
+          .eq("id", genId);
+      }
+
       // Mark purchase as used so next generation requires new payment
       if (user) {
         await supabase
@@ -351,6 +389,35 @@ const ResumeForge = () => {
                 </Button>
               </Card>
             )}
+          </div>
+        )}
+
+        {/* Past Generations */}
+        {pastGenerations.length > 0 && (
+          <div className="mt-12">
+            <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+              <History className="w-5 h-5" /> Your Past Generations
+            </h2>
+            <div className="grid gap-3">
+              {pastGenerations.map((gen: any) => (
+                <div
+                  key={gen.id}
+                  className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30"
+                >
+                  <div>
+                    <span className="font-medium text-foreground">{gen.company_name}</span>
+                    <span className="text-sm text-muted-foreground ml-3">
+                      {new Date(gen.created_at).toLocaleDateString("en-IN", {
+                        day: "numeric", month: "short", year: "numeric",
+                      })}
+                    </span>
+                  </div>
+                  <Badge variant={gen.status === "completed" ? "default" : "secondary"}>
+                    {gen.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
