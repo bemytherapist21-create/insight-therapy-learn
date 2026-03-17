@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FileText, Lock } from "lucide-react";
+import { FileText, Lock, Brain, ExternalLink } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -20,6 +20,17 @@ const products = [
     gradient: "from-emerald-500 to-teal-500",
     requiresLogin: true,
   },
+  {
+    slug: "open-mind",
+    icon: Brain,
+    title: "Open Mind",
+    description:
+      "Chat with 26+ open-source AI models — including GPT-OSS, DeepSeek R1, Qwen3, LLaMA, Mistral, vision models & more. Select any model, upload images, generate code, and explore AI freely.",
+    price: "FREE",
+    gradient: "from-violet-500 to-purple-600",
+    requiresLogin: false,
+    externalUrl: "http://141.148.202.95:8080",
+  },
 ];
 
 const Experiments = () => {
@@ -37,8 +48,8 @@ const Experiments = () => {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {products.map((product) => (
-            <Link key={product.slug} to={`/experiments/${product.slug}`}>
+          {products.map((product) => {
+            const cardContent = (
               <Card className="glass-card hover-lift cursor-pointer group animate-scale-in h-full">
                 <CardHeader className="text-center">
                   <div
@@ -46,15 +57,18 @@ const Experiments = () => {
                   >
                     <product.icon className="w-8 h-8 text-white" />
                   </div>
-                  <CardTitle className="text-2xl text-foreground group-hover:text-primary transition-colors">
+                  <CardTitle className="text-2xl text-foreground group-hover:text-primary transition-colors flex items-center justify-center gap-2">
                     {product.title}
+                    {product.externalUrl && (
+                      <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="text-center space-y-3">
                   <CardDescription className="text-muted-foreground">
                     {product.description}
                   </CardDescription>
-                  <div className="flex items-center justify-center gap-2">
+                  <div className="flex items-center justify-center gap-2 flex-wrap">
                     <Badge variant="secondary" className="text-sm">
                       {product.price}
                     </Badge>
@@ -66,11 +80,38 @@ const Experiments = () => {
                         <Lock className="w-3 h-3" /> Login Required
                       </Badge>
                     )}
+                    {product.externalUrl && (
+                      <Badge
+                        variant="outline"
+                        className="text-xs flex items-center gap-1 border-violet-500/50 text-violet-400"
+                      >
+                        26+ AI Models
+                      </Badge>
+                    )}
                   </div>
                 </CardContent>
               </Card>
-            </Link>
-          ))}
+            );
+
+            if (product.externalUrl) {
+              return (
+                <a
+                  key={product.slug}
+                  href={product.externalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {cardContent}
+                </a>
+              );
+            }
+
+            return (
+              <Link key={product.slug} to={`/experiments/${product.slug}`}>
+                {cardContent}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>
