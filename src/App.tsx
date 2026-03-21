@@ -48,6 +48,7 @@ const BlackMirrorGadgets = lazy(() => import("./pages/BlackMirrorGadgets"));
 const PrecisionInsights = lazy(() => import("./pages/PrecisionInsights"));
 const Experiments = lazy(() => import("./pages/Experiments"));
 const ResumeForge = lazy(() => import("./pages/ResumeForge"));
+const OpenMind = lazy(() => import("./pages/OpenMind"));
 const AdminResumeGenerations = lazy(
   () => import("./pages/AdminResumeGenerations"),
 );
@@ -148,6 +149,10 @@ const App = () => {
                   <Route
                     path="/experiments/resume-brandifier"
                     element={<ResumeForge />}
+                  />
+                  <Route
+                    path="/experiments/open-mind"
+                    element={<OpenMind />}
                   />
                   <Route
                     path="/admin/resume-generations"

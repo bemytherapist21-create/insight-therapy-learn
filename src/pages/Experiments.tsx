@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FileText, Lock, Brain, ExternalLink } from "lucide-react";
+import { FileText, Lock, Brain } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -19,6 +19,7 @@ const products = [
     price: "₹99/resume",
     gradient: "from-emerald-500 to-teal-500",
     requiresLogin: true,
+    badge: null as string | null,
   },
   {
     slug: "open-mind",
@@ -29,7 +30,7 @@ const products = [
     price: "FREE",
     gradient: "from-violet-500 to-purple-600",
     requiresLogin: false,
-    externalUrl: "http://141.148.202.95:8080",
+    badge: "26+ AI Models",
   },
 ];
 
@@ -48,8 +49,8 @@ const Experiments = () => {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {products.map((product) => {
-            const cardContent = (
+          {products.map((product) => (
+            <Link key={product.slug} to={`/experiments/${product.slug}`}>
               <Card className="glass-card hover-lift cursor-pointer group animate-scale-in h-full">
                 <CardHeader className="text-center">
                   <div
@@ -57,11 +58,8 @@ const Experiments = () => {
                   >
                     <product.icon className="w-8 h-8 text-white" />
                   </div>
-                  <CardTitle className="text-2xl text-foreground group-hover:text-primary transition-colors flex items-center justify-center gap-2">
+                  <CardTitle className="text-2xl text-foreground group-hover:text-primary transition-colors">
                     {product.title}
-                    {product.externalUrl && (
-                      <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="text-center space-y-3">
@@ -80,38 +78,19 @@ const Experiments = () => {
                         <Lock className="w-3 h-3" /> Login Required
                       </Badge>
                     )}
-                    {product.externalUrl && (
+                    {product.badge && (
                       <Badge
                         variant="outline"
                         className="text-xs flex items-center gap-1 border-violet-500/50 text-violet-400"
                       >
-                        26+ AI Models
+                        {product.badge}
                       </Badge>
                     )}
                   </div>
                 </CardContent>
               </Card>
-            );
-
-            if (product.externalUrl) {
-              return (
-                <a
-                  key={product.slug}
-                  href={product.externalUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {cardContent}
-                </a>
-              );
-            }
-
-            return (
-              <Link key={product.slug} to={`/experiments/${product.slug}`}>
-                {cardContent}
-              </Link>
-            );
-          })}
+            </Link>
+          ))}
         </div>
       </div>
     </div>
