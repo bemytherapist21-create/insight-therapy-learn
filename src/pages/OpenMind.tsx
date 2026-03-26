@@ -27,7 +27,7 @@ const OpenMind = () => {
       }}
     >
       <iframe
-        src="http://141.148.202.95:8080"
+        src="https://openmind.theeverythingai.com"
         style={{
           width: "100%",
           height: "100%",

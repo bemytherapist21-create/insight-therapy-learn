@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FileText, Lock, Brain } from "lucide-react";
+import { FileText, Lock } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -23,14 +23,16 @@ const products = [
   },
   {
     slug: "open-mind",
-    icon: Brain,
+    icon: null as any,
     title: "Open Mind",
     description:
       "Chat with 26+ open-source AI models — including GPT-OSS, DeepSeek R1, Qwen3, LLaMA, Mistral, vision models & more. Select any model, upload images, generate code, and explore AI freely.",
     price: "FREE",
-    gradient: "from-violet-500 to-purple-600",
+    gradient: "from-cyan-500 to-teal-500",
     requiresLogin: false,
     badge: "26+ AI Models",
+    externalUrl: "https://openmind.theeverythingai.com",
+    logoUrl: "https://openmind.theeverythingai.com/logo.png",
   },
 ];
 
@@ -49,14 +51,18 @@ const Experiments = () => {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {products.map((product) => (
-            <Link key={product.slug} to={`/experiments/${product.slug}`}>
+          {products.map((product) => {
+            const cardContent = (
               <Card className="glass-card hover-lift cursor-pointer group animate-scale-in h-full">
                 <CardHeader className="text-center">
                   <div
-                    className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-r ${product.gradient} p-4 mb-4 group-hover:shadow-glow transition-all duration-300`}
+                    className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-r ${product.gradient} p-3 mb-4 group-hover:shadow-glow transition-all duration-300 flex items-center justify-center`}
                   >
-                    <product.icon className="w-8 h-8 text-white" />
+                    {(product as any).logoUrl ? (
+                      <img src={(product as any).logoUrl} alt={product.title} className="w-10 h-10 rounded-lg" />
+                    ) : (
+                      product.icon && <product.icon className="w-8 h-8 text-white" />
+                    )}
                   </div>
                   <CardTitle className="text-2xl text-foreground group-hover:text-primary transition-colors">
                     {product.title}
@@ -81,7 +87,7 @@ const Experiments = () => {
                     {product.badge && (
                       <Badge
                         variant="outline"
-                        className="text-xs flex items-center gap-1 border-violet-500/50 text-violet-400"
+                        className="text-xs flex items-center gap-1 border-teal-500/50 text-teal-400"
                       >
                         {product.badge}
                       </Badge>
@@ -89,8 +95,21 @@ const Experiments = () => {
                   </div>
                 </CardContent>
               </Card>
-            </Link>
-          ))}
+            );
+
+            if ((product as any).externalUrl) {
+              return (
+                <a key={product.slug} href={(product as any).externalUrl} target="_blank" rel="noopener noreferrer">
+                  {cardContent}
+                </a>
+              );
+            }
+            return (
+              <Link key={product.slug} to={`/experiments/${product.slug}`}>
+                {cardContent}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>
