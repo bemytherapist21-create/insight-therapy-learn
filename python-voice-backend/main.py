@@ -3,7 +3,7 @@ FastAPI Voice Therapy Backend
 Implements cd-irvan pipeline with Guardian Safety Framework
 """
 
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -13,24 +13,29 @@ from dotenv import load_dotenv
 import tempfile
 from guardian_safety import GuardianSafety, RiskLevel
 from minimax_service import MinimaxVoiceService
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 load_dotenv()
 
 app = FastAPI(title="Voice Therapy API", version="1.0.0")
 
+# Constants
+MAX_FILE_SIZE = 25 * 1024 * 1024  # 25MB
+ALLOWED_CONTENT_TYPES = ['audio/webm', 'audio/wav', 'audio/mp3', 'audio/mpeg', 'audio/ogg', 'audio/x-wav']
+
 # CORS middleware for React frontend - Secure configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:8080",  # Local Vite dev server
-        "http://localhost:5173",  # Alternative Vite port
-        "https://insight-therapy-learn.lovable.app",  # Production
-        "https://*.lovable.app",  # Preview deployments
+        "http://localhost:8080",
+        "http://localhost:5173",
+        "https://insight-therapy-learn.lovable.app",
+        "https://www.theeverythingai.com",
+        "https://theeverythingai.com",
     ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["POST", "GET", "OPTIONS"],
+    allow_headers=["authorization", "content-type", "x-client-info", "apikey"],
 )
 
 # Initialize OpenAI client
@@ -68,6 +73,23 @@ class VoiceResponse(BaseModel):
     crisis_detected: bool
 
 
+async def validate_audio_upload(audio: UploadFile) -> bytes:
+    """Validate audio file type and size, return content bytes."""
+    # Validate content type
+    if audio.content_type and audio.content_type not in ALLOWED_CONTENT_TYPES:
+        raise HTTPException(status_code=400, detail='Invalid file type. Allowed: webm, wav, mp3, mpeg, ogg')
+
+    # Read and validate size
+    content = await audio.read()
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=413, detail=f'File too large. Maximum {MAX_FILE_SIZE // (1024*1024)}MB allowed.')
+    
+    if len(content) == 0:
+        raise HTTPException(status_code=400, detail='Empty audio file.')
+
+    return content
+
+
 @app.get("/")
 async def root():
     return {"message": "Voice Therapy API with Guardian Safety", "status": "active"}
@@ -78,7 +100,7 @@ async def voice_therapy(
     audio: UploadFile = File(...),
     user_id: str = "",
     session_id: str = "",
-    message_history: str = "[]"  # JSON string of previous messages
+    message_history: str = "[]"
 ):
     """
     Complete voice therapy pipeline:
@@ -87,15 +109,18 @@ async def voice_therapy(
     3. Generate response (GPT with adaptive safety)
     4. Convert to speech (TTS)
     """
+    temp_audio_path = None
     
     try:
-        # Step 1: Save uploaded audio temporarily
+        # Validate and read audio
+        content = await validate_audio_upload(audio)
+        
+        # Save uploaded audio temporarily
         with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as temp_audio:
-            content = await audio.read()
             temp_audio.write(content)
             temp_audio_path = temp_audio.name
         
-        # Step 2: Transcribe with Whisper
+        # Transcribe with Whisper
         with open(temp_audio_path, "rb") as audio_file:
             transcript_response = client.audio.transcriptions.create(
                 model="whisper-1",
@@ -104,22 +129,18 @@ async def voice_therapy(
             )
         transcript = transcript_response if isinstance(transcript_response, str) else transcript_response.text
         
-        # Clean up temp audio file
-        os.unlink(temp_audio_path)
-        
-        # Step 3: Guardian Safety Analysis
+        # Guardian Safety Analysis
         safety_analysis = guardian.analyze_safety(transcript)
         
-        # Step 4: Get adaptive safety instructions
+        # Get adaptive safety instructions
         safety_instructions = guardian.get_safety_instructions(safety_analysis.risk_level)
         
-        # Step 5: Generate response with GPT
+        # Generate response with GPT
         messages = [
             {"role": "system", "content": safety_instructions},
             {"role": "user", "content": transcript}
         ]
         
-        # Add CBT therapeutic context
         cbt_context = """
         Use Cognitive Behavioral Therapy (CBT) techniques:
         - Ask open-ended questions
@@ -140,7 +161,7 @@ async def voice_therapy(
         
         response_text = chat_response.choices[0].message.content
         
-        # Step 6: Convert response to speech
+        # Convert response to speech
         tts_response = client.audio.speech.create(
             model="tts-1",
             voice="nova",
@@ -152,7 +173,6 @@ async def voice_therapy(
             tts_response.stream_to_file(temp_tts.name)
             tts_audio_path = temp_tts.name
         
-        # Return response with safety data
         return VoiceResponse(
             transcript=transcript,
             response=response_text,
@@ -168,13 +188,23 @@ async def voice_therapy(
             crisis_detected=safety_analysis.crisis_detected
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Voice therapy service temporarily unavailable.")
+    finally:
+        # Ensure temp files are cleaned up
+        if temp_audio_path and os.path.exists(temp_audio_path):
+            os.unlink(temp_audio_path)
 
 
 @app.get("/audio/{filename}")
 async def get_audio(filename: str):
     """Serve generated TTS audio files"""
+    # Validate filename to prevent path traversal
+    if '/' in filename or '\\' in filename or '..' in filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    
     audio_path = os.path.join(tempfile.gettempdir(), filename)
     if os.path.exists(audio_path):
         return FileResponse(audio_path, media_type="audio/mpeg")
@@ -186,14 +216,10 @@ async def voice_therapy_minimax(
     audio: UploadFile = File(...),
     user_id: str = "",
     session_id: str = "",
-    message_history: str = "[]"  # JSON string of previous messages
+    message_history: str = "[]"
 ):
     """
-    Voice therapy pipeline using Minimax AI:
-    1. Transcribe audio (Minimax ASR or Whisper fallback)
-    2. Analyze safety (Guardian)
-    3. Generate response (Minimax LLM with adaptive safety)
-    4. Convert to speech (Minimax TTS with cloned voice)
+    Voice therapy pipeline using Minimax AI.
     """
     
     if not minimax:
@@ -202,50 +228,43 @@ async def voice_therapy_minimax(
             detail="Minimax service not available. Check API key configuration."
         )
     
+    temp_audio_path = None
+    
     try:
-        # Step 1: Save uploaded audio temporarily
+        # Validate and read audio
+        content = await validate_audio_upload(audio)
+        
+        # Save uploaded audio temporarily
         with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as temp_audio:
-            content = await audio.read()
             temp_audio.write(content)
             temp_audio_path = temp_audio.name
         
-        # Step 2: Transcribe with Minimax (or fallback to Gemini)
+        # Transcribe with Minimax (or fallback to Gemini)
         try:
             transcript = minimax.speech_to_text(temp_audio_path)
         except Exception as e:
-            # Fallback to Gemini if Minimax fails
             print(f"Minimax ASR failed, using Gemini: {e}")
             
             import google.generativeai as genai
             genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
             
-            # Upload audio file to Gemini
             audio_file = genai.upload_file(temp_audio_path)
-            
-            # Use Gemini to transcribe
             model = genai.GenerativeModel("gemini-1.5-pro")
             result = model.generate_content([
                 "Transcribe this audio exactly. Return only the transcribed text, nothing else.",
                 audio_file
             ])
             transcript = result.text.strip()
-            print(f"Gemini transcription: {transcript}")
         
-        # Clean up temp audio file
-        os.unlink(temp_audio_path)
-        
-        # Step 3: Guardian Safety Analysis
+        # Guardian Safety Analysis
         safety_analysis = guardian.analyze_safety(transcript)
-        
-        # Step 4: Get adaptive safety instructions
         safety_instructions = guardian.get_safety_instructions(safety_analysis.risk_level)
         
-        # Step 5: Generate response with Minimax LLM
+        # Generate response with Minimax LLM
         messages = [
             {"role": "system", "content": safety_instructions}
         ]
         
-        # Add CBT therapeutic context
         cbt_context = """
         You are a compassionate AI therapist using Cognitive Behavioral Therapy (CBT) techniques:
         - Ask open-ended questions to understand deeply
@@ -266,11 +285,11 @@ async def voice_therapy_minimax(
             max_tokens=300
         )
         
-        # Step 6: Convert response to speech with cloned voice
+        # Convert response to speech with cloned voice
         audio_bytes = minimax.text_to_speech(
             text=response_text,
-            speed=1.0,  # Natural speaking speed
-            pitch=0     # Normal pitch (must be integer)
+            speed=1.0,
+            pitch=0
         )
         
         # Save TTS audio
@@ -278,7 +297,6 @@ async def voice_therapy_minimax(
             temp_tts.write(audio_bytes)
             tts_audio_path = temp_tts.name
         
-        # Return response with safety data
         return VoiceResponse(
             transcript=transcript,
             response=response_text,
@@ -294,8 +312,13 @@ async def voice_therapy_minimax(
             crisis_detected=safety_analysis.crisis_detected
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Voice therapy service temporarily unavailable.")
+    finally:
+        if temp_audio_path and os.path.exists(temp_audio_path):
+            os.unlink(temp_audio_path)
 
 
 @app.get("/health")
