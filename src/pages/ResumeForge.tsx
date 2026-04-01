@@ -12,7 +12,6 @@ import {
   Building2,
   ClipboardList,
   Sparkles,
-  Download,
   Loader2,
   CheckCircle2,
   Lock,
@@ -20,6 +19,8 @@ import {
   Upload,
   X,
 } from "lucide-react";
+import { GenerationProgress } from "@/components/resume/GenerationProgress";
+import { ResumePreview } from "@/components/resume/ResumePreview";
 
 const PRODUCT_SLUG = "resume-forge";
 const PRODUCT_PRICE = 9900; // ₹99 in paise
@@ -27,11 +28,7 @@ const PRODUCT_PRICE = 9900; // ₹99 in paise
 const steps = [
   { icon: FileText, label: "Resume", description: "Upload or paste resume" },
   { icon: Building2, label: "Company", description: "Target company" },
-  {
-    icon: ClipboardList,
-    label: "Job Description",
-    description: "Paste the JD",
-  },
+  { icon: ClipboardList, label: "Job Description", description: "Paste the JD" },
   { icon: Sparkles, label: "Generate", description: "Get your resume" },
 ];
 
@@ -54,7 +51,7 @@ const ResumeForge = () => {
 
   // Extract text from an uploaded file (PDF, DOCX, or TXT)
   const processUploadedFile = useCallback(async (file: File) => {
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       toast.error("File too large. Maximum size is 10MB.");
       return;
@@ -71,7 +68,6 @@ const ResumeForge = () => {
         setResumeText(text);
         toast.success(`Loaded ${file.name}`);
       } else if (ext === "pdf") {
-        // Use pdf.js from CDN to extract text
         const pdfjsLib = await import(
           "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/+esm" as any
         );
@@ -88,12 +84,8 @@ const ResumeForge = () => {
           fullText += pageText + "\n\n";
         }
         setResumeText(fullText.trim());
-        toast.success(
-          `Extracted text from ${file.name} (${pdf.numPages} pages)`,
-        );
+        toast.success(`Extracted text from ${file.name} (${pdf.numPages} pages)`);
       } else if (ext === "docx") {
-        // Basic DOCX extraction: read XML inside the zip
-        // DOCX files are ZIP archives containing XML
         const { BlobReader, ZipReader, TextWriter } = await import(
           "https://cdn.jsdelivr.net/npm/@nicolo-ribaudo/zip.js@2.7.32/+esm" as any
         );
@@ -102,12 +94,9 @@ const ResumeForge = () => {
         const documentEntry = entries.find(
           (e: any) => e.filename === "word/document.xml",
         );
-        if (!documentEntry) {
-          throw new Error("Invalid DOCX file");
-        }
+        if (!documentEntry) throw new Error("Invalid DOCX file");
         const xmlText = await documentEntry.getData(new TextWriter());
         await zipReader.close();
-        // Strip XML tags to get plain text
         const plainText = xmlText
           .replace(/<\/w:p>/g, "\n")
           .replace(/<[^>]+>/g, "")
@@ -121,16 +110,13 @@ const ResumeForge = () => {
       }
     } catch (err) {
       console.error("File processing error:", err);
-      toast.error(
-        "Failed to read file. Please try pasting your resume text instead.",
-      );
+      toast.error("Failed to read file. Please try pasting your resume text instead.");
       setUploadedFile(null);
     } finally {
       setFileProcessing(false);
     }
   }, []);
 
-  // Check if user has an unused (pending generation) purchase
   useEffect(() => {
     if (!user) {
       setCheckingPayment(false);
@@ -207,9 +193,7 @@ const ResumeForge = () => {
           if (verifyError) {
             toast.error("Payment verification failed");
           } else {
-            toast.success(
-              "Payment successful! You can now use Resume Brandifier.",
-            );
+            toast.success("Payment successful! You can now use Resume Brandifier.");
             setHasPaid(true);
           }
         },
@@ -231,8 +215,8 @@ const ResumeForge = () => {
       return;
     }
     setGenerating(true);
+    setGeneratedHtml("");
     try {
-      // Log generation start
       let genId: string | null = null;
       if (user) {
         const { data: genRow } = await supabase
@@ -256,11 +240,40 @@ const ResumeForge = () => {
           body: { resumeText, companyName, companyWebsite, jobDescription },
         },
       );
-      if (error) throw error;
+
+      if (error) {
+        // Try to parse the structured error from edge function
+        const errorBody = typeof error === "object" && "message" in error
+          ? error.message
+          : String(error);
+        throw new Error(errorBody);
+      }
+
+      // Check for error in response body (edge function returns 4xx/5xx with JSON)
+      if (data?.error) {
+        const code = data.code || "UNKNOWN";
+        if (code === "RATE_LIMITED") {
+          toast.error("Rate limit hit. Please wait a moment and try again.");
+        } else if (code === "CREDITS_EXHAUSTED") {
+          toast.error("AI credits exhausted. Please try again later.");
+        } else if (code.startsWith("MISSING_") || code.endsWith("_TOO_LONG")) {
+          toast.error(data.error);
+        } else {
+          toast.error(data.error || "Generation failed. Please try again.");
+        }
+        if (user && genId) {
+          await supabase
+            .from("resume_generations" as any)
+            .update({ status: "failed" } as any)
+            .eq("id", genId);
+        }
+        setGenerating(false);
+        return;
+      }
+
       setGeneratedHtml(data.html);
       toast.success("Resume generated!");
 
-      // Mark generation as completed
       if (user && genId) {
         await supabase
           .from("resume_generations" as any)
@@ -268,7 +281,6 @@ const ResumeForge = () => {
           .eq("id", genId);
       }
 
-      // Mark purchase as used so next generation requires new payment
       if (user) {
         await supabase
           .from("product_purchases" as any)
@@ -286,27 +298,13 @@ const ResumeForge = () => {
     }
   }, [resumeText, companyName, companyWebsite, jobDescription, user]);
 
-  const downloadHtml = () => {
-    const blob = new Blob([generatedHtml], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${companyName.replace(/\s+/g, "_")}_Resume.html`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
   if (!user) {
     return (
       <div className="min-h-screen pt-24 pb-16 flex items-center justify-center">
         <Card className="glass-card max-w-md w-full text-center p-8">
           <Lock className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-          <h2 className="text-2xl font-bold text-foreground mb-2">
-            Login Required
-          </h2>
-          <p className="text-muted-foreground mb-6">
-            Please sign in to use Resume Brandifier.
-          </p>
+          <h2 className="text-2xl font-bold text-foreground mb-2">Login Required</h2>
+          <p className="text-muted-foreground mb-6">Please sign in to use Resume Brandifier.</p>
           <Button asChild>
             <a href="/login?redirect=/experiments/resume-brandifier">Sign In</a>
           </Button>
@@ -327,28 +325,17 @@ const ResumeForge = () => {
     return (
       <div className="min-h-screen pt-24 pb-16 flex items-center justify-center">
         <Card className="glass-card max-w-md w-full text-center p-8">
-          <Sparkles className="w-12 h-12 mx-auto text-emerald-400 mb-4" />
-          <h2 className="text-2xl font-bold text-foreground mb-2">
-            Resume Brandifier
-          </h2>
+          <Sparkles className="w-12 h-12 mx-auto text-primary mb-4" />
+          <h2 className="text-2xl font-bold text-foreground mb-2">Resume Brandifier</h2>
           <p className="text-muted-foreground mb-4">
-            Generate a stunning, company-branded HTML resume with 3-theme
-            toggle.
+            Generate a stunning, company-branded HTML resume with 3-theme toggle.
           </p>
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-6">
             <p className="text-3xl font-bold text-foreground">
-              ₹99{" "}
-              <span className="text-sm font-normal text-muted-foreground">
-                per resume
-              </span>
+              ₹99 <span className="text-sm font-normal text-muted-foreground">per resume</span>
             </p>
           </div>
-          <Button
-            onClick={handlePayment}
-            disabled={paymentLoading}
-            className="w-full"
-            size="lg"
-          >
+          <Button onClick={handlePayment} disabled={paymentLoading} className="w-full" size="lg">
             {paymentLoading ? "Loading..." : "Pay ₹99 & Unlock"}
           </Button>
           <p className="text-xs text-muted-foreground mt-3">
@@ -362,7 +349,7 @@ const ResumeForge = () => {
   return (
     <div className="min-h-screen pt-24 pb-16">
       <div className="container mx-auto px-4 max-w-4xl">
-        <h1 className="text-3xl md:text-4xl font-bold text-center bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent mb-8 pb-2">
+        <h1 className="text-3xl md:text-4xl font-bold text-center bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-8 pb-2">
           Resume Brandifier
         </h1>
 
@@ -374,9 +361,9 @@ const ResumeForge = () => {
               onClick={() => i <= (generatedHtml ? 3 : 2) && setCurrentStep(i)}
               className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 i === currentStep
-                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                  ? "bg-primary/20 text-primary border border-primary/40"
                   : i < currentStep || (i === 3 && generatedHtml)
-                    ? "text-emerald-400/70"
+                    ? "text-primary/70"
                     : "text-muted-foreground"
               }`}
             >
@@ -390,26 +377,23 @@ const ResumeForge = () => {
           ))}
         </div>
 
-        {/* Step Content */}
+        {/* Step 1: Resume Upload + Paste */}
         {currentStep === 0 && (
           <Card className="glass-card">
             <CardHeader>
-              <CardTitle>Step 1: Upload Your Resume</CardTitle>
+              <CardTitle>Step 1: Your Resume</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* File Upload Zone */}
               <div
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                 onDrop={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   const file = e.dataTransfer.files?.[0];
                   if (file) processUploadedFile(file);
                 }}
-                className="relative border-2 border-dashed rounded-xl p-8 transition-all duration-300 border-white/20 hover:border-emerald-500/50 hover:bg-emerald-500/5 cursor-pointer text-center"
+                className="relative border-2 border-dashed rounded-xl p-8 transition-all duration-300 border-border hover:border-primary/50 hover:bg-primary/5 cursor-pointer text-center"
                 onClick={() => fileInputRef.current?.click()}
               >
                 <input
@@ -425,14 +409,12 @@ const ResumeForge = () => {
                 />
                 {fileProcessing ? (
                   <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="w-10 h-10 text-emerald-400 animate-spin" />
-                    <p className="text-sm text-muted-foreground">
-                      Extracting text from file...
-                    </p>
+                    <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                    <p className="text-sm text-muted-foreground">Extracting text from file...</p>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-3">
-                    <Upload className="w-10 h-10 text-emerald-400" />
+                    <Upload className="w-10 h-10 text-primary" />
                     <div>
                       <p className="text-sm font-medium text-foreground">
                         Drop your resume here, or click to browse
@@ -445,14 +427,12 @@ const ResumeForge = () => {
                 )}
               </div>
 
-              {/* Show uploaded file name */}
+              {/* Uploaded file indicator */}
               {uploadedFile && (
-                <div className="flex items-center justify-between p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10">
+                <div className="flex items-center justify-between p-3 rounded-lg border border-primary/30 bg-primary/10">
                   <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-emerald-400" />
-                    <span className="text-sm font-medium text-foreground">
-                      {uploadedFile.name}
-                    </span>
+                    <FileText className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium text-foreground">{uploadedFile.name}</span>
                     <span className="text-xs text-muted-foreground">
                       ({(uploadedFile.size / 1024).toFixed(1)} KB)
                     </span>
@@ -471,7 +451,24 @@ const ResumeForge = () => {
                 </div>
               )}
 
-              {/* Next Button */}
+              {/* Manual paste textarea */}
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground font-medium">
+                  Or paste your resume text below:
+                </p>
+                <Textarea
+                  placeholder="Paste your resume content here..."
+                  value={resumeText}
+                  onChange={(e) => setResumeText(e.target.value)}
+                  rows={10}
+                  className="bg-background/50"
+                  maxLength={50000}
+                />
+                <p className="text-xs text-muted-foreground text-right">
+                  {resumeText.length.toLocaleString()} / 50,000 characters
+                </p>
+              </div>
+
               <Button
                 onClick={() => setCurrentStep(1)}
                 disabled={!resumeText.trim()}
@@ -483,6 +480,7 @@ const ResumeForge = () => {
           </Card>
         )}
 
+        {/* Step 2: Company Info */}
         {currentStep === 1 && (
           <Card className="glass-card">
             <CardHeader>
@@ -494,6 +492,7 @@ const ResumeForge = () => {
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
                 className="bg-background/50"
+                maxLength={200}
               />
               <Input
                 placeholder="Company website (optional)"
@@ -505,10 +504,7 @@ const ResumeForge = () => {
                 <Button variant="outline" onClick={() => setCurrentStep(0)}>
                   ← Back
                 </Button>
-                <Button
-                  onClick={() => setCurrentStep(2)}
-                  disabled={!companyName.trim()}
-                >
+                <Button onClick={() => setCurrentStep(2)} disabled={!companyName.trim()}>
                   Next →
                 </Button>
               </div>
@@ -516,6 +512,7 @@ const ResumeForge = () => {
           </Card>
         )}
 
+        {/* Step 3: Job Description */}
         {currentStep === 2 && (
           <Card className="glass-card">
             <CardHeader>
@@ -528,7 +525,11 @@ const ResumeForge = () => {
                 onChange={(e) => setJobDescription(e.target.value)}
                 rows={14}
                 className="bg-background/50"
+                maxLength={20000}
               />
+              <p className="text-xs text-muted-foreground text-right">
+                {jobDescription.length.toLocaleString()} / 20,000 characters
+              </p>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setCurrentStep(1)}>
                   ← Back
@@ -547,49 +548,31 @@ const ResumeForge = () => {
           </Card>
         )}
 
+        {/* Step 4: Generation / Preview */}
         {currentStep === 3 && (
           <div className="space-y-4">
             {generating ? (
-              <Card className="glass-card p-12 text-center">
-                <Loader2 className="w-12 h-12 animate-spin mx-auto text-emerald-400 mb-4" />
-                <p className="text-lg text-muted-foreground">
-                  Generating your company-branded resume...
-                </p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  This may take 30-60 seconds
-                </p>
-              </Card>
+              <GenerationProgress />
             ) : generatedHtml ? (
-              <>
-                <div className="flex justify-between items-center">
-                  <Badge variant="secondary" className="text-sm">
-                    Preview
-                  </Badge>
-                  <Button onClick={downloadHtml} size="sm">
-                    <Download className="w-4 h-4 mr-2" /> Download HTML
-                  </Button>
-                </div>
-                <div className="rounded-lg border border-border overflow-hidden bg-white">
-                  <iframe
-                    srcDoc={generatedHtml}
-                    className="w-full min-h-[80vh] border-0"
-                    title="Generated Resume Preview"
-                    sandbox="allow-scripts"
-                  />
-                </div>
-              </>
+              <ResumePreview
+                html={generatedHtml}
+                companyName={companyName}
+                onRegenerate={handleGenerate}
+                regenerating={generating}
+              />
             ) : (
               <Card className="glass-card p-8 text-center">
                 <p className="text-muted-foreground">
                   Generation failed. Please try again.
                 </p>
-                <Button
-                  onClick={() => setCurrentStep(2)}
-                  variant="outline"
-                  className="mt-4"
-                >
-                  ← Go Back
-                </Button>
+                <div className="flex justify-center gap-2 mt-4">
+                  <Button onClick={() => setCurrentStep(2)} variant="outline">
+                    ← Go Back
+                  </Button>
+                  <Button onClick={handleGenerate}>
+                    <Sparkles className="w-4 h-4 mr-2" /> Retry
+                  </Button>
+                </div>
               </Card>
             )}
           </div>
@@ -608,9 +591,7 @@ const ResumeForge = () => {
                   className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30"
                 >
                   <div>
-                    <span className="font-medium text-foreground">
-                      {gen.company_name}
-                    </span>
+                    <span className="font-medium text-foreground">{gen.company_name}</span>
                     <span className="text-sm text-muted-foreground ml-3">
                       {new Date(gen.created_at).toLocaleDateString("en-IN", {
                         day: "numeric",
@@ -619,11 +600,7 @@ const ResumeForge = () => {
                       })}
                     </span>
                   </div>
-                  <Badge
-                    variant={
-                      gen.status === "completed" ? "default" : "secondary"
-                    }
-                  >
+                  <Badge variant={gen.status === "completed" ? "default" : "secondary"}>
                     {gen.status}
                   </Badge>
                 </div>
