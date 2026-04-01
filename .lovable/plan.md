@@ -1,49 +1,85 @@
 
 
-## Problem
+## Resume Brandifier — Assessment & Improvement Plan
 
-Resume Brandifier's edge function (`generate-resume`) has **two issues**:
+### Current State
+The feature works end-to-end: 4-step wizard, Razorpay payment, AI generation via Lovable AI Gateway, HTML preview in iframe, download. It's functional but has several areas where a fresh build would do better.
 
-1. **Wrong Gemini model name** — It calls `gemini-2.5-flash-preview-05-20` which is outdated/invalid. The `GOOGLE_AI_API_KEY` secret exists, so this path runs first and fails.
+### What's Good
+- Payment flow with Razorpay is solid
+- PDF/DOCX/TXT file upload with client-side extraction
+- Generation tracking in the database
+- The AI prompt is detailed and produces themed resumes
 
-2. **Wrong fallback URL** — The Lovable AI fallback uses the old `https://api.lovable.dev/v1/chat/completions` instead of the correct `https://ai.gateway.lovable.dev/v1/chat/completions` (which therapy-chat, analyze-emotion, and transcribe-audio all use successfully).
+### What Needs Improvement
 
-3. **Missing config.toml entry** — `generate-resume` is not listed in `supabase/config.toml`, so JWT verification may block requests.
+**1. No textarea for manual resume input**
+The upload zone exists, but there's no visible textarea to paste resume text manually. Users who don't have a file ready are stuck.
 
-## Plan
+**2. No loading progress or streaming feedback**
+Generation takes 30-60 seconds with just a spinner. A progress indicator or streaming would make it feel much faster.
 
-### 1. Rewrite `generate-resume` edge function to use Lovable AI Gateway
+**3. Preview is basic**
+The iframe preview has no controls — no fullscreen, no "open in new tab", no print button. The download only offers HTML.
 
-- Remove the direct Google Gemini API path entirely — no need for a separate `GOOGLE_AI_API_KEY` code path
-- Use `LOVABLE_API_KEY` with `https://ai.gateway.lovable.dev/v1/chat/completions` (same pattern as therapy-chat and other working functions)
-- Use model `google/gemini-2.5-flash` (appropriate for large HTML generation)
-- Handle 429/402 rate limit errors properly
+**4. Edge function has no input validation**
+The function accepts any length of resumeText and jobDescription with no limits, which could cause AI token overflows or abuse.
 
-### 2. Add `generate-resume` to `supabase/config.toml`
+**5. No error specificity on the frontend**
+All errors show "Generation failed. Please try again" — no distinction between rate limits, payment issues, or AI failures.
 
-```toml
-[functions.generate-resume]
-verify_jwt = false
-```
+**6. Single-file 639-line component**
+Everything lives in one massive file. A fresh project would split this into composable pieces.
+
+**7. No "regenerate" or "edit & retry" flow**
+After generation, users can't tweak inputs and regenerate without losing the current result.
+
+**8. The model could be upgraded**
+Using `gemini-2.5-flash` — upgrading to `gemini-2.5-pro` would produce higher quality HTML for this use case where quality matters more than speed.
+
+---
+
+### Implementation Plan
+
+#### Step 1: Add manual paste textarea alongside file upload
+- Show a textarea below the upload zone with "Or paste your resume text" label
+- Both methods populate the same `resumeText` state
+
+#### Step 2: Upgrade AI model and add input validation
+- **Edge function**: Switch to `google/gemini-2.5-pro` for better HTML output quality
+- Add input length limits: resumeText (50k chars), jobDescription (20k chars), companyName (200 chars)
+- Return specific error codes the frontend can act on
+
+#### Step 3: Better error handling on frontend
+- Parse error responses from the edge function and show specific toast messages for rate limits (429), payment (402), and validation errors
+- Show a "Try Again" button that preserves all inputs
+
+#### Step 4: Enhanced preview controls
+- Add "Open in New Tab", "Print", and "Fullscreen" buttons alongside Download
+- Add a "Regenerate" button that re-runs generation with current inputs
+
+#### Step 5: Refactor into smaller components
+- Extract: `ResumeUploadStep`, `CompanyInfoStep`, `JobDescriptionStep`, `ResumePreview`, `PaymentGate`
+- Keep the main page as an orchestrator
+
+#### Step 6: Add progress animation during generation
+- Replace the plain spinner with a multi-stage progress indicator ("Analyzing resume...", "Researching company brand...", "Designing layout...", "Generating HTML...")
+- Timed stages that advance every ~10 seconds to give visual feedback
 
 ### Technical Details
 
-The fix mirrors exactly how `therapy-chat/index.ts` calls the AI gateway:
-```typescript
-const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-  method: "POST",
-  headers: {
-    Authorization: `Bearer ${LOVABLE_API_KEY}`,
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    model: "google/gemini-2.5-flash",
-    messages: [...],
-    max_tokens: 16000,
-    temperature: 0.7,
-  }),
-});
-```
+**Edge function changes** (`supabase/functions/generate-resume/index.ts`):
+- Model: `google/gemini-2.5-pro`
+- Add Zod-style validation for input lengths
+- Return structured error objects: `{ error: string, code: string }`
 
-No new API keys needed — `LOVABLE_API_KEY` is already configured.
+**New component files**:
+- `src/components/resume/ResumeUploadStep.tsx`
+- `src/components/resume/CompanyInfoStep.tsx`
+- `src/components/resume/JobDescriptionStep.tsx`
+- `src/components/resume/ResumePreview.tsx`
+- `src/components/resume/PaymentGate.tsx`
+- `src/components/resume/GenerationProgress.tsx`
+
+**Main page** (`src/pages/ResumeForge.tsx`): Reduced to ~150 lines orchestrating the sub-components.
 
