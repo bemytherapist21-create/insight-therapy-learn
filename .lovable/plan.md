@@ -1,85 +1,58 @@
 
 
-## Resume Brandifier — Assessment & Improvement Plan
+## Fix Resume Quality: Embed the Opal HTML as a Few-Shot Template
 
-### Current State
-The feature works end-to-end: 4-step wizard, Razorpay payment, AI generation via Lovable AI Gateway, HTML preview in iframe, download. It's functional but has several areas where a fresh build would do better.
+### Problem
+The current Step 4 prompt describes what to build in prose. The AI interprets it loosely and produces inconsistent, mediocre HTML. The uploaded Opal Deloitte resume (423 lines) is the gold standard — it uses a precise CSS variable architecture, proper theme toggling, staggered animations, and clean semantic structure.
 
-### What's Good
-- Payment flow with Razorpay is solid
-- PDF/DOCX/TXT file upload with client-side extraction
-- Generation tracking in the database
-- The AI prompt is detailed and produces themed resumes
+### Root Cause
+No concrete example. The model needs to **see** the exact CSS/HTML architecture to replicate it consistently.
 
-### What Needs Improvement
+### Solution
+Embed a **condensed version of the Opal HTML** (~120 lines) directly into the Step 4 system prompt as a structural blueprint. The AI fills in the actual content and brand colors but follows the architecture exactly.
 
-**1. No textarea for manual resume input**
-The upload zone exists, but there's no visible textarea to paste resume text manually. Users who don't have a file ready are stuck.
+### Single file change: `supabase/functions/generate-resume/index.ts`
 
-**2. No loading progress or streaming feedback**
-Generation takes 30-60 seconds with just a spinner. A progress indicator or streaming would make it feel much faster.
+#### Replace the Step 4 `htmlSystemPrompt` with a template-driven prompt containing:
 
-**3. Preview is basic**
-The iframe preview has no controls — no fullscreen, no "open in new tab", no print button. The download only offers HTML.
+**1. The exact CSS variable pattern from the Opal resume:**
+```css
+.theme-default {
+  --color-primary: PRIMARY_HEX;
+  --color-accent: ACCENT_HEX;
+  --color-bg: BG_HEX;
+  --color-card-bg: CARD_HEX;
+  --color-text: TEXT_HEX;
+  --color-text-secondary: SECONDARY_TEXT_HEX;
+  --color-border: BORDER_HEX;
+  --color-heading: HEADING_HEX;
+}
+.theme-light { /* fixed professional blue */ }
+.theme-dark { /* fixed #121212 + #64FFDA */ }
+```
 
-**4. Edge function has no input validation**
-The function accepts any length of resumeText and jobDescription with no limits, which could cause AI token overflows or abuse.
+**2. The exact HTML structure skeleton:**
+- Sticky header with `bg-brand-card-bg/80 backdrop-blur-sm`
+- Hero section with `hero-gradient`, huge name, title, SVG contact icons
+- 3-column grid (`lg:grid-cols-3`): experience (col-span-2) + sidebar (col-span-1)
+- Experience cards: `bg-brand-card-bg p-6 rounded-lg shadow-md border border-brand-border hover:shadow-xl hover:-translate-y-1`
+- Skill tags: `rounded-full` pills with `hover:scale-105 hover:bg-ACCENT hover:text-white`
+- Section headers: `border-l-4 border-brand-heading pl-4`
+- "Why Company?" section with `border-l-4 border-brand-accent` italic block
+- Footer with company tagline
 
-**5. No error specificity on the frontend**
-All errors show "Generation failed. Please try again" — no distinction between rate limits, payment issues, or AI failures.
+**3. The exact JS pattern:**
+- `setTheme()` with `localStorage` persistence
+- `classList.toggle('active')` on buttons
+- Staggered `animationDelay` on `.animate-on-load` elements
 
-**6. Single-file 639-line component**
-Everything lives in one massive file. A fresh project would split this into composable pieces.
+**4. Tailwind config extension block** using `var(--color-*)` references
 
-**7. No "regenerate" or "edit & retry" flow**
-After generation, users can't tweak inputs and regenerate without losing the current result.
+#### Additional changes:
+- Increase `max_tokens` from 16,000 to 24,000 (Opal output is 423 lines)
+- Lower `temperature` from 0.7 to 0.4 (more consistent structural output)
+- Add explicit instruction: "Use CSS custom properties for ALL theme-dependent colors. NEVER hardcode colors on individual elements."
 
-**8. The model could be upgraded**
-Using `gemini-2.5-flash` — upgrading to `gemini-2.5-pro` would produce higher quality HTML for this use case where quality matters more than speed.
-
----
-
-### Implementation Plan
-
-#### Step 1: Add manual paste textarea alongside file upload
-- Show a textarea below the upload zone with "Or paste your resume text" label
-- Both methods populate the same `resumeText` state
-
-#### Step 2: Upgrade AI model and add input validation
-- **Edge function**: Switch to `google/gemini-2.5-pro` for better HTML output quality
-- Add input length limits: resumeText (50k chars), jobDescription (20k chars), companyName (200 chars)
-- Return specific error codes the frontend can act on
-
-#### Step 3: Better error handling on frontend
-- Parse error responses from the edge function and show specific toast messages for rate limits (429), payment (402), and validation errors
-- Show a "Try Again" button that preserves all inputs
-
-#### Step 4: Enhanced preview controls
-- Add "Open in New Tab", "Print", and "Fullscreen" buttons alongside Download
-- Add a "Regenerate" button that re-runs generation with current inputs
-
-#### Step 5: Refactor into smaller components
-- Extract: `ResumeUploadStep`, `CompanyInfoStep`, `JobDescriptionStep`, `ResumePreview`, `PaymentGate`
-- Keep the main page as an orchestrator
-
-#### Step 6: Add progress animation during generation
-- Replace the plain spinner with a multi-stage progress indicator ("Analyzing resume...", "Researching company brand...", "Designing layout...", "Generating HTML...")
-- Timed stages that advance every ~10 seconds to give visual feedback
-
-### Technical Details
-
-**Edge function changes** (`supabase/functions/generate-resume/index.ts`):
-- Model: `google/gemini-2.5-pro`
-- Add Zod-style validation for input lengths
-- Return structured error objects: `{ error: string, code: string }`
-
-**New component files**:
-- `src/components/resume/ResumeUploadStep.tsx`
-- `src/components/resume/CompanyInfoStep.tsx`
-- `src/components/resume/JobDescriptionStep.tsx`
-- `src/components/resume/ResumePreview.tsx`
-- `src/components/resume/PaymentGate.tsx`
-- `src/components/resume/GenerationProgress.tsx`
-
-**Main page** (`src/pages/ResumeForge.tsx`): Reduced to ~150 lines orchestrating the sub-components.
+### What stays the same
+Steps 1-3 (extract, brand analysis, content transform) remain unchanged. Only Step 4's prompt and parameters change.
 
