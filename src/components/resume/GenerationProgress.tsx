@@ -51,7 +51,7 @@ export const GenerationProgress = () => {
         </p>
       </div>
       <p className="text-xs text-muted-foreground">
-        Using premium AI model for highest quality output
+        4-step AI pipeline: Extract → Brand Analysis → Transform → Generate
       </p>
     </Card>
   );
