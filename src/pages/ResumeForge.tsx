@@ -125,6 +125,11 @@ const ResumeForge = () => {
       setCheckingPayment(false);
       return;
     }
+    if (isWhitelisted) {
+      setHasPaid(true);
+      setCheckingPayment(false);
+      return;
+    }
     (async () => {
       try {
         const [purchaseRes, historyRes] = await Promise.all([
