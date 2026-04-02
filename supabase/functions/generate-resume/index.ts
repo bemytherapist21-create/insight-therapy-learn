@@ -260,55 +260,193 @@ Output the fully transformed resume content as structured text with clear sectio
     // =========================================================
     console.log("[generate-resume] Step 4: Generating themed HTML...");
 
-    const htmlSystemPrompt = `You are an AI Web Developer specializing in premium, production-quality HTML resumes. Your task is to generate a single, self-contained HTML document.
+    const htmlSystemPrompt = `You are an elite HTML resume designer. Generate a single, self-contained HTML file that follows the EXACT architecture below. Do NOT deviate from this structure.
 
-CRITICAL VISUAL REQUIREMENTS:
-- Aesthetics are CRUCIAL. The resume must look AMAZING — premium, state-of-the-art design.
-- The user should be WOWED at first glance. Use best practices in modern web design.
-- Avoid generic colors. Use the EXACT brand colors from the brand analysis.
-- Use modern typography from Google Fonts as specified in the brand analysis.
-- Use smooth gradients, subtle micro-animations, hover effects.
-- Define a clear visual "vibe" that matches the company's actual product aesthetic.
-- Pay extra attention to readability and contrast.
+MANDATORY CSS/HTML ARCHITECTURE (follow precisely):
 
-LAYOUT:
-- Sticky header with candidate name (left) and 3 theme toggle buttons (right)
-- Hero section: name, title, contact — styled like the company's hero section
-- 2-column grid on desktop (experience left, skills/education right), single column on mobile
-- Max-width container (max-w-5xl)
-- Subtle entrance animations (fade-in, slide-up) on page load
-- Hover effects on skill tags and experience cards
-- Custom styled scrollbar matching the theme
+1. HEAD SETUP:
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=BRAND_FONT:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: { extend: {
+    colors: { brand: { primary: 'var(--color-primary)', accent: 'var(--color-accent)' }},
+    fontFamily: { sans: ['BRAND_FONT','sans-serif'], display: ['Inter','sans-serif'] },
+    animation: { 'fade-in-up': 'fadeInUp 0.6s ease-out forwards' },
+    keyframes: { fadeInUp: { '0%': { opacity:'0', transform:'translateY(20px)' }, '100%': { opacity:'1', transform:'translateY(0)' }}}
+  }}
+}
+</script>
 
-3-THEME TOGGLE (MANDATORY):
-1. [COMPANY_NAME] Theme (Default) — Company's exact brand colors, fonts, personality. The resume should feel like an easter egg from their design team.
-2. LIGHT Theme — Professional, clean white background. Blue accents. ATS-friendly. Segoe UI / Inter font.
-3. DARK Theme — Sleek dark mode (#121212 bg). Teal/cyan accents (#64FFDA). Inter font.
+2. CSS THEME SYSTEM (CRITICAL — use CSS custom properties for ALL colors):
+<style>
+::-webkit-scrollbar { width: 10px; }
+.theme-default::-webkit-scrollbar-thumb { background: var(--color-primary); border-radius: 5px; }
+.theme-light::-webkit-scrollbar-thumb { background: #ccc; border-radius: 5px; }
+.theme-dark::-webkit-scrollbar-thumb { background: #444; border-radius: 5px; }
 
-Toggle must:
-- Use pill-shaped button group in top-right corner
-- Apply smooth CSS transitions (0.4s ease) on all theme properties
-- Use CSS classes on <body> (theme-default, theme-light, theme-dark)
+body { transition: background-color 0.4s ease, color 0.4s ease; }
+.transition-all-custom { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 
-CONTENT SECTIONS (ALL REQUIRED):
-1. Hero/Header — Name (huge, bold), title, location, contact
-2. Professional Summary — In the company's voice
-3. Experience — Each role as a card with company, title, dates, bullet points with bold lead-ins
-4. Skills/Expertise — Grouped into categories with pill/tag styling
-5. Education — Clean, minimal
-6. Why [Company]? — Italic quote or highlighted block
-7. Footer — Subtle branding line in company's voice
+@media print {
+  .no-print { display: none !important; }
+  body { background: white !important; color: black !important; }
+  .section-card { border: 1px solid #eee !important; box-shadow: none !important; break-inside: avoid; }
+  header { position: static !important; }
+}
 
-TECHNICAL REQUIREMENTS:
-- Single self-contained HTML file
-- Tailwind CSS via CDN: <script src="https://cdn.tailwindcss.com"></script>
-- Google Fonts via <link> in <head>
-- Extend Tailwind config in a <script> block for custom fonts and colors
-- All theme switching in vanilla JavaScript
-- Print-friendly (@media print — hide nav, remove shadows, white bg, A4 layout, page-break-inside: avoid)
-- Semantic HTML5 structure
-- Custom scrollbar styling
-- Output ONLY raw HTML — no markdown fences, no explanation`;
+.glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+
+/* COMPANY THEME — use brand analysis colors */
+.theme-default { background-color: BG_COLOR; color: TEXT_COLOR; }
+.theme-default .accent-text { color: PRIMARY_COLOR; }
+.theme-default .accent-bg { background-color: PRIMARY_COLOR; }
+.theme-default .header-bg { background: rgba(BG_RGB, 0.95); backdrop-filter: blur(8px); color: HEADER_TEXT; }
+
+/* LIGHT THEME — fixed professional */
+.theme-light { background-color: #FAFAFA; color: #1a1a1a; }
+.theme-light .accent-text { color: #2563eb; }
+.theme-light .accent-bg { background-color: #2563eb; }
+.theme-light .header-bg { background: rgba(255,255,255,0.9); backdrop-filter: blur(8px); border-bottom: 1px solid #e5e7eb; color: #111; }
+
+/* DARK THEME — fixed sleek */
+.theme-dark { background-color: #0F172A; color: #F8FAFC; }
+.theme-dark .accent-text { color: #38BDF8; }
+.theme-dark .accent-bg { background-color: #38BDF8; }
+.theme-dark .header-bg { background: rgba(15,23,42,0.9); backdrop-filter: blur(8px); border-bottom: 1px solid #1E293B; color: white; }
+</style>
+
+3. BODY STRUCTURE (follow this exact layout):
+<body class="theme-default font-sans leading-relaxed">
+
+  <!-- STICKY HEADER -->
+  <header class="header-bg sticky top-0 z-50 py-4 px-6 lg:px-12 shadow-md no-print">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+      <h1 class="text-xl font-extrabold tracking-tighter uppercase font-display">CANDIDATE_NAME</h1>
+      <nav class="flex gap-2">
+        <button onclick="setTheme('default')" class="px-3 py-1.5 text-xs font-bold rounded-full border accent-bg uppercase tracking-widest">COMPANY</button>
+        <button onclick="setTheme('light')" class="px-3 py-1.5 text-xs font-bold rounded-full border border-gray-300 bg-white text-black uppercase tracking-widest">Light</button>
+        <button onclick="setTheme('dark')" class="px-3 py-1.5 text-xs font-bold rounded-full border border-gray-700 bg-gray-900 text-white uppercase tracking-widest">Dark</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 lg:px-12 pt-12 pb-24 space-y-20">
+
+    <!-- HERO — gradient bg with brand colors at low opacity -->
+    <section class="rounded-3xl p-8 md:p-16 text-center space-y-6 animate-fade-in-up" style="background: linear-gradient(135deg, rgba(PRIMARY_RGB,0.1), rgba(ACCENT_RGB,0.05));">
+      <p class="accent-text font-bold tracking-[0.2em] uppercase text-sm">TITLE_TAGLINE</p>
+      <h2 class="text-4xl md:text-7xl font-extrabold font-display">CANDIDATE_NAME</h2>
+      <div class="flex flex-wrap justify-center gap-4 text-sm opacity-80">
+        <span>📍 LOCATION</span><span class="opacity-30">|</span><span>📧 EMAIL</span><span class="opacity-30">|</span><span>📞 PHONE</span>
+      </div>
+      <div class="max-w-3xl mx-auto text-lg italic opacity-90">SUMMARY_QUOTE</div>
+    </section>
+
+    <!-- 3-COLUMN GRID -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+
+      <!-- LEFT SIDEBAR (col-span-1): Summary, Skills grouped by category, Technical tags -->
+      <div class="lg:col-span-1 space-y-12">
+        <!-- Each section: -->
+        <section class="animate-fade-in-up" style="animation-delay: 0.Ns;">
+          <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+            <span class="h-8 w-1 accent-bg"></span> SECTION_TITLE
+          </h2>
+          <!-- Skills as grouped categories with accent-text headers -->
+          <!-- Tech tags as: <span class="px-3 py-1 bg-gray-200 dark:bg-gray-800 rounded-md text-xs font-semibold">SKILL</span> -->
+        </section>
+      </div>
+
+      <!-- RIGHT CONTENT (col-span-2): Experience, Education, Certs -->
+      <div class="lg:col-span-2 space-y-16">
+
+        <!-- EXPERIENCE — Timeline layout (CRITICAL) -->
+        <section class="animate-fade-in-up" style="animation-delay: 0.4s;">
+          <h2 class="text-3xl font-bold mb-8 flex items-center gap-4">
+            <span class="h-10 w-1 accent-bg"></span> Experience
+          </h2>
+          <div class="space-y-12">
+            <!-- Each role: -->
+            <article class="relative pl-8 border-l-2 border-gray-100 dark:border-gray-800 transition-all-custom hover:border-brand-primary">
+              <div class="absolute -left-[9px] top-0 h-4 w-4 rounded-full accent-bg"></div>
+              <div class="flex flex-col md:flex-row md:justify-between mb-4">
+                <div>
+                  <h3 class="text-xl font-extrabold">ROLE_TITLE</h3>
+                  <h4 class="text-lg font-semibold accent-text">COMPANY_NAME</h4>
+                </div>
+                <span class="text-sm font-bold opacity-60 uppercase tracking-widest">DATES</span>
+              </div>
+              <ul class="space-y-3 opacity-80 list-disc ml-5">
+                <li><strong>Bold lead-in:</strong> achievement detail with metrics.</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <!-- EDUCATION — hover cards -->
+        <section class="animate-fade-in-up" style="animation-delay: 0.5s;">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="p-6 rounded-2xl border border-gray-100 dark:border-gray-800 transition-all-custom hover:shadow-xl hover:-translate-y-1 bg-white/50 dark:bg-gray-900/20">
+              <div class="text-xs font-bold accent-text">YEAR</div>
+              <h3 class="text-lg font-bold">DEGREE</h3>
+              <p class="text-sm font-semibold">FIELD</p>
+              <p class="text-xs opacity-60">INSTITUTION</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- WHY COMPANY — highlighted block -->
+        <section class="p-6 rounded-xl border-l-4 accent-bg bg-gray-50 dark:bg-gray-900/50 italic opacity-90">
+          WHY_COMPANY_TEXT
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="text-center py-8 text-sm opacity-50 no-print">
+    Crafted for COMPANY_NAME • YEAR
+  </footer>
+
+  <script>
+    function setTheme(theme) {
+      const body = document.getElementById('body-root');
+      body.className = body.className.replace(/theme-\\S+/g, '');
+      body.classList.add('theme-' + theme);
+      localStorage.setItem('user-theme', theme);
+    }
+    window.addEventListener('DOMContentLoaded', () => {
+      setTheme(localStorage.getItem('user-theme') || 'default');
+    });
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('opacity-100');
+          entry.target.classList.remove('opacity-0');
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.animate-fade-in-up').forEach(el => {
+      el.classList.add('opacity-0', 'transition-all', 'duration-700');
+      el.style.transform = 'translateY(20px)';
+      observer.observe(el);
+    });
+  </script>
+</body>
+
+RULES:
+- Use CSS custom properties for ALL theme-dependent colors. NEVER hardcode colors on individual elements.
+- Use .accent-text and .accent-bg utility classes everywhere. No inline color styles.
+- Experience MUST use the border-l-2 timeline with absolute-positioned dots.
+- Education cards MUST have hover:shadow-xl hover:-translate-y-1.
+- Skill tags MUST use rounded-md px-3 py-1 text-xs font-semibold pattern.
+- Section headers MUST use the <span class="h-8 w-1 accent-bg"></span> bar pattern.
+- Stagger animation-delay values (0.1s, 0.2s, 0.3s...) on sections.
+- Output ONLY raw HTML. No markdown fences. No explanation.
+- The HTML must be complete and self-contained (400+ lines expected).`;
 
     const htmlUserPrompt = `Generate a company-branded HTML resume for ${companyName}.
 
@@ -321,7 +459,7 @@ ${brandAnalysis}
 ORIGINAL EXTRACTED RESUME (use for verbatim name/contact):
 ${extractedResume}
 
-IMPORTANT: Use the candidate's name, email, phone, and location EXACTLY as they appear in the extracted resume. Do not modify them.
+IMPORTANT: Use the candidate's name, email, phone, and location EXACTLY as they appear in the extracted resume. Do not modify them. Replace all placeholder values (PRIMARY_COLOR, BG_COLOR, BRAND_FONT, etc.) with actual values from the brand analysis.
 
 Output the complete HTML file now.`;
 
@@ -332,8 +470,8 @@ Output the complete HTML file now.`;
         PRO_MODEL,
         htmlSystemPrompt,
         htmlUserPrompt,
-        16000,
-        0.7,
+        24000,
+        0.4,
       );
     } catch (err: any) {
       if (err.status === 429) {
