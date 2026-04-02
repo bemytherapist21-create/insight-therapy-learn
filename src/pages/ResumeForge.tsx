@@ -32,8 +32,11 @@ const steps = [
   { icon: Sparkles, label: "Generate", description: "Get your resume" },
 ];
 
+const WHITELISTED_EMAILS = ["bhupeshpandey62@gmail.com"];
+
 const ResumeForge = () => {
   const { user } = useAuth();
+  const isWhitelisted = user?.email ? WHITELISTED_EMAILS.includes(user.email) : false;
   const [currentStep, setCurrentStep] = useState(0);
   const [resumeText, setResumeText] = useState("");
   const [companyName, setCompanyName] = useState("");
