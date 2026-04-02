@@ -4,11 +4,11 @@ import { Progress } from "@/components/ui/progress";
 import { Sparkles } from "lucide-react";
 
 const stages = [
-  { label: "Analyzing your resume...", duration: 8000 },
-  { label: "Researching company brand...", duration: 10000 },
-  { label: "Designing layout & themes...", duration: 12000 },
-  { label: "Generating HTML resume...", duration: 20000 },
-  { label: "Finalizing details...", duration: 15000 },
+  { label: "Step 1: Extracting resume data...", duration: 10000 },
+  { label: "Step 2: Analyzing company brand identity...", duration: 10000 },
+  { label: "Step 3: Transforming content with brand voice...", duration: 25000 },
+  { label: "Step 4: Generating themed HTML resume...", duration: 35000 },
+  { label: "Finalizing & polishing...", duration: 20000 },
 ];
 
 export const GenerationProgress = () => {
