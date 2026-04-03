@@ -6,6 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+<<<<<<< Updated upstream
 function errorResponse(msg: string, code: string, status = 400) {
   return new Response(JSON.stringify({ error: msg, code }), {
     status,
@@ -50,6 +51,60 @@ async function callAI(
 
   const result = await response.json();
   return result.choices?.[0]?.message?.content || "";
+=======
+// Helper function to call Gemini 2.5 Flash API
+async function callGemini(
+  apiKey: string,
+  systemPrompt: string,
+  userPrompt: string,
+  requireJson: boolean = false,
+  maxTokens: number = 8192
+) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+  const body: any = {
+    contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+    systemInstruction: { role: "system", parts: [{ text: systemPrompt }] },
+    generationConfig: {
+      maxOutputTokens: maxTokens,
+      temperature: 0.7,
+    },
+  };
+
+  if (requireJson) {
+    body.generationConfig.responseMimeType = "application/json";
+  }
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error(`Gemini API Error: ${errText}`);
+    throw new Error(`Gemini API failed [${response.status}]: ${errText}`);
+  }
+
+  const result = await response.json();
+  const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+  if (requireJson) {
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      // Fallback: strip markdown json blocks if Gemini ignores responseMimeType
+      const cleanText = text
+        .replace(/^```json\s*\n?/i, "")
+        .replace(/\n?```\s*$/i, "")
+        .trim();
+      return JSON.parse(cleanText);
+    }
+  }
+
+  return text;
+>>>>>>> Stashed changes
 }
 
 serve(async (req) => {
@@ -58,9 +113,17 @@ serve(async (req) => {
   }
 
   try {
+<<<<<<< Updated upstream
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       return errorResponse("Service temporarily unavailable", "CONFIG_ERROR", 500);
+=======
+    const GOOGLE_API_KEY =
+      Deno.env.get("GOOGLE_AI_API_KEY") || Deno.env.get("GEMINI_API_KEY");
+
+    if (!GOOGLE_API_KEY) {
+      throw new Error("GOOGLE_AI_API_KEY is not configured in Supabase secrets");
+>>>>>>> Stashed changes
     }
 
     const body = await req.json();
@@ -89,6 +152,7 @@ serve(async (req) => {
       return errorResponse("Company website URL is too long", "WEBSITE_TOO_LONG");
     }
 
+<<<<<<< Updated upstream
     const PRO_MODEL = "google/gemini-2.5-pro";
     const FLASH_MODEL = "google/gemini-2.5-flash";
 
@@ -234,10 +298,48 @@ ${extractedResume}
 
 COMPANY BRAND ANALYSIS:
 ${brandAnalysis}
+=======
+    console.log(`[generate-resume] Starting 4-Step Pipeline for: ${companyName}`);
 
-JOB DESCRIPTION:
-${jobDescription}
+    // =========================================================================
+    // STEP 1: Extract Resume Content
+    // =========================================================================
+    console.log("[generate-resume] Step 1: Extracting Resume JSON...");
+    const step1System = `Objective: Extract key information from the provided resume file. This includes the candidate's name, contact details such as email, phone number, and location, as well as their work experience, education, skills, and any other relevant sections found in the text.
 
+Output Format: Provide a structured JSON representation of the extracted resume content. Use clear keys for each section (e.g., name, contact, experience, education, skills, certifications, projects) to ensure the data is organized for further processing. Return plain JSON only.
+
+CRITICAL INSTRUCTION: Ensure you extract the candidate's name, email, and location verbatim. Do not infer or substitute elements.`;
+    
+    const step1User = `User Input / Context: \n${resumeText}`;
+    
+    const parsedResumeJson = await callGemini(GOOGLE_API_KEY, step1System, step1User, true);
+
+
+    // =========================================================================
+    // STEP 2: Analyze Company Brand
+    // =========================================================================
+    console.log("[generate-resume] Step 2: Analyzing Brand Identity...");
+    const step2System = `Objective: 
+Research and analyze the brand identity of the company provided in the input. Use your knowledge to identify the target company's brand colors, typography, UI design inspiration, brand voice, and any relevant metaphors or stylistic elements. Gather this information as if you searched publicly available sources such as the company website, design guidelines, and press kits.
+
+Output Format: 
+Return a JSON object containing primary_color, secondary_color, accent_color, background_color, google_font, secondary_font, design_theme, content_tone, ui_inspiration, and metaphors (experience, skills, education, certifications, summary, projects). Return plain JSON only.`;
+    
+    const step2User = `User Input / Context: \nCompany Name: ${companyName}\nCompany Website: ${companyWebsite || "N/A"}\nJob Description: ${jobDescription}`;
+    
+    const brandAnalysisJson = await callGemini(GOOGLE_API_KEY, step2System, step2User, true);
+
+>>>>>>> Stashed changes
+
+    // =========================================================================
+    // STEP 3: Transform Resume Content
+    // =========================================================================
+    console.log("[generate-resume] Step 3: Transforming Content to Brand Voice...");
+    const step3System = `Objective:
+Rewrite and optimize the provided resume content to align with a specific job description and company brand analysis. Tailor the keywords, phrasing, and professional highlights to ensure the resume is ATS-friendly and reflects the brand voice of the target company while maintaining a professional tone.
+
+<<<<<<< Updated upstream
 Output the fully transformed resume content as structured text with clear section headings. Use the brand metaphors for section headers. Keep all facts accurate.`,
         6000,
         0.6,
@@ -483,6 +585,124 @@ Output the complete HTML file now.`;
       console.error("[generate-resume] Step 4 failed:", err);
       return errorResponse("AI generation failed during HTML creation. Please try again.", "AI_ERROR", 502);
     }
+=======
+CRITICAL INSTRUCTION: Copy the candidate's "name" field verbatim from the input resume JSON into the output JSON without any rewording.
+
+Output Format:
+A cohesive, rewritten version of the resume content organized by standard resume sections (name, contact, experience, skills, education, etc) in a JSON object. Verify that all key requirements from the job description are addressed and the brand alignment is evident. Include a "why_company" string field demonstrating cultural fit. Return plain JSON only.`;
+
+    const step3User = `User Input / Context:
+Job Description: ${jobDescription}
+Company Brand Analysis: ${JSON.stringify(brandAnalysisJson)}
+Extracted Resume Content: ${JSON.stringify(parsedResumeJson)}`;
+    
+    const transformedResumeJson = await callGemini(GOOGLE_API_KEY, step3System, step3User, true);
+
+
+    // =========================================================================
+    // STEP 4: Generate Themed HTML
+    // =========================================================================
+    console.log("[generate-resume] Step 4: Generating Final HTML...");
+    
+    const step4System = `You are an AI Web Developer. Your task is to generate a single, self-contained HTML document for rendering in an iframe, based on user instructions and data.
+
+**Visual aesthetic:**
+    * Aesthetics are crucial. Make the page look amazing, especially on mobile.
+    * Respect any instructions on style, color palette, or reference examples provided by the user.
+    * **CRITICAL: Aim for premium, state-of-the-art designs. Avoid simple minimum viable products.**
+    * **Use Rich Aesthetics**: The USER should be wowed at first glance by the design. Use best practices in modern web design (e.g. vibrant colors, dark modes, glassmorphism, and dynamic animations) to create a stunning first impression. Failure to do this is UNACCEPTABLE.
+    * **Prioritize Visual Excellence**: Implement designs that will WOW the user and feel extremely premium:
+        - Avoid generic colors (plain red, blue, green). Use curated, harmonious color palettes (e.g., HSL tailored colors, sleek dark modes).
+        - Using modern typography (e.g., from Google Fonts like Inter, Roboto, or Outfit) instead of browser defaults.
+        - Use smooth gradients.
+        - Add subtle micro-animations for enhanced user experience.
+    * **Use a Dynamic Design**: An interface that feels responsive and alive encourages interaction. Achieve this with hover effects and interactive elements. Micro-animations, in particular, are highly effective for improving user engagement.
+    * **Thematic Specificity**: Do not just create a generic layout. Define a clear "vibe" or theme based on the content. Use specific aesthetic keywords (e.g., "Glassmorphism", "Neobrutalism", "Minimalist", "Comic Book Style") to guide the design.
+    * **Typography Hierarchy**: Explicitly import and use font pairings. Use a distinct Display Font for headers and a highly readable Body Font for text.
+    * **Readability**: Pay extra attention to readability. Ensure the text is always readable with sufficient contrast against the background. Choose fonts and colors that enhance legibility.
+
+**Design and Functionality:**
+    * **Component-Based Design**: Do not just dump text into blocks. Semanticize the content into distinct UI components.
+    * **Layout Dynamics**: Break the grid. Avoid strict, identical grid columns. Use asymmetrical layouts, Bento grids, or responsive flexbox layouts where some elements span full width to create visual interest and emphasize key content.
+    * **Tailwind Configuration**: Extend the Tailwind configuration within a \`<script>\` block to define custom font families and color palettes that match the theme.
+    * Thoroughly analyze the user's instructions to determine the desired type of webpage, application, or visualization. What are the key features, layouts, or functionality?
+    * Analyze any provided data to identify the most compelling layout or visualization of it. For example, if the user requests a visualization, select an appropriate chart type (bar, line, pie, scatter, etc.) to create the most insightful and visually compelling representation. Or if user instructions say \`use a carousel format\`, you should consider how to break the content and any media into different card components to display within the carousel.
+    * If requirements are underspecified, make reasonable assumptions to complete the design and functionality. Your goal is to deliver a working product with no placeholder content.
+    * Ensure the generated code is valid and functional. Return only the code, and open the HTML codeblock with the literal string "\`\`\`html".
+    * The output must be a complete and valid HTML document with no placeholder content for the developer to fill in.
+
+**Libraries:**
+  Unless otherwise specified, use:
+    * Tailwind for CSS
+    * **CRITICAL: Use the Tailwind CDN from \`https://cdn.tailwindcss.com\`. Do NOT use \`tailwind.min.css\` or any other local Tailwind file. Always include Tailwind using: \`<script src="https://cdn.tailwindcss.com"></script>\`**
+
+**Constraints:**
+  * **External Links:** You ARE allowed to generate external links (\`<a href="...">\` and \`window.open(...)\`) to external websites (e.g. google.com, wikipedia.org) for user navigation.
+  * **NO External Embeds:** Do NOT embed any external resources (e.g. \`<script src="...">\`, \`<img src="...">\`, \`<iframe src="...">\`, \`<link href="...">\`) from external URLs. Content Security Policy (CSP) will block them.
+  * **Media Restriction:** ONLY use media URLs that are explicitly passed in the input. Do NOT generate or hallucinate any other media URLs (e.g. from placeholder sites or external CDNs).
+  * **Render All Media:** You MUST render ALL media (images, videos, audio) that are passed in. Do NOT skip or omit any provided media items. Every passed-in media URL must appear in the final HTML output.
+  * **Navigation Restriction:** Do NOT generate unneeded fake links or buttons to sub-pages (e.g. "About", "Contact", "Learn More") unless explicitly requested. Stick to the plan and the provided content.
+  * **Footer Restriction:** **NEVER** generate any footer content, including legal footers like "All rights reserved" or "Copyright 2024". [It is a violation of Google's policies to hallucinate legal footers.]`;
+
+    const step4User = `Generate a comprehensive, production-quality HTML file for a themed resume, incorporating dynamic styling based on company brand analysis, responsive design, and theme toggling.
+
+**Layout Organization**:
+1.  **Overall Structure**: The webpage will consist of a full-width, sticky \`header\` element at the top, followed by a \`main\` content area.
+2.  **Header Layout**: The \`header\` will contain two primary sections:
+    *   The candidate's \`name\` (from \`extract_resume_content\`), prominently displayed, positioned to the left.
+    *   A group of three \`button\` elements positioned to the right, serving as theme toggles: '[company_name] Theme' (default), 'LIGHT Theme', and 'DARK Theme'.
+    *   The header must remain fixed at the top of the viewport (\`sticky\`).
+3.  **Main Content Area**: This area will house all resume content, structured for readability and scannability.
+    *   **Hero Section**: The very top of the \`main\` content will feature a visually impactful hero section. This section will display the candidate's \`name\`, \`email\`, and \`location\` (all verbatim from \`extract_resume_content\`) in a clear, accessible, and prominent manner, serving as an immediate introduction.
+    *   **Resume Sections**: The \`transformed_resume_content\` will be organized into distinct, semantic \`<section>\` elements (e.g., "Summary," "Experience," "Education," "Skills," "Projects").
+        *   Each section will have a clear \`<h2>\` heading.
+        *   Individual experience entries and educational achievements will be presented as separate blocks or card-like structures, detailing titles, organizations, dates, and key achievements or descriptions.
+        *   Skills can be categorized and displayed as a list or a series of styled tags/badges.
+    *   **Content Flow**: On mobile, use a clean, stacked, single-column layout. On larger screens, the \`main\` content should transition to a wider, single-column layout with generous side padding, or a two-column structure if appropriate for specific sections, to maximize readability and visual appeal.
+
+**Style Design Language**:
+1.  **Visual Design Approach**: "Adaptive Professionalism with Brand Integration."
+    *   **Default ([company_name] Theme)**: This theme will embody a "Modern & Stylish" and "Expressive" aesthetic. It will leverage the \`company_brand_analysis\` to create a unique, branded look with a "Wow Factor."
+    *   **LIGHT Theme**: This theme will be "Minimalist & Professional," prioritizing extreme readability and high contrast for ATS-friendliness.
+    *   **DARK Theme**: This theme will offer a "Modern & Professional" dark mode experience with comfortable contrast.
+2.  **Color Scheme**:
+    *   **Default ([company_name] Theme)**: Dynamically apply primary, secondary, and accent colors, along with corresponding text and background colors, directly from the \`analyze_company_brand\` input.
+    *   **LIGHT Theme**: Predominantly use a very light background (e.g., white or off-white) with dark grey or black text. A single, subtle accent color, potentially derived from the company brand analysis or a neutral professional tone, will be used sparingly for highlights or links.
+    *   **DARK Theme**: Feature a deep, rich dark background (e.g., charcoal, dark navy) with light, highly contrasting text. Company accent colors should be used judiciously for interactive elements or key highlights.
+3.  **Typography Style**:
+    *   **Default ([company_name] Theme)**: Headings will use the primary Google Font identified in \`analyze_company_brand\` to establish brand identity. Body text will use a highly readable, complementary sans-serif Google Font (from brand analysis if available, otherwise a common professional sans-serif like Lato or Roboto).
+    *   **LIGHT Theme**: A clean, universally readable sans-serif font (e.g., Lato, Roboto, Open Sans) for all text, prioritizing clarity and legibility for ATS compatibility.
+    *   **DARK Theme**: Typography consistent with the default theme, ensuring optimal legibility against dark backgrounds.
+    *   All fonts must be loaded from Google Fonts (as specified in \`company_brand_analysis\`) and be scalable for responsiveness.
+4.  **Spacing and Layout Principles**: Employ generous whitespace throughout the design to enhance readability, provide visual breathing room, and convey a premium feel. Maintain consistent padding and margins across all sections and components. Content should be well-organized, with a clear visual hierarchy that guides the reader's eye.
+5.  **Aesthetic Goal**: "Adaptive Professionalism with Brand Integration." The resume should appear custom-tailored, contemporary, and trustworthy, reflecting the candidate's professionalism while seamlessly adapting to various viewing preferences and aligning with the target company's brand.
+
+**Component Guidelines**:
+1.  **Sticky Header**: A \`nav\` element containing the candidate's name (e.g., \`<h1>\`) and three distinct \`button\` elements for theme switching. Smooth CSS \`transition\` properties must be applied to relevant elements for seamless theme changes.
+2.  **Hero Section**: A dedicated \`section\` element, visually distinct, prominently displaying \`name\`, \`email\`, and \`location\` using appropriate semantic tags (e.g., \`<h1>\`, \`<p>\`).
+3.  **Resume Content Sections**: Each major resume category will be a semantic \`section\` with an \`<h2>\` heading.
+    *   **Experience/Education Entries**: Structure these as \`article\` or \`div\` elements, using \`<h3>\` for titles/degrees, \`<h4>\` for companies/institutions, \`<span>\` for dates/locations, and \`<ul>\` with \`<li>\` for bulleted achievements.
+    *   **Skills**: Display as a \`div\` or \`ul\`, with individual skills styled as tags or badges.
+4.  **Theming**: Implement theme switching by applying different CSS classes (or updating CSS variables) to the \`<body>\` element or a primary wrapper \`div\`. Ensure smooth transitions (\`transition: all 0.3s ease-in-out;\`) on properties like \`background-color\`, \`color\`, and \`border-color\`.
+5.  **Responsiveness**: Utilize Tailwind CSS's mobile-first approach and utility classes to ensure the layout, typography, and spacing adapt gracefully across all screen sizes, from mobile to desktop.
+6.  **Print Styles**: Include a \`@media print\` query in the CSS to:
+    *   Force all text to black and backgrounds to white for optimal ink usage and readability.
+    *   Remove or hide interactive elements (buttons, sticky header behavior) that are not relevant for print.
+    *   Adjust margins, padding, and font sizes for a clean, professional print layout.
+    *   Ensure content does not break awkwardly across pages (\`page-break-inside: avoid;\`).
+7.  **Custom Scrollbar**: Apply custom CSS styling (e.g., \`::-webkit-scrollbar\`) to the scrollbar to match the aesthetic of the active theme, ensuring a polished user experience.
+8.  **Technology Stack**: The HTML file must be self-contained, using Tailwind CSS via a CDN link in the \`<head>\`, Google Fonts via \`<link>\` or \`@import\`, and adhering to Semantic HTML5 principles. JavaScript will be required for theme toggle functionality.
+
+transform_resume_content: ${JSON.stringify(transformedResumeJson, null, 2)}
+
+analyze_company_brand: ${JSON.stringify(brandAnalysisJson, null, 2)}
+
+extract_resume_content: ${JSON.stringify(parsedResumeJson, null, 2)}
+
+company_name: ${companyName}`;
+
+    let html = await callGemini(GOOGLE_API_KEY, step4System, step4User, false, 16000);
+>>>>>>> Stashed changes
 
     // Strip markdown code fences if present
     html = html
@@ -490,11 +710,19 @@ Output the complete HTML file now.`;
       .replace(/\n?```\s*$/i, "")
       .trim();
 
+<<<<<<< Updated upstream
     if (!html || html.length < 500) {
       return errorResponse("AI returned an incomplete response. Please try again.", "EMPTY_RESPONSE", 502);
     }
 
     console.log(`[generate-resume] Successfully generated HTML (${html.length} chars) via 4-step pipeline`);
+=======
+    if (!html) {
+      throw new Error("AI returned empty response at Step 4");
+    }
+
+    console.log(`[generate-resume] Generation Complete! Return size: ${html.length} chars`);
+>>>>>>> Stashed changes
 
     return new Response(JSON.stringify({ html }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
