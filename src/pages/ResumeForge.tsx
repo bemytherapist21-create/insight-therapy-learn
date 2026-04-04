@@ -296,7 +296,9 @@ const ResumeForge = () => {
           .eq("user_id", user.id)
           .eq("product_slug", PRODUCT_SLUG)
           .eq("status", "paid");
-        setHasPaid(false);
+        if (!isWhitelisted) {
+          setHasPaid(false);
+        }
       }
     } catch (err) {
       console.error(err);
