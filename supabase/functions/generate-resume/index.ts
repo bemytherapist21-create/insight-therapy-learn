@@ -22,7 +22,7 @@ async function callGemini(
   maxTokens: number = 8192,
   temperature: number = 0.7
 ) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
   const body: any = {
     contents: [{ role: "user", parts: [{ text: userPrompt }] }],
