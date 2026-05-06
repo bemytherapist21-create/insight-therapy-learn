@@ -24,6 +24,7 @@ import { ResumePreview } from "@/components/resume/ResumePreview";
 
 const PRODUCT_SLUG = "resume-forge";
 const PRODUCT_PRICE = 9900; // ₹99 in paise
+const OPAL_URL = "https://opal.google/app/1oETbkY7XfWfZ4TWt-riq6z6mRzx4OjAj";
 
 const steps = [
   { icon: FileText, label: "Resume", description: "Upload or paste resume" },
@@ -201,8 +202,9 @@ const ResumeForge = () => {
           if (verifyError) {
             toast.error("Payment verification failed");
           } else {
-            toast.success("Payment successful! You can now use Resume Brandifier.");
+            toast.success("Payment successful! Opening Resume Brandifier...");
             setHasPaid(true);
+            window.open(OPAL_URL, "_blank", "noopener,noreferrer");
           }
         },
         theme: { color: "#10b981" },
@@ -357,268 +359,22 @@ const ResumeForge = () => {
   }
 
   return (
-    <div className="min-h-screen pt-24 pb-16">
-      <div className="container mx-auto px-4 max-w-4xl">
-        <h1 className="text-3xl md:text-4xl font-bold text-center bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-8 pb-2">
-          Resume Brandifier
-        </h1>
-
-        {/* Stepper */}
-        <div className="flex items-center justify-center gap-2 mb-10">
-          {steps.map((step, i) => (
-            <button
-              key={i}
-              onClick={() => i <= (generatedHtml ? 3 : 2) && setCurrentStep(i)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                i === currentStep
-                  ? "bg-primary/20 text-primary border border-primary/40"
-                  : i < currentStep || (i === 3 && generatedHtml)
-                    ? "text-primary/70"
-                    : "text-muted-foreground"
-              }`}
-            >
-              {i < currentStep || (i === 3 && generatedHtml) ? (
-                <CheckCircle2 className="w-4 h-4" />
-              ) : (
-                <step.icon className="w-4 h-4" />
-              )}
-              <span className="hidden sm:inline">{step.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Step 1: Resume Upload + Paste */}
-        {currentStep === 0 && (
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle>Step 1: Your Resume</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* File Upload Zone */}
-              <div
-                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  const file = e.dataTransfer.files?.[0];
-                  if (file) processUploadedFile(file);
-                }}
-                className="relative border-2 border-dashed rounded-xl p-8 transition-all duration-300 border-border hover:border-primary/50 hover:bg-primary/5 cursor-pointer text-center"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,.docx,.doc,.txt"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) processUploadedFile(file);
-                    e.target.value = "";
-                  }}
-                  className="hidden"
-                />
-                {fileProcessing ? (
-                  <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                    <p className="text-sm text-muted-foreground">Extracting text from file...</p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-3">
-                    <Upload className="w-10 h-10 text-primary" />
-                    <div>
-                      <p className="text-sm font-medium text-foreground">
-                        Drop your resume here, or click to browse
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Supports PDF, DOCX, and TXT (max 10MB)
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Uploaded file indicator */}
-              {uploadedFile && (
-                <div className="flex items-center justify-between p-3 rounded-lg border border-primary/30 bg-primary/10">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-medium text-foreground">{uploadedFile.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      ({(uploadedFile.size / 1024).toFixed(1)} KB)
-                    </span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setUploadedFile(null);
-                      setResumeText("");
-                    }}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              )}
-
-              {/* Manual paste textarea */}
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground font-medium">
-                  Or paste your resume text below:
-                </p>
-                <Textarea
-                  placeholder="Paste your resume content here..."
-                  value={resumeText}
-                  onChange={(e) => setResumeText(e.target.value)}
-                  rows={10}
-                  className="bg-background/50"
-                  maxLength={50000}
-                />
-                <p className="text-xs text-muted-foreground text-right">
-                  {resumeText.length.toLocaleString()} / 50,000 characters
-                </p>
-              </div>
-
-              <Button
-                onClick={() => setCurrentStep(1)}
-                disabled={!resumeText.trim()}
-                className="w-full"
-              >
-                Next →
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Step 2: Company Info */}
-        {currentStep === 1 && (
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle>Step 2: Target Company</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Input
-                placeholder="Company name (e.g. Google)"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                className="bg-background/50"
-                maxLength={200}
-              />
-              <Input
-                placeholder="Company website (optional)"
-                value={companyWebsite}
-                onChange={(e) => setCompanyWebsite(e.target.value)}
-                className="bg-background/50"
-              />
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setCurrentStep(0)}>
-                  ← Back
-                </Button>
-                <Button onClick={() => setCurrentStep(2)} disabled={!companyName.trim()}>
-                  Next →
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Step 3: Job Description */}
-        {currentStep === 2 && (
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle>Step 3: Job Description</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Textarea
-                placeholder="Paste the job description here..."
-                value={jobDescription}
-                onChange={(e) => setJobDescription(e.target.value)}
-                rows={14}
-                className="bg-background/50"
-                maxLength={20000}
-              />
-              <p className="text-xs text-muted-foreground text-right">
-                {jobDescription.length.toLocaleString()} / 20,000 characters
-              </p>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setCurrentStep(1)}>
-                  ← Back
-                </Button>
-                <Button
-                  onClick={() => {
-                    setCurrentStep(3);
-                    handleGenerate();
-                  }}
-                  disabled={!jobDescription.trim()}
-                >
-                  <Sparkles className="w-4 h-4 mr-2" /> Generate Resume
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Step 4: Generation / Preview */}
-        {currentStep === 3 && (
-          <div className="space-y-4">
-            {generating ? (
-              <GenerationProgress />
-            ) : generatedHtml ? (
-              <ResumePreview
-                html={generatedHtml}
-                companyName={companyName}
-                onRegenerate={handleGenerate}
-                regenerating={generating}
-              />
-            ) : (
-              <Card className="glass-card p-8 text-center">
-                <p className="text-muted-foreground">
-                  Generation failed. Please try again.
-                </p>
-                <div className="flex justify-center gap-2 mt-4">
-                  <Button onClick={() => setCurrentStep(2)} variant="outline">
-                    ← Go Back
-                  </Button>
-                  <Button onClick={handleGenerate}>
-                    <Sparkles className="w-4 h-4 mr-2" /> Retry
-                  </Button>
-                </div>
-              </Card>
-            )}
-          </div>
-        )}
-
-        {/* Past Generations */}
-        {pastGenerations.length > 0 && (
-          <div className="mt-12">
-            <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-              <History className="w-5 h-5" /> Your Past Generations
-            </h2>
-            <div className="grid gap-3">
-              {pastGenerations.map((gen: any) => (
-                <div
-                  key={gen.id}
-                  className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30"
-                >
-                  <div>
-                    <span className="font-medium text-foreground">{gen.company_name}</span>
-                    <span className="text-sm text-muted-foreground ml-3">
-                      {new Date(gen.created_at).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </span>
-                  </div>
-                  <Badge variant={gen.status === "completed" ? "default" : "secondary"}>
-                    {gen.status}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+    <div className="min-h-screen pt-24 pb-16 flex items-center justify-center">
+      <Card className="glass-card max-w-md w-full text-center p-8">
+        <CheckCircle2 className="w-12 h-12 mx-auto text-primary mb-4" />
+        <h2 className="text-2xl font-bold text-foreground mb-2">You're all set!</h2>
+        <p className="text-muted-foreground mb-6">
+          Click below to open Resume Brandifier and create your branded resume.
+        </p>
+        <Button
+          onClick={() => window.open(OPAL_URL, "_blank", "noopener,noreferrer")}
+          className="w-full"
+          size="lg"
+        >
+          <Sparkles className="w-4 h-4 mr-2" />
+          Open Resume Brandifier
+        </Button>
+      </Card>
     </div>
   );
 };
