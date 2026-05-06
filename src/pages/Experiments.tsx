@@ -16,11 +16,10 @@ const products = [
     title: "Resume Brandifier",
     description:
       "Upload your resume, enter a target company & job description, and get a stunning company-branded HTML resume with 3-theme toggle.",
-    price: "FREE",
+    price: "₹99/resume",
     gradient: "from-emerald-500 to-teal-500",
-    requiresLogin: false,
+    requiresLogin: true,
     badge: null as string | null,
-    externalUrl: "https://opal.google/app/1oETbkY7XfWfZ4TWt-riq6z6mRzx4OjAj",
   },
   {
     slug: "open-mind",
