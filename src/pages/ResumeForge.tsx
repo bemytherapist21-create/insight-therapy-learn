@@ -202,8 +202,9 @@ const ResumeForge = () => {
           if (verifyError) {
             toast.error("Payment verification failed");
           } else {
-            toast.success("Payment successful! You can now use Resume Brandifier.");
+            toast.success("Payment successful! Opening Resume Brandifier...");
             setHasPaid(true);
+            window.open(OPAL_URL, "_blank", "noopener,noreferrer");
           }
         },
         theme: { color: "#10b981" },
