@@ -24,6 +24,7 @@ import { ResumePreview } from "@/components/resume/ResumePreview";
 
 const PRODUCT_SLUG = "resume-forge";
 const PRODUCT_PRICE = 9900; // ₹99 in paise
+const OPAL_URL = "https://opal.google/app/1oETbkY7XfWfZ4TWt-riq6z6mRzx4OjAj";
 
 const steps = [
   { icon: FileText, label: "Resume", description: "Upload or paste resume" },
