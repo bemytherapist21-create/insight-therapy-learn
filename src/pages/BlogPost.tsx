@@ -1,6 +1,8 @@
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Calendar, Clock, User } from "lucide-react";
 import { blogPosts } from "./Blog";
+import { SEO } from "@/components/SEO";
+
 
 // Full blog content mapped by slug
 const blogContent: Record<string, React.ReactNode> = {
@@ -264,7 +266,22 @@ const BlogPost = () => {
 
     return (
         <div className="min-h-screen pt-24 pb-16">
+            <SEO
+                title={`${post.title} — The Everything AI Blog`}
+                description={post.excerpt}
+                path={`/blog/${post.slug}`}
+                type="article"
+                jsonLd={{
+                    "@context": "https://schema.org",
+                    "@type": "Article",
+                    headline: post.title,
+                    description: post.excerpt,
+                    datePublished: post.date,
+                    author: { "@type": "Organization", name: post.author },
+                }}
+            />
             <div className="container mx-auto px-4 max-w-3xl">
+
                 {/* Back Link */}
                 <Link
                     to="/blog"
