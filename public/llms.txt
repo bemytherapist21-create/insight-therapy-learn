@@ -1,0 +1,18 @@
+# The Everything AI
+
+> AI-powered platform for mental health therapy, business insights, and learning — featuring AI chat & voice therapists, human therapist booking, business analytics, and experimental AI tools.
+
+## Pages
+
+- [Home](/): Overview of all services and platform highlights.
+- [AI Therapy](/ai-therapy): AI chatbot, voice therapist, and human therapist booking.
+- [Insight Fusion](/insight-fusion): Business analytics and strategy sessions.
+- [AI Learning](/ai-learning): Curated AI educational materials and resources.
+- [Experiments](/experiments): Experimental AI tools including the Resume Brandifier.
+- [Blog](/blog): Articles on AI, mental health, and technology.
+- [Therapist Registration](/therapist-registration): Apply to join as a licensed therapist.
+
+## Optional
+
+- [Terms](/terms): Terms of service.
+- [Privacy](/privacy): Privacy policy.
