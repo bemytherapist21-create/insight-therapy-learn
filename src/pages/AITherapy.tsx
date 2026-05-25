@@ -21,6 +21,8 @@ import {
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/config/constants";
+import { SEO } from "@/components/SEO";
+
 
 const AITherapy = () => {
   const navigate = useNavigate();
@@ -100,6 +102,20 @@ const AITherapy = () => {
 
   return (
     <div className="min-h-screen pt-20">
+      <SEO
+        title="AI Therapy — Chat & Voice Mental Health Support | The Everything AI"
+        description="Talk to AI chatbot or voice therapists, or book a human professional. Confidential, 24/7 mental health support powered by AI."
+        path="/ai-therapy"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "Service",
+          name: "AI Therapy",
+          provider: { "@type": "Organization", name: "The Everything AI" },
+          description: "AI-powered chat and voice mental health therapy with human therapist options.",
+          url: "https://insight-therapy-learn.lovable.app/ai-therapy",
+        }}
+      />
+
       {/* Hero Section */}
       <section className="py-20">
         <div className="container mx-auto px-4">

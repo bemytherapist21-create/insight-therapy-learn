@@ -12,8 +12,10 @@ import { ArrowRight } from "lucide-react";
 import { HeroSection } from "@/components/home/HeroSection";
 import { ServiceCard } from "@/components/home/ServiceCard";
 import { ContactForm } from "@/components/home/ContactForm";
+import { SEO } from "@/components/SEO";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
 
 const Home = () => {
   const location = useLocation();
@@ -64,7 +66,13 @@ const Home = () => {
 
   return (
     <div className="min-h-screen">
+      <SEO
+        title="The Everything AI — AI Therapy, Business Insights & Learning"
+        description="AI-powered platform for mental health therapy, business analytics, and learning. Chat with AI therapists, book human professionals, and explore experimental AI tools."
+        path="/"
+      />
       <HeroSection />
+
 
       {/* Services Section */}
       <section id="services" className="py-20 relative">

@@ -1,10 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DeleteAccountDialog } from "@/components/settings/DeleteAccountDialog";
+import { SEO } from "@/components/SEO";
 
 const PrivacyPolicy = () => {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <SEO
+        title="Privacy Policy — The Everything AI"
+        description="Learn how The Everything AI collects, uses, and protects your personal information and data."
+        path="/privacy"
+      />
+
       <Card className="glass-card">
         <CardHeader>
           <CardTitle className="text-3xl font-bold text-center text-white mb-4">

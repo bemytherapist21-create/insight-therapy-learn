@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { SEO } from "@/components/SEO";
 
 const products = [
   {
@@ -39,7 +40,13 @@ const products = [
 const Experiments = () => {
   return (
     <div className="min-h-screen pt-24 pb-16">
+      <SEO
+        title="Experiments — Cutting-edge AI Tools | The Everything AI"
+        description="Try our experimental AI tools — the Resume Brandifier, Open Mind multi-model chat, and more standalone AI experiences."
+        path="/experiments"
+      />
       <div className="container mx-auto px-4">
+
         <div className="text-center mb-16 animate-fade-in">
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent mb-4 pb-2">
             Experimentation Products

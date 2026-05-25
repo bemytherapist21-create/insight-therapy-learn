@@ -19,6 +19,7 @@ import {
   Download,
   Play,
 } from "lucide-react";
+import { SEO } from "@/components/SEO";
 
 const AILearning = () => {
   const learningCategories = [
@@ -101,6 +102,12 @@ const AILearning = () => {
 
   return (
     <div className="min-h-screen pt-20">
+      <SEO
+        title="AI Learning — Courses & Resources | The Everything AI"
+        description="Curated AI courses, tutorials, and learning materials. Master AI fundamentals, machine learning, and applied AI with expert resources."
+        path="/ai-learning"
+      />
+
       {/* Hero Section */}
       <section className="py-20">
         <div className="container mx-auto px-4">
