@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { SEO } from "@/components/SEO";
 
 export interface BlogPostMeta {
     slug: string;
@@ -47,7 +48,13 @@ export const blogPosts: BlogPostMeta[] = [
 const Blog = () => {
     return (
         <div className="min-h-screen pt-24 pb-16">
+            <SEO
+                title="Blog — The Everything AI"
+                description="Stories, insights, and case studies from our projects and experiments in AI, web development, and technology."
+                path="/blog"
+            />
             <div className="container mx-auto px-4 max-w-5xl">
+
                 {/* Header */}
                 <div className="text-center mb-16">
                     <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-[#8A2BE2] to-[#FF8C00] bg-clip-text text-transparent mb-4 pb-2">

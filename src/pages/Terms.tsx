@@ -1,9 +1,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { SEO } from "@/components/SEO";
 
 const Terms = () => {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <SEO
+        title="Terms and Conditions — The Everything AI"
+        description="Read the terms and conditions governing your use of The Everything AI platform and services."
+        path="/terms"
+      />
+
       <Card className="glass-card">
         <CardHeader>
           <CardTitle className="text-3xl font-bold text-center text-white mb-4">

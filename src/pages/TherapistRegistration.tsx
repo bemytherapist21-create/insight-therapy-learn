@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import { Heart, Shield, Users, TrendingUp, Check } from "lucide-react";
 import TherapistRegistrationForm from "@/components/therapist/TherapistRegistrationForm";
+import { SEO } from "@/components/SEO";
+
 
 const TherapistRegistration = () => {
   const benefits = [
@@ -43,7 +45,13 @@ const TherapistRegistration = () => {
 
   return (
     <div className="min-h-screen pt-20">
+      <SEO
+        title="Therapist Registration — Join The Everything AI"
+        description="Apply to join The Everything AI as a licensed therapist or practitioner. Help users with AI-supported mental health care."
+        path="/therapist-registration"
+      />
       {/* Hero Section */}
+
       <section className="py-20">
         <div className="container mx-auto px-4">
           <motion.div

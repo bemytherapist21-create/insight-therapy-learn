@@ -28,6 +28,8 @@ import { InlineWidget } from "react-calendly";
 import { supabase } from "@/integrations/supabase/safeClient";
 import { useUsageGate } from "@/hooks/useUsageGate";
 import { PaywallModal } from "@/components/PaywallModal";
+import { SEO } from "@/components/SEO";
+
 
 const CALENDLY_URL = "https://calendly.com/bhupeshpandey62/30min";
 
