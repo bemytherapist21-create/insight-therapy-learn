@@ -12,3 +12,6 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Sitemap: https://insight-therapy-learn.lovable.app/sitemap.xml
+
