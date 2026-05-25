@@ -352,6 +352,20 @@ const InsightFusion = () => {
 
   return (
     <div className="min-h-screen pt-20">
+      <SEO
+        title="Insight Fusion — AI Business Analytics & Strategy | The Everything AI"
+        description="AI-powered business analytics and 1:1 strategy sessions to accelerate growth. Upload data, get insights, and book strategy calls."
+        path="/insight-fusion"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "Service",
+          name: "Insight Fusion",
+          provider: { "@type": "Organization", name: "The Everything AI" },
+          description: "AI business analytics and strategy sessions.",
+          url: "https://insight-therapy-learn.lovable.app/insight-fusion",
+        }}
+      />
+
       {/* Hero Section */}
       <section className="py-20">
         <div className="container mx-auto px-4">
