@@ -17,9 +17,12 @@ async function bootstrap() {
 
     createRoot(root).render(
       <ErrorBoundary>
-        <App />
+        <HelmetProvider>
+          <App />
+        </HelmetProvider>
       </ErrorBoundary>,
     );
+
 
     reportWebVitals();
   } catch (err) {
